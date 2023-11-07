@@ -40,19 +40,19 @@ void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base, int32_t ev
 
 void onWebsocketPriceMessage(esp_websocket_event_data_t* event_data)
 {
-    DynamicJsonDocument doc(event_data->data_len);
+    SpiRamJsonDocument doc(event_data->data_len);
 
     deserializeJson(doc, (char *)event_data->data_ptr);
 
     if (doc.containsKey("bitcoin")) {
         if (currentPrice != doc["bitcoin"].as<long>()) {
-            Serial.printf("New price %lu\r\n", currentPrice);
+           // Serial.printf("New price %lu\r\n", currentPrice);
 
             const unsigned long oldPrice = currentPrice;
             currentPrice = doc["bitcoin"].as<long>();
 
            // if (abs((int)(oldPrice-currentPrice)) > round(0.0015*oldPrice)) {
-                if (priceUpdateTaskHandle != nullptr)
+                if (priceUpdateTaskHandle != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER || getCurrentScreen() == SCREEN_MSCW_TIME))
                     xTaskNotifyGive(priceUpdateTaskHandle);
             //}
         }

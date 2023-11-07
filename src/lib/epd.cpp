@@ -169,7 +169,6 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
                 showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
             }
 
-#ifdef USE_UNIVERSAL_PIN
             char tries = 0;
             while (tries < 3)
             {
@@ -180,14 +179,9 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
                     break;
                 }
 
-                delay(100);
+                vTaskDelay(pdMS_TO_TICKS(100));
                 tries++;
             }
-#else
-            displays[epdIndex].display(updatePartial);
-            displays[epdIndex].hibernate();
-            currentEpdContent[epdIndex] = epdContent[epdIndex];
-#endif
         }
         xSemaphoreGive(epdUpdateSemaphore[epdIndex]);
     }
@@ -264,4 +258,14 @@ void setBgColor(int color)
 void setFgColor(int color)
 {
     fgColor = color;
+}
+
+std::array<String, NUM_SCREENS> getCurrentEpdContent()
+{
+  //  Serial.println("currentEpdContent");
+
+    // for (int i = 0; i < NUM_SCREENS; i++) {
+    //     Serial.printf("%d = %s", i, currentEpdContent[i]);
+    // }
+    return currentEpdContent;
 }

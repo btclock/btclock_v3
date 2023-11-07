@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "shared.hpp"
 
 #include "esp_websocket_client.h"
 #include "screen_handler.hpp"

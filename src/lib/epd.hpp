@@ -20,3 +20,4 @@ void setBgColor(int color);
 void setFgColor(int color);
 
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent);
+std::array<String, NUM_SCREENS> getCurrentEpdContent();
