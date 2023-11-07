@@ -21,9 +21,10 @@ void setup()
         blinkDelay(100, 3);
     }
 
-    tryImprovSetup();
 
     setupDisplays();
+    tryImprovSetup();
+
     setupPreferences();
     setupWebserver();
 
@@ -68,7 +69,7 @@ void tryImprovSetup()
                 x_position = 0;
             }
         }
-        vTaskDelay(1);
+       // vTaskDelay(1);
     }
 }
 
