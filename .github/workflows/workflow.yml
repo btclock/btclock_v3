@@ -69,6 +69,7 @@ jobs:
           artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini/*.bin"
           allowUpdates: true
           removeArtifacts: true
+          makeLatest: true
       - name: Pushes full-firmware.bin to web flasher
         id: push_directory
         uses: cpina/github-action-push-to-another-repository@main
