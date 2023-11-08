@@ -32,7 +32,7 @@ void setupBlockNotify()
     {
         String blockHeightStr = http->getString();
         currentBlockHeight = blockHeightStr.toInt();
-      //  xTaskNotifyGive(blockUpdateTaskHandle);
+        xTaskNotifyGive(blockUpdateTaskHandle);
     }
 
    // std::strcpy(wsServer, String("wss://" + mempoolInstance + "/api/v1/ws").c_str());

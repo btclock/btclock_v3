@@ -115,7 +115,9 @@ void taskBlockUpdate(void *pvParameters)
             taskEpdContent[(NUM_SCREENS - 1)] = "TO/GO";
         }
 
-        setEpdContent(taskEpdContent);
+        if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN || getCurrentScreen() == SCREEN_BLOCK_HEIGHT) {
+            setEpdContent(taskEpdContent);
+        }
     }
 }
 
