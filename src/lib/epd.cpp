@@ -125,15 +125,6 @@ void taskEpd(void *pvParameters)
                 }
             }
         }
-
-#ifdef WITH_RGB_LED
-        if (updatedThisCycle && preferences.getBool("ledFlashOnUpd", false))
-        {
-            xTaskNotifyGive(ledHandlerTaskHandle);
-        }
-#endif
-
-        // vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -189,29 +180,40 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
             {
                 String top = epdContent[epdIndex].substring(0, epdContent[epdIndex].indexOf("/"));
                 String bottom = epdContent[epdIndex].substring(epdContent[epdIndex].indexOf("/") + 1);
+#ifdef PAGED_WRITE
                 splitTextPaged(epdIndex, top, bottom, updatePartial);
+#else
+                splitText(epdIndex, top, bottom, updatePartial);
+#endif
             }
             else
             {
-                // displays[epdIndex].drawPaged([&epdIndex, &updatePartial](const void *data)
-                //                              { showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG); },
-                //                              0);
+
+#ifdef PAGED_WRITE
                 showDigitPaged(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+#else
+                showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+#endif
             }
 
-            // char tries = 0;
-            // while (tries < 3)
-            // {
-            //     if (displays[epdIndex].displayWithReturn(updatePartial))
-            //     {
-            //         displays[epdIndex].hibernate();
+#ifdef PAGED_WRITE
             currentEpdContent[epdIndex] = epdContent[epdIndex];
-            //         break;
-            //     }
+#else
+            char tries = 0;
+            while (tries < 3)
+            {
+                if (displays[epdIndex].displayWithReturn(updatePartial))
+                {
+                    displays[epdIndex].hibernate();
+                    break;
+                }
 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            //     tries++;
-            // }
+                vTaskDelay(pdMS_TO_TICKS(100));
+                tries++;
+            }
+            currentEpdContent[epdIndex] = epdContent[epdIndex];
+
+#endif
         }
         xSemaphoreGive(epdUpdateSemaphore[epdIndex]);
     }

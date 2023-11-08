@@ -3,9 +3,6 @@
 TaskHandle_t ledTaskHandle = NULL;
 QueueHandle_t ledTaskQueue = NULL;
 Adafruit_NeoPixel pixels(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
-
-const TickType_t debounceDelay = pdMS_TO_TICKS(50);
-uint32_t notificationValue;
 unsigned long ledTaskParams;
 
 void ledTask(void *parameter)
@@ -53,6 +50,7 @@ void ledTask(void *parameter)
                         delay(100);
                     }
                     pixels.setPixelColor(0, pixels.Color(255, 0, 0));
+                    pixels.show();
 
                     delay(900);
 
@@ -61,7 +59,7 @@ void ledTask(void *parameter)
                     break;
                 case LED_EFFECT_START_TIMER:
                     pixels.clear();
-                    pixels.setPixelColor(NEOPIXEL_COUNT, pixels.Color(255, 0, 0));
+                    pixels.setPixelColor((NEOPIXEL_COUNT-1), pixels.Color(255, 0, 0));
                     pixels.show();
 
                     delay(900);
@@ -114,7 +112,7 @@ void setupLeds()
 
 void setupLedTask()
 {
-    ledTaskQueue = xQueueCreate(10, sizeof(char));
+    ledTaskQueue = xQueueCreate(5, sizeof(char));
 
     xTaskCreate(ledTask, "LedTask", 2048, NULL, tskIDLE_PRIORITY, &ledTaskHandle);
 }

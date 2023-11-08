@@ -10,6 +10,7 @@ void setupPriceNotify()
 {
     esp_websocket_client_config_t config = {
         .uri = wsServerPrice,
+        .user_agent = USER_AGENT,
     };
 
     clientPrice = esp_websocket_client_init(&config);

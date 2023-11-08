@@ -105,8 +105,8 @@ void setupWebsocketClients()
 
 void setupTimers()
 {
-    xTaskCreate(setupTimeUpdateTimer, "setupTimeUpdateTimer", 2048, NULL, 1, NULL);
-    xTaskCreate(setupScreenRotateTimer, "setupScreenRotateTimer", 2048, NULL, 1, NULL);
+    xTaskCreate(setupTimeUpdateTimer, "setupTimeUpdateTimer", 2048, NULL, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(setupScreenRotateTimer, "setupScreenRotateTimer", 2048, NULL, tskIDLE_PRIORITY, NULL);
 }
 
 void finishSetup()

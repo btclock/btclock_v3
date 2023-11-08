@@ -13,10 +13,6 @@
 #define NEOPIXEL_COUNT 4
 #endif
 
-typedef struct {
-    int flashType;
-} LedTaskParameters;
-
 const int LED_FLASH_ERROR = 0;
 const int LED_FLASH_SUCCESS = 1;
 const int LED_FLASH_UPDATE = 2;

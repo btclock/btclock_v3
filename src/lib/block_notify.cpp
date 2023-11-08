@@ -37,7 +37,8 @@ void setupBlockNotify()
    // std::strcpy(wsServer, String("wss://" + mempoolInstance + "/api/v1/ws").c_str());
 
     esp_websocket_client_config_t config = {
-        .uri = "wss://mempool.bitcoin.nl/api/v1/ws",
+        .uri = "wss://mempool.space/api/v1/ws",
+        .user_agent = USER_AGENT,
     };
 
     blockNotifyClient = esp_websocket_client_init(&config);
@@ -48,13 +49,14 @@ void setupBlockNotify()
 void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-    const char sub[38] = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
+    const String sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
     switch (event_id)
     {
     case WEBSOCKET_EVENT_CONNECTED:
         Serial.println(F("Connected to Mempool.space WebSocket"));
         
-        if (esp_websocket_client_send_text(blockNotifyClient, sub, 38, portMAX_DELAY) == -1)
+        Serial.println(sub);
+        if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(), sub.length(), portMAX_DELAY) == -1)
         {
             Serial.println(F("Mempool.space WS Block Subscribe Error"));
         }
@@ -85,6 +87,8 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
 
         currentBlockHeight = block["height"].as<long>();
 
+         Serial.printf("New block found: %d\r\n", block["height"].as<long>());
+
         if (blockUpdateTaskHandle != nullptr) {
             xTaskNotifyGive(blockUpdateTaskHandle);
             if (preferences.getBool("ledFlashOnUpd", false)) {
@@ -93,8 +97,8 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
                 queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
             }
         }
-    }
-
+    } 
+    
     doc.clear();
 }
 
