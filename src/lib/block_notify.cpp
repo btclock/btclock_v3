@@ -16,12 +16,11 @@ void setupBlockNotify()
 
         if (dnsErr != 1) {
             Serial.print(mempoolInstance);
-            Serial.println("mempool DNS could not be resolved");
+            Serial.println(F("mempool DNS could not be resolved"));
             WiFi.reconnect();
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
     }
-    Serial.println("mempool DNS can be resolved");
 
     // Get current block height through regular API
     HTTPClient *http = new HTTPClient();
@@ -41,8 +40,6 @@ void setupBlockNotify()
         .uri = "wss://mempool.bitcoin.nl/api/v1/ws",
     };
 
-    Serial.printf("Connecting to %s\r\n", config.uri);
-
     blockNotifyClient = esp_websocket_client_init(&config);
     esp_websocket_register_events(blockNotifyClient, WEBSOCKET_EVENT_ANY, onWebsocketEvent, blockNotifyClient);
     esp_websocket_client_start(blockNotifyClient);
@@ -51,17 +48,15 @@ void setupBlockNotify()
 void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-    String init;
-    String sub;
+    const char sub[38] = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
     switch (event_id)
     {
     case WEBSOCKET_EVENT_CONNECTED:
-        Serial.println("Connected to Mempool.space WebSocket");
+        Serial.println(F("Connected to Mempool.space WebSocket"));
         
-        sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
-        if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(), sub.length(), portMAX_DELAY) == -1)
+        if (esp_websocket_client_send_text(blockNotifyClient, sub, 38, portMAX_DELAY) == -1)
         {
-            Serial.println("Mempool.space WS Block Subscribe Error");
+            Serial.println(F("Mempool.space WS Block Subscribe Error"));
         }
 
         break;
@@ -70,10 +65,10 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_i
         // Handle the received WebSocket message (block notifications) here
         break;
     case WEBSOCKET_EVENT_ERROR:
-        Serial.println("Mempool.space WS Connnection error");
+        Serial.println(F("Mempool.space WS Connnection error"));
         break;
     case WEBSOCKET_EVENT_DISCONNECTED:
-        Serial.println("Mempool.space WS Connnection Closed");
+        Serial.println(F("Mempool.space WS Connnection Closed"));
         break;
     }
 }
@@ -83,19 +78,17 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
     SpiRamJsonDocument doc(event_data->data_len);
 
     deserializeJson(doc, (char *)event_data->data_ptr);
-    // serializeJsonPretty(doc, Serial);
 
     if (doc.containsKey("block"))
     {
         JsonObject block = doc["block"];
 
         currentBlockHeight = block["height"].as<long>();
-        Serial.print("New block found: ");
-        Serial.println(block["height"].as<long>());
 
         if (blockUpdateTaskHandle != nullptr) {
             xTaskNotifyGive(blockUpdateTaskHandle);
             if (preferences.getBool("ledFlashOnUpd", false)) {
+                setCurrentScreen(SCREEN_BLOCK_HEIGHT);
                 vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
                 queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
             }

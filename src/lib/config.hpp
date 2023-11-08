@@ -44,7 +44,7 @@ void setupHardware();
 void tryImprovSetup();
 void setupTimers();
 void finishSetup();
-std::map<int, std::string> getScreenNameMap();
+std::vector<std::string> getScreenNameMap();
 
 std::vector<std::string> getLocalUrl();
 bool improv_connectWifi(std::string ssid, std::string password);

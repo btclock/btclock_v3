@@ -6,7 +6,7 @@
 
 Preferences preferences;
 Adafruit_MCP23X17 mcp;
-std::map<int, std::string> screenNameMap;
+std::vector<std::string> screenNameMap(SCREEN_COUNT);
 
 void setup()
 {
@@ -90,11 +90,11 @@ void setupPreferences()
     setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
     setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
 
-    screenNameMap = {{SCREEN_BLOCK_HEIGHT, "Block Height"},
-                     {SCREEN_MSCW_TIME, "Sats per dollar"},
-                     {SCREEN_BTC_TICKER, "Ticker"},
-                     {SCREEN_TIME, "Time"},
-                     {SCREEN_HALVING_COUNTDOWN, "Halving countdown"}};
+    screenNameMap[SCREEN_BLOCK_HEIGHT]  =  "Block Height";
+    screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
+    screenNameMap[SCREEN_BTC_TICKER] =  "Ticker";
+    screenNameMap[SCREEN_TIME] =  "Time";
+    screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
 }
 
 void setupWebsocketClients()
@@ -105,8 +105,8 @@ void setupWebsocketClients()
 
 void setupTimers()
 {
-    xTaskCreate(setupTimeUpdateTimer, "setupTimeUpdateTimer", 4096, NULL, 1, NULL);
-    xTaskCreate(setupScreenRotateTimer, "setupScreenRotateTimer", 4096, NULL, 1, NULL);
+    xTaskCreate(setupTimeUpdateTimer, "setupTimeUpdateTimer", 2048, NULL, 1, NULL);
+    xTaskCreate(setupScreenRotateTimer, "setupScreenRotateTimer", 2048, NULL, 1, NULL);
 }
 
 void finishSetup()
@@ -120,7 +120,7 @@ void finishSetup()
 
 }
 
-std::map<int, std::string> getScreenNameMap() {
+std::vector<std::string> getScreenNameMap() {
     return screenNameMap;
 }
 

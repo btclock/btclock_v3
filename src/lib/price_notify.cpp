@@ -20,21 +20,20 @@ void setupPriceNotify()
 void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-    String init;
-    String sub;
+
     switch (event_id)
     {
     case WEBSOCKET_EVENT_CONNECTED:
-        Serial.println("Connected to CoinCap.io WebSocket");
+        Serial.println(F("Connected to CoinCap.io WebSocket"));
         break;
     case WEBSOCKET_EVENT_DATA:
         onWebsocketPriceMessage(data);
         break;
     case WEBSOCKET_EVENT_ERROR:
-        Serial.println("Connnection error");
+        Serial.println(F("Price WS Connnection error"));
         break;
     case WEBSOCKET_EVENT_DISCONNECTED:
-        Serial.println("Connnection Closed");
+        Serial.println(F("Price WS Connnection Closed"));
         break;
     }
 }

@@ -11,8 +11,13 @@ void setupDisplays();
 void taskEpd(void *pvParameters);
 
 void splitText(const uint dispNum, String top, String bottom, bool partial);
+void splitTextPaged(const uint dispNum, String top, String bottom, bool partial);
+
 void showDigit(const uint dispNum, char chr, bool partial, const GFXfont *font);
+void showDigitPaged(const uint dispNum, char chr, bool partial, const GFXfont *font);
+
 extern "C" void updateDisplay(void *pvParameters) noexcept;
+void updateDisplayAlt(int epdIndex);
 
 int getBgColor();
 int getFgColor();

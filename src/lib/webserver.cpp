@@ -2,6 +2,7 @@
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
+TaskHandle_t eventSourceTaskHandle;
 
 void setupWebserver()
 {
@@ -19,7 +20,7 @@ void setupWebserver()
                          }
                          // send event with message "hello!", id current millis
                          //  and set reconnect delay to 1 second
-                         eventSourceLoop();
+                         eventSourceUpdate();
                      });
     server.addHandler(&events);
 
@@ -66,6 +67,8 @@ void setupWebserver()
         }
     }
     MDNS.addService("http", "tcp", 80);
+
+    xTaskCreate(eventSourceTask, "eventSourceTask", 4096, NULL, tskIDLE_PRIORITY, &eventSourceTaskHandle);
 }
 
 StaticJsonDocument<768> getStatusObject()
@@ -76,12 +79,12 @@ StaticJsonDocument<768> getStatusObject()
     root["numScreens"] = NUM_SCREENS;
     root["timerRunning"] = isTimerActive();
     root["espUptime"] = esp_timer_get_time() / 1000000;
-    root["currentPrice"] = getPrice();
-    root["currentBlockHeight"] = getBlockHeight();
+    // root["currentPrice"] = getPrice();
+    // root["currentBlockHeight"] = getBlockHeight();
     root["espFreeHeap"] = ESP.getFreeHeap();
     root["espHeapSize"] = ESP.getHeapSize();
-    root["espFreePsram"] = ESP.getFreePsram();
-    root["espPsramSize"] = ESP.getPsramSize();
+    // root["espFreePsram"] = ESP.getFreePsram();
+    // root["espPsramSize"] = ESP.getPsramSize();
 
     JsonObject conStatus = root.createNestedObject("connectionStatus");
     conStatus["price"] = isPriceNotifyConnected();
@@ -90,7 +93,7 @@ StaticJsonDocument<768> getStatusObject()
     return root;
 }
 
-void eventSourceLoop()
+void eventSourceUpdate()
 {
     if (!events.count()) return;
     StaticJsonDocument<768> root = getStatusObject();
@@ -101,8 +104,6 @@ void eventSourceLoop()
 
     copyArray(epdContent, data);
 
-    size_t bufSize = measureJson(root);
-    char buffer[bufSize];
     String bufString;
     serializeJson(root, bufString);
 
@@ -229,7 +230,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 #endif
     JsonArray screens = root.createNestedArray("screens");
 
-    std::map<int, std::string> screenNameMap = getScreenNameMap();
+    std::vector<std::string> screenNameMap = getScreenNameMap();
 
     for (int i = 0; i < screenNameMap.size(); i++)
     {
@@ -274,7 +275,6 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
 
 void onApiSettingsPost(AsyncWebServerRequest *request)
 {
-    int params = request->params();
     bool settingsChanged = false;
 
     settingsChanged = processEpdColorSettings(request);
@@ -300,8 +300,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *mempoolInstance = request->getParam("mempoolInstance", true);
 
         preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
-        Serial.print("Setting mempool instance to ");
-        Serial.println(mempoolInstance->value().c_str());
+        Serial.printf("Setting mempool instance to %s\r\n", mempoolInstance->value().c_str());
         settingsChanged = true;
     }
 
@@ -310,8 +309,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *ledBrightness = request->getParam("ledBrightness", true);
 
         preferences.putUInt("ledBrightness", ledBrightness->value().toInt());
-        Serial.print("Setting brightness to ");
-        Serial.println(ledBrightness->value().c_str());
+        Serial.printf("Setting brightness to %d\r\n", ledBrightness->value().toInt());
         settingsChanged = true;
     }
 
@@ -320,8 +318,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *fullRefreshMin = request->getParam("fullRefreshMin", true);
 
         preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
-        Serial.print("Set full refresh minutes to ");
-        Serial.println(fullRefreshMin->value().c_str());
+        Serial.printf("Set full refresh minutes to %d\r\n",fullRefreshMin->value().toInt());
         settingsChanged = true;
     }
 
@@ -330,12 +327,11 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *wpTimeout = request->getParam("wpTimeout", true);
 
         preferences.putUInt("wpTimeout", wpTimeout->value().toInt());
-        Serial.print("Set WiFi portal timeout seconds to ");
-        Serial.println(wpTimeout->value().c_str());
+        Serial.printf("Set WiFi portal timeout seconds to %d\r\n", wpTimeout->value().toInt());
         settingsChanged = true;
     }
 
-    std::map<int, std::string> screenNameMap = getScreenNameMap();
+    std::vector<std::string> screenNameMap = getScreenNameMap();
 
     for (int i = 0; i < screenNameMap.size(); i++)
     {
@@ -347,8 +343,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
             AsyncWebParameter *screenParam = request->getParam(key, true);
             visible = screenParam->value().toInt();
         }
-        Serial.print("Setting screen " + String(i) + " to ");
-        Serial.println(visible);
+        Serial.printf("Setting screen %d to %d\r\n", i, visible);
 
         preferences.putBool(prefKey.c_str(), visible);
     }
@@ -358,18 +353,16 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *p = request->getParam("tzOffset", true);
         int tzOffsetSeconds = p->value().toInt() * 60;
         preferences.putInt("gmtOffset", tzOffsetSeconds);
-        Serial.print("Setting tz offset to ");
-        Serial.println(tzOffsetSeconds);
+        Serial.printf("Setting tz offset to %d\r\n", tzOffsetSeconds);
         settingsChanged = true;
     }
 
      if (request->hasParam("minSecPriceUpd", true))
     {
         AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
-        int minSecPriceUpd = p->value().toInt() * 60;
-        preferences.putInt("minSecPriceUpd", minSecPriceUpd);
-        Serial.print("Setting minSecPriceUpd ");
-        Serial.println(minSecPriceUpd);
+        int minSecPriceUpd = p->value().toInt();
+        preferences.putUInt("minSecPriceUpd", minSecPriceUpd);
+        Serial.printf("Setting minSecPriceUpd to %d\r\n", minSecPriceUpd);
         settingsChanged = true;
     }
 
@@ -465,3 +458,11 @@ void onNotFound(AsyncWebServerRequest *request)
         request->send(404);
     }
 };
+
+void eventSourceTask(void *pvParameters) {
+    for (;;)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        eventSourceUpdate();
+    }
+}

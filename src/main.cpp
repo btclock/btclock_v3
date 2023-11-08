@@ -1,6 +1,8 @@
 #include "Arduino.h"
 #include "lib/config.hpp"
 
+//char ptrTaskList[400];
+
 extern "C" void app_main()
 {
     initArduino();
@@ -10,7 +12,15 @@ extern "C" void app_main()
 
     while (true)
     {
-        eventSourceLoop();
-        vTaskDelay(pdMS_TO_TICKS(2500));
+        // vTaskList(ptrTaskList);
+        // Serial.println(F("**********************************"));
+        // Serial.println(F("Task  State   Prio    Stack    Num"));
+        // Serial.println(F("**********************************"));
+        // Serial.print(ptrTaskList);
+        // Serial.println(F("**********************************"));
+        if (eventSourceTaskHandle != NULL)
+            xTaskNotifyGive(eventSourceTaskHandle);
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

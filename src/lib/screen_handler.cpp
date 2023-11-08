@@ -61,7 +61,7 @@ void taskScreenRotate(void *pvParameters)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        int nextScreen = (currentScreen+ 1) % 5;
+        int nextScreen = (currentScreen + 1) % 5;
         String key = "screen" + String(nextScreen) + "Visible";
 
         while (!preferences.getBool(key.c_str(), true))
@@ -115,7 +115,8 @@ void taskBlockUpdate(void *pvParameters)
             taskEpdContent[(NUM_SCREENS - 1)] = "TO/GO";
         }
 
-        if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN || getCurrentScreen() == SCREEN_BLOCK_HEIGHT) {
+        if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN || getCurrentScreen() == SCREEN_BLOCK_HEIGHT)
+        {
             setEpdContent(taskEpdContent);
         }
     }
@@ -217,7 +218,8 @@ void setupScreenRotateTimer(void *pvParameters)
 
     esp_timer_create(&screenRotateTimerConfig, &screenRotateTimer);
 
-    if (preferences.getBool("timerActive", true)) {
+    if (preferences.getBool("timerActive", true))
+    {
         esp_timer_start_periodic(screenRotateTimer, getTimerSeconds() * usPerSecond);
     }
 
@@ -248,9 +250,13 @@ void setTimerActive(bool status)
         queueLedEffect(LED_EFFECT_PAUSE_TIMER);
         preferences.putBool("timerActive", false);
     }
+
+    if (eventSourceTaskHandle != NULL)
+        xTaskNotifyGive(eventSourceTaskHandle);
 }
 
-void toggleTimerActive() {
+void toggleTimerActive()
+{
     setTimerActive(!isTimerActive());
 }
 
@@ -282,6 +288,9 @@ void setCurrentScreen(uint newScreen)
         xTaskNotifyGive(priceUpdateTaskHandle);
         break;
     }
+
+    if (eventSourceTaskHandle != NULL)
+        xTaskNotifyGive(eventSourceTaskHandle);
 }
 
 void nextScreen()
@@ -329,9 +338,9 @@ void showSystemStatusScreen()
         ipAddr = ipAddr.substring(ipAddrPos);
         subNet = subNet.substring(subnetPos);
     }
-    sysStatusEpdContent[NUM_SCREENS-2] = "RAM/Status";
+    sysStatusEpdContent[NUM_SCREENS - 2] = "RAM/Status";
 
-    sysStatusEpdContent[NUM_SCREENS-1] = String((int)round(ESP.getFreeHeap()/1024)) + "/" + (int)round(ESP.getHeapSize()/1024);
+    sysStatusEpdContent[NUM_SCREENS - 1] = String((int)round(ESP.getFreeHeap() / 1024)) + "/" + (int)round(ESP.getHeapSize() / 1024);
     setCurrentScreen(SCREEN_CUSTOM);
     setEpdContent(sysStatusEpdContent);
 }

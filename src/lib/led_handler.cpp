@@ -52,6 +52,7 @@ void ledTask(void *parameter)
 
                         delay(100);
                     }
+                    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
 
                     delay(900);
 
@@ -60,7 +61,7 @@ void ledTask(void *parameter)
                     break;
                 case LED_EFFECT_START_TIMER:
                     pixels.clear();
-                    pixels.setPixelColor(NEOPIXEL_COUNT, pixels.Color(0, 255, 0));
+                    pixels.setPixelColor(NEOPIXEL_COUNT, pixels.Color(255, 0, 0));
                     pixels.show();
 
                     delay(900);
@@ -113,9 +114,9 @@ void setupLeds()
 
 void setupLedTask()
 {
-    ledTaskQueue = xQueueCreate(10, sizeof(unsigned long));
+    ledTaskQueue = xQueueCreate(10, sizeof(char));
 
-    xTaskCreate(ledTask, "LedTask", 4096, NULL, tskIDLE_PRIORITY, &ledTaskHandle);
+    xTaskCreate(ledTask, "LedTask", 2048, NULL, tskIDLE_PRIORITY, &ledTaskHandle);
 }
 
 void blinkDelay(int d, int times)
@@ -221,6 +222,6 @@ bool queueLedEffect(uint effect)
         return false;
     }
 
-    unsigned long flashType = effect;
+    char flashType = effect;
     xQueueSend(ledTaskQueue, &flashType, portMAX_DELAY);
 }

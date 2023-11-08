@@ -25,7 +25,7 @@ let processStatusData = (jsonData) => {
 
     var context = {
         timerRunning: jsonData.timerRunning,
-        memUsage: Math.round(jsonData.espFreeHeap / jsonData.espHeapSize * 100),
+        memFreePercent: Math.round(jsonData.espFreeHeap / jsonData.espHeapSize * 100),
         memFree: Math.round(jsonData.espFreeHeap / 1024),
         memTotal: Math.round(jsonData.espHeapSize / 1024),
         uptime: toTime(jsonData.espUptime),

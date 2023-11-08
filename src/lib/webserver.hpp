@@ -12,6 +12,8 @@
 
 #include "webserver/OneParamRewrite.hpp"
 
+extern TaskHandle_t eventSourceTaskHandle;
+
 void setupWebserver();
 bool processEpdColorSettings(AsyncWebServerRequest *request);
 
@@ -36,4 +38,5 @@ void onIndex(AsyncWebServerRequest *request);
 void onNotFound(AsyncWebServerRequest *request);
 
 StaticJsonDocument<768> getStatusObject();
-void eventSourceLoop();
+void eventSourceUpdate();
+void eventSourceTask(void *pvParameters);
