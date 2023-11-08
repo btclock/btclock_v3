@@ -1,0 +1,84 @@
+name: BTClock CI
+
+on: 
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Get current date
+        id: dateAndTime
+        # run: echo "::set-output name=dateAndTime::$(date +'%Y-%m-%d-%H:%M')"
+        run: echo "dateAndTime=$(date +'%Y-%m-%d-%H:%M')" >> $GITHUB_OUTPUT
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build BTClock firmware
+        run: pio run -e default 
+
+      - name: Build BTClock filesystem
+        run: pio run -e default --target buildfs
+
+      - name: Install esptools.py
+        run: pip install --upgrade esptool
+
+      - name: Create merged firmware binary
+        run: mkdir -p output && esptool.py --chip esp32s3 merge_bin -o output/full-firmware.bin --flash_mode dio 0x0000 .pio/build/lolin_s3_mini/bootloader.bin 0x8000 .pio/build/lolin_s3_mini/partitions.bin 0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 .pio/build/lolin_s3_mini/firmware.bin 0x330000 .pio/build/lolin_s3_mini/littlefs.bin
+
+      - name: Create checksum for merged binary
+        run: shasum -a 256 output/full-firmware.bin | awk '{print $1}' > output/full-firmware.sha256
+
+      - name: Write commit hash to file
+        run: echo $GITHUB_SHA > output/commit.txt
+
+      - name: Write build date to file
+        run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > output/date.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            .pio/build/lolin_s3_mini/*.bin
+            output/full-firmware.bin
+            output/full-firmware.sha256
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          name: release-${{ steps.dateAndTime.outputs.dateAndTime }}
+          artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini/*.bin"
+          allowUpdates: true
+          removeArtifacts: true
+      # - name: Pushes full-firmware.bin to web flasher
+      #   id: push_directory
+      #   uses: cpina/github-action-push-to-another-repository@main
+      #   env:
+      #     SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+      #   with:
+      #     source-directory: output/
+      #     target-directory: firmware_v3/
+      #     destination-github-username: 'btclock'
+      #     destination-repository-name: 'web-flasher'
+      #     target-branch: btclock
+      #     user-name: ${{github.actor}}
+      #     user-email: ${{github.actor}}@users.noreply.github.com

@@ -64,8 +64,7 @@ void tryImprovSetup()
                 x_position = 0;
             }
         }
-
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        esp_task_wdt_reset();
     }
 }
 

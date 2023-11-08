@@ -9,6 +9,9 @@
 #include <esp_sntp.h>
 #include "epd.hpp"
 #include "improv.hpp"
+#include "hal/wdt_hal.h" 
+#include "esp_task_wdt.h"
+
 #include <map>
 
 #include "lib/screen_handler.hpp"
