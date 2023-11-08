@@ -3,6 +3,7 @@
 #include "ESPAsyncWebServer.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <ESPmDNS.h>
 
 #include "lib/block_notify.hpp"
 #include "lib/price_notify.hpp"
@@ -33,3 +34,6 @@ void onApiRestart(AsyncWebServerRequest *request);
 
 void onIndex(AsyncWebServerRequest *request);
 void onNotFound(AsyncWebServerRequest *request);
+
+StaticJsonDocument<768> getStatusObject();
+void eventSourceLoop();

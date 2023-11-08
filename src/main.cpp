@@ -10,6 +10,7 @@ extern "C" void app_main()
 
     while (true)
     {
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        eventSourceLoop();
+        vTaskDelay(pdMS_TO_TICKS(2500));
     }
 }

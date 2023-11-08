@@ -9,6 +9,7 @@
 #include <esp_sntp.h>
 #include "epd.hpp"
 #include "improv.hpp"
+#include <map>
 
 #include "lib/screen_handler.hpp"
 #include "lib/webserver.hpp"
@@ -22,6 +23,7 @@
 #define TIME_OFFSET_SECONDS 3600
 #define USER_AGENT "BTClock/2.0"
 #define MCP_DEV_ADDR 0x20
+#define DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE 30
 
 #define DEFAULT_FG_COLOR GxEPD_WHITE
 #define DEFAULT_BG_COLOR GxEPD_BLACK

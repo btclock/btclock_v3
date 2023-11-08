@@ -36,3 +36,4 @@ void clearLeds();
 QueueHandle_t getLedTaskQueue();
 bool queueLedEffect(uint effect);
 void setLights(int r, int g, int b);
+void setLights(uint32_t color);

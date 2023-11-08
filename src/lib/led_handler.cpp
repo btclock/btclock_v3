@@ -185,19 +185,29 @@ void blinkDelayTwoColor(int d, int times, uint32_t c1, uint32_t c2)
 
 void clearLeds()
 {
+    preferences.putBool("ledStatus", false);
     pixels.clear();
     pixels.show();
 }
 
 void setLights(int r, int g, int b)
 {
+    setLights(pixels.Color(r, g, b));
+}
+
+void setLights(uint32_t color)
+{
+    preferences.putUInt("ledColor", color);
+    preferences.putBool("ledStatus", true);
+
     for (int i = 0; i < NEOPIXEL_COUNT; i++)
     {
-        pixels.setPixelColor(i, pixels.Color(r, g, b));
+        pixels.setPixelColor(i, color);
     }
 
     pixels.show();
 }
+
 
 QueueHandle_t getLedTaskQueue()
 {

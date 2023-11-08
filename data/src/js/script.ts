@@ -19,39 +19,65 @@ toTime = (secs) => {
     return obj;
 }
 
-getBcStatus = () => {
-    fetch('/api/status', {
-        method: 'get'
-    })
-        .then(response => response.json())
-        .then(jsonData => {
-            var source = document.getElementById("entry-template").innerHTML;
-            var template = Handlebars.compile(source);
+let processStatusData = (jsonData) => {
+    var source = document.getElementById("entry-template").innerHTML;
+    var template = Handlebars.compile(source);
 
-            var context = { 
-                timerRunning: jsonData.timerRunning, 
-                memUsage: Math.round(jsonData.espFreeHeap / jsonData.espHeapSize * 100), 
-                memFree: Math.round(jsonData.espFreeHeap / 1024), 
-                memTotal: Math.round(jsonData.espHeapSize / 1024), 
-                uptime: toTime(jsonData.espUptime), 
-                currentScreen: jsonData.currentScreen, 
-                rendered: jsonData.rendered, 
-                data: jsonData.data, 
-                screens: screens, 
-                ledStatus: jsonData.ledStatus ? jsonData.ledStatus.map((t) => (t).toString(16)) : [],
-                connectionStatus: jsonData.connectionStatus
-            };
+    var context = {
+        timerRunning: jsonData.timerRunning,
+        memUsage: Math.round(jsonData.espFreeHeap / jsonData.espHeapSize * 100),
+        memFree: Math.round(jsonData.espFreeHeap / 1024),
+        memTotal: Math.round(jsonData.espHeapSize / 1024),
+        uptime: toTime(jsonData.espUptime),
+        currentScreen: jsonData.currentScreen,
+        rendered: jsonData.data,
+        data: jsonData.data,
+        screens: screens,
+        ledStatus: jsonData.ledStatus ? jsonData.ledStatus.map((t) => (t).toString(16)) : [],
+        connectionStatus: jsonData.connectionStatus
+    };
 
 
-            document.getElementById('output').innerHTML = template(context);
-        })
-        .catch(err => {
-            //error block
-        });
+    document.getElementById('output').innerHTML = template(context);
 }
 
-interval = setInterval(getBcStatus, 2500);
-getBcStatus();
+
+if (!!window.EventSource) {
+    var source = new EventSource('/events');
+
+    source.addEventListener('open', function (e) {
+        console.log("Status EventSource Connected");
+        if (e.data) {
+            processStatusData(JSON.parse(e.data));
+        }
+    }, false);
+
+    source.addEventListener('error', function (e) {
+        if (e.target.readyState != EventSource.OPEN) {
+            console.log("Status EventSource Disconnected");
+        }
+        source.close();
+    }, false);
+
+    source.addEventListener('status', function (e) {
+        processStatusData(JSON.parse(e.data));
+    }, false);
+}
+
+
+// getBcStatus = () => {
+//     fetch('/api/status', {
+//         method: 'get'
+//     })
+//         .then(response => response.json())
+//         .then()
+//         .catch(err => {
+//             //error block
+//         });
+// }
+
+// interval = setInterval(getBcStatus, 2500);
+// getBcStatus();
 
 fetch('/api/settings', {
     method: 'get'
@@ -77,17 +103,18 @@ fetch('/api/settings', {
         if (jsonData.useBitcoinNode)
             document.getElementById('useBitcoinNode').checked = true;
 
-        let nodeFields = ["rpcHost", "rpcPort", "rpcUser", "tzOffset"];
+        // let nodeFields = ["rpcHost", "rpcPort", "rpcUser", "tzOffset"];
 
-        for (let n of nodeFields) {
-            document.getElementById(n).value = jsonData[n];
-        }
+        // for (let n of nodeFields) {
+        //     document.getElementById(n).value = jsonData[n];
+        // }
 
         document.getElementById('timePerScreen').value = jsonData.timerSeconds / 60;
         document.getElementById('ledBrightness').value = jsonData.ledBrightness;
         document.getElementById('fullRefreshMin').value = jsonData.fullRefreshMin;
-        document.getElementById('wpTimeout').value = jsonData.wpTimeout;
+        document.getElementById('tzOffset').value = jsonData.tzOffset;
         document.getElementById('mempoolInstance').value = jsonData.mempoolInstance;
+        document.getElementById('minSecPriceUpd').value = jsonData.minSecPriceUpd;
 
         if (jsonData.gitRev)
             document.getElementById('gitRev').innerHTML = "Version: " + jsonData.gitRev;

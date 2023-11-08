@@ -32,7 +32,7 @@ void setupBlockNotify()
     {
         String blockHeightStr = http->getString();
         currentBlockHeight = blockHeightStr.toInt();
-        xTaskNotifyGive(blockUpdateTaskHandle);
+      //  xTaskNotifyGive(blockUpdateTaskHandle);
     }
 
    // std::strcpy(wsServer, String("wss://" + mempoolInstance + "/api/v1/ws").c_str());
@@ -95,7 +95,10 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
 
         if (blockUpdateTaskHandle != nullptr) {
             xTaskNotifyGive(blockUpdateTaskHandle);
-            queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
+            if (preferences.getBool("ledFlashOnUpd", false)) {
+                vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
+                queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
+            }
         }
     }
 

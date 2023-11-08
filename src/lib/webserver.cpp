@@ -1,6 +1,7 @@
 #include "webserver.hpp"
 
 AsyncWebServer server(80);
+AsyncEventSource events("/events");
 
 void setupWebserver()
 {
@@ -9,6 +10,18 @@ void setupWebserver()
         Serial.println(F("An Error has occurred while mounting LittleFS"));
         return;
     }
+
+    events.onConnect([](AsyncEventSourceClient *client)
+                     {
+                         if (client->lastId())
+                         {
+                             Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
+                         }
+                         // send event with message "hello!", id current millis
+                         //  and set reconnect delay to 1 second
+                         eventSourceLoop();
+                     });
+    server.addHandler(&events);
 
     server.serveStatic("/css", LittleFS, "/css/");
     server.serveStatic("/js", LittleFS, "/js/");
@@ -30,31 +43,38 @@ void setupWebserver()
 
     server.on("/api/lights/off", HTTP_GET, onApiLightsOff);
     server.on("/api/lights/color", HTTP_GET, onApiLightsSetColor);
-    server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET, onApiLightsSetColor);
+
+    // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET, onApiLightsSetColor);
 
     server.on("/api/restart", HTTP_GET, onApiRestart);
-
+    server.addRewrite(new OneParamRewrite("/api/lights/{color}", "/api/lights/color?c={color}"));
     server.addRewrite(new OneParamRewrite("/api/show/screen/{s}", "/api/show/screen?s={s}"));
     server.addRewrite(new OneParamRewrite("/api/show/text/{text}", "/api/show/text?t={text}"));
     server.addRewrite(new OneParamRewrite("/api/show/number/{number}", "/api/show/text?t={text}"));
 
     server.onNotFound(onNotFound);
 
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+
     server.begin();
+    if (!MDNS.begin(getMyHostname()))
+    {
+        Serial.println(F("Error setting up MDNS responder!"));
+        while (1)
+        {
+            delay(1000);
+        }
+    }
+    MDNS.addService("http", "tcp", 80);
 }
 
-/**
- * @Api
- * @Path("/api/status")
- */
-void onApiStatus(AsyncWebServerRequest *request)
+StaticJsonDocument<768> getStatusObject()
 {
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
-    StaticJsonDocument<512> root;
+    StaticJsonDocument<768> root;
 
     root["currentScreen"] = getCurrentScreen();
     root["numScreens"] = NUM_SCREENS;
-    root["timerRunning"] = isTimerActive();;
+    root["timerRunning"] = isTimerActive();
     root["espUptime"] = esp_timer_get_time() / 1000000;
     root["currentPrice"] = getPrice();
     root["currentBlockHeight"] = getBlockHeight();
@@ -67,6 +87,37 @@ void onApiStatus(AsyncWebServerRequest *request)
     conStatus["price"] = isPriceNotifyConnected();
     conStatus["blocks"] = isBlockNotifyConnected();
 
+    return root;
+}
+
+void eventSourceLoop()
+{
+    if (!events.count()) return;
+    StaticJsonDocument<768> root = getStatusObject();
+    JsonArray data = root.createNestedArray("data");
+    String epdContent[NUM_SCREENS];
+    std::array<String, NUM_SCREENS> retEpdContent = getCurrentEpdContent();
+    std::copy(std::begin(retEpdContent), std::end(retEpdContent), epdContent);
+
+    copyArray(epdContent, data);
+
+    size_t bufSize = measureJson(root);
+    char buffer[bufSize];
+    String bufString;
+    serializeJson(root, bufString);
+
+    events.send(bufString.c_str(), "status");
+}
+
+/**
+ * @Api
+ * @Path("/api/status")
+ */
+void onApiStatus(AsyncWebServerRequest *request)
+{
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+
+    StaticJsonDocument<768> root = getStatusObject();
     JsonArray data = root.createNestedArray("data");
     JsonArray rendered = root.createNestedArray("rendered");
     String epdContent[NUM_SCREENS];
@@ -107,7 +158,6 @@ void onApiActionTimerRestart(AsyncWebServerRequest *request)
     request->send(200);
 }
 
-
 void onApiShowScreen(AsyncWebServerRequest *request)
 {
     if (request->hasParam("s"))
@@ -128,13 +178,14 @@ void onApiShowText(AsyncWebServerRequest *request)
         t.toUpperCase(); // This is needed as long as lowercase letters are glitchy
 
         std::array<String, NUM_SCREENS> textEpdContent;
-        for (uint i = 0; i < NUM_SCREENS; i++) {
+        for (uint i = 0; i < NUM_SCREENS; i++)
+        {
             textEpdContent[i] = t[i];
         }
 
         setEpdContent(textEpdContent);
     }
-    //setCurrentScreen(SCREEN_CUSTOM);
+    // setCurrentScreen(SCREEN_CUSTOM);
     request->send(200);
 }
 
@@ -156,7 +207,8 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["fgColor"] = getFgColor();
     root["bgColor"] = getBgColor();
     root["timerSeconds"] = getTimerSeconds();
-    root["timerRunning"] = isTimerActive();;
+    root["timerRunning"] = isTimerActive();
+    root["minSecPriceUpd"] = preferences.getUInt("minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
     root["fullRefreshMin"] = preferences.getUInt("fullRefreshMin", 30);
     root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
     root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
@@ -166,7 +218,6 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["rpcHost"] = preferences.getString("rpcHost", BITCOIND_HOST);
     root["mempoolInstance"] = preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
 
-    root["epdColors"] = 2;
     root["ledFlashOnUpdate"] = preferences.getBool("ledFlashOnUpd", false);
     root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
 
@@ -312,6 +363,16 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         settingsChanged = true;
     }
 
+     if (request->hasParam("minSecPriceUpd", true))
+    {
+        AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
+        int minSecPriceUpd = p->value().toInt() * 60;
+        preferences.putInt("minSecPriceUpd", minSecPriceUpd);
+        Serial.print("Setting minSecPriceUpd ");
+        Serial.println(minSecPriceUpd);
+        settingsChanged = true;
+    }
+
     if (request->hasParam("timePerScreen", true))
     {
         AsyncWebParameter *p = request->getParam("timePerScreen", true);
@@ -381,13 +442,15 @@ void onApiLightsOff(AsyncWebServerRequest *request)
 
 void onApiLightsSetColor(AsyncWebServerRequest *request)
 {
-    String rgbColor = request->pathArg(0);
-    uint r, g, b;
-    sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
-    setLights(r, g, b);
-    request->send(200, "text/plain", rgbColor);
+    if (request->hasParam("c"))
+    {
+        String rgbColor = request->getParam("c")->value();
+        uint r, g, b;
+        sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
+        setLights(r, g, b);
+        request->send(200, "text/plain", rgbColor);
+    }
 }
-
 
 void onIndex(AsyncWebServerRequest *request) { request->send(LittleFS, "/index.html", String(), false); }
 

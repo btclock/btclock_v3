@@ -148,7 +148,16 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
 
         if (epdContent[epdIndex].compareTo(currentEpdContent[epdIndex]) != 0)
         {
+            
             displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
+            uint count = 0;
+            while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10) {
+                vTaskDelay(pdMS_TO_TICKS(100));
+                if (count >= 9) {
+                    displays[epdIndex].init(0, false); 
+                }
+                count++;
+            }
 
             bool updatePartial = true;
 

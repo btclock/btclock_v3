@@ -180,6 +180,8 @@ void setupTasks()
     xTaskCreate(taskBlockUpdate, "updateBlock", 2048, NULL, tskIDLE_PRIORITY, &blockUpdateTaskHandle);
     xTaskCreate(taskTimeUpdate, "updateTime", 4096, NULL, tskIDLE_PRIORITY, &timeUpdateTaskHandle);
     xTaskCreate(taskScreenRotate, "rotateScreen", 2048, NULL, tskIDLE_PRIORITY, &taskScreenRotateTaskHandle);
+
+    setCurrentScreen(preferences.getUInt("currentScreen", 0));
 }
 
 void setupTimeUpdateTimer(void *pvParameters)
@@ -212,7 +214,10 @@ void setupScreenRotateTimer(void *pvParameters)
         .name = "screen_rotate_timer"};
 
     esp_timer_create(&screenRotateTimerConfig, &screenRotateTimer);
-    esp_timer_start_periodic(screenRotateTimer, getTimerSeconds() * usPerSecond);
+
+    if (preferences.getBool("timerActive", true)) {
+        esp_timer_start_periodic(screenRotateTimer, getTimerSeconds() * usPerSecond);
+    }
 
     vTaskDelete(NULL);
 }
@@ -233,11 +238,13 @@ void setTimerActive(bool status)
     {
         esp_timer_start_periodic(screenRotateTimer, getTimerSeconds() * usPerSecond);
         queueLedEffect(LED_EFFECT_START_TIMER);
+        preferences.putBool("timerActive", true);
     }
     else
     {
         esp_timer_stop(screenRotateTimer);
         queueLedEffect(LED_EFFECT_PAUSE_TIMER);
+        preferences.putBool("timerActive", false);
     }
 }
 

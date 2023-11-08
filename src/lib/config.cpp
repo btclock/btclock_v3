@@ -10,6 +10,7 @@ std::map<int, std::string> screenNameMap;
 
 void setup()
 {
+    setupPreferences();
     setupHardware();
     if (mcp.digitalRead(3) == LOW)
     {
@@ -20,7 +21,6 @@ void setup()
     setupDisplays();
     tryImprovSetup();
 
-    setupPreferences();
     setupWebserver();
 
     // setupWifi();
@@ -112,7 +112,13 @@ void setupTimers()
 
 void finishSetup()
 {
-    clearLeds();
+
+    if (preferences.getBool("ledStatus", false)) {
+        setLights(preferences.getUInt("ledColor", 0xFFCC00));
+    } else {
+        clearLeds();
+    }
+
 }
 
 std::map<int, std::string> getScreenNameMap() {
@@ -122,7 +128,7 @@ std::map<int, std::string> getScreenNameMap() {
 void setupHardware()
 {
     setupLeds();
-
+    WiFi.setHostname(getMyHostname().c_str());;
     if (psramInit())
     {
         Serial.println(F("PSRAM is correctly initialized"));
