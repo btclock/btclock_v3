@@ -35,10 +35,10 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build BTClock firmware
-        run: pio run -e default 
+        run: pio run -e lolin_s3_mini 
 
       - name: Build BTClock filesystem
-        run: pio run -e default --target buildfs
+        run: pio run -e lolin_s3_mini --target buildfs
 
       - name: Install esptools.py
         run: pip install --upgrade esptool
