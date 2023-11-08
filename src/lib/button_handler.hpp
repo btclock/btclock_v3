@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "shared.hpp"
+#include "screen_handler.hpp"
 
 extern TaskHandle_t buttonTaskHandle;
 

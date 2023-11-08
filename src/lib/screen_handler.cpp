@@ -61,7 +61,16 @@ void taskScreenRotate(void *pvParameters)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        setCurrentScreen((currentScreen+1) % 5);
+        int nextScreen = (currentScreen+ 1) % 5;
+        String key = "screen" + String(nextScreen) + "Visible";
+
+        while (!preferences.getBool(key.c_str(), true))
+        {
+            nextScreen = (nextScreen + 1) % 5;
+            key = "screen" + String(nextScreen) + "Visible";
+        }
+
+        setCurrentScreen(nextScreen);
     }
 }
 
@@ -143,20 +152,6 @@ void taskTimeUpdate(void *pvParameters)
     }
 }
 
-const char* int64_to_iso8601(int64_t timestamp) {
-    time_t seconds = timestamp / 1000000; // Convert microseconds to seconds
-    struct tm timeinfo;
-    gmtime_r(&seconds, &timeinfo);
-
-    // Define a buffer to store the formatted time string
-    static char iso8601[21]; // ISO 8601 time string has the format "YYYY-MM-DDTHH:MM:SSZ"
-
-    // Format the time into the buffer
-    strftime(iso8601, sizeof(iso8601), "%Y-%m-%dT%H:%M:%SZ", &timeinfo);
-
-    return iso8601;
-}
-
 void IRAM_ATTR minuteTimerISR(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -217,10 +212,7 @@ void setupScreenRotateTimer(void *pvParameters)
         .name = "screen_rotate_timer"};
 
     esp_timer_create(&screenRotateTimerConfig, &screenRotateTimer);
-
     esp_timer_start_periodic(screenRotateTimer, getTimerSeconds() * usPerSecond);
-
-    Serial.println("Set up Screen Rotate Timer");
 
     vTaskDelete(NULL);
 }
@@ -240,11 +232,17 @@ void setTimerActive(bool status)
     if (status)
     {
         esp_timer_start_periodic(screenRotateTimer, getTimerSeconds() * usPerSecond);
+        queueLedEffect(LED_EFFECT_START_TIMER);
     }
     else
     {
         esp_timer_stop(screenRotateTimer);
+        queueLedEffect(LED_EFFECT_PAUSE_TIMER);
     }
+}
+
+void toggleTimerActive() {
+    setTimerActive(!isTimerActive());
 }
 
 uint getCurrentScreen()
@@ -275,4 +273,56 @@ void setCurrentScreen(uint newScreen)
         xTaskNotifyGive(priceUpdateTaskHandle);
         break;
     }
+}
+
+void nextScreen()
+{
+    int newCurrentScreen = (getCurrentScreen() + 1) % SCREEN_COUNT;
+    String key = "screen" + String(newCurrentScreen) + "Visible";
+
+    while (!preferences.getBool(key.c_str(), true))
+    {
+        newCurrentScreen = (newCurrentScreen + 1) % SCREEN_COUNT;
+        key = "screen" + String(newCurrentScreen) + "Visible";
+    }
+    setCurrentScreen(newCurrentScreen);
+}
+
+void previousScreen()
+{
+    int newCurrentScreen = modulo(getCurrentScreen() - 1, SCREEN_COUNT);
+    String key = "screen" + String(newCurrentScreen) + "Visible";
+
+    while (!preferences.getBool(key.c_str(), true))
+    {
+        newCurrentScreen = modulo(newCurrentScreen - 1, SCREEN_COUNT);
+        key = "screen" + String(newCurrentScreen) + "Visible";
+    }
+    setCurrentScreen(newCurrentScreen);
+}
+
+void showSystemStatusScreen()
+{
+    std::array<String, NUM_SCREENS> sysStatusEpdContent = {"", "", "", "", "", "", ""};
+
+    String ipAddr = WiFi.localIP().toString();
+    String subNet = WiFi.subnetMask().toString();
+
+    sysStatusEpdContent[0] = "IP/Subnet";
+
+    int ipAddrPos = 0;
+    int subnetPos = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        sysStatusEpdContent[1 + i] = ipAddr.substring(0, ipAddr.indexOf('.')) + "/" + subNet.substring(0, subNet.indexOf('.'));
+        ipAddrPos = ipAddr.indexOf('.') + 1;
+        subnetPos = subNet.indexOf('.') + 1;
+        ipAddr = ipAddr.substring(ipAddrPos);
+        subNet = subNet.substring(subnetPos);
+    }
+    sysStatusEpdContent[NUM_SCREENS-2] = "RAM/Status";
+
+    sysStatusEpdContent[NUM_SCREENS-1] = String((int)round(ESP.getFreeHeap()/1024)) + "/" + (int)round(ESP.getHeapSize()/1024);
+    setCurrentScreen(SCREEN_CUSTOM);
+    setEpdContent(sysStatusEpdContent);
 }

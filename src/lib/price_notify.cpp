@@ -2,7 +2,7 @@
 
 const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 // WebsocketsClient client;
-esp_websocket_client_handle_t clientPrice;
+esp_websocket_client_handle_t clientPrice = NULL;
 unsigned long int currentPrice;
 
 void setupPriceNotify()
@@ -46,7 +46,6 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t* event_data)
 
     if (doc.containsKey("bitcoin")) {
         if (currentPrice != doc["bitcoin"].as<long>()) {
-           // Serial.printf("New price %lu\r\n", currentPrice);
 
             const unsigned long oldPrice = currentPrice;
             currentPrice = doc["bitcoin"].as<long>();
@@ -61,4 +60,10 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t* event_data)
 
 unsigned long getPrice() {
     return currentPrice;
+}
+
+bool isPriceNotifyConnected() {
+    if (clientPrice == NULL)
+        return false;
+    return esp_websocket_client_is_connected(clientPrice);
 }

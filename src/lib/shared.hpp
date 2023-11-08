@@ -3,6 +3,7 @@
 #include <Adafruit_MCP23X17.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include "utils.hpp"
 
 extern Adafruit_MCP23X17 mcp;
 extern Preferences preferences;
@@ -15,6 +16,7 @@ const PROGMEM int SCREEN_HALVING_COUNTDOWN = 4;
 const PROGMEM int SCREEN_COUNTDOWN = 98;
 const PROGMEM int SCREEN_CUSTOM = 99;
 const PROGMEM int screens[5] = { SCREEN_BLOCK_HEIGHT, SCREEN_MSCW_TIME, SCREEN_BTC_TICKER, SCREEN_TIME, SCREEN_HALVING_COUNTDOWN };
+const int SCREEN_COUNT = 5;
 
 struct SpiRamAllocator {
   void* allocate(size_t size) {

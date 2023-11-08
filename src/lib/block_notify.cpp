@@ -1,8 +1,7 @@
 #include "block_notify.hpp"
 
-const char *wsServer = "wss://mempool.space/api/v1/ws";
-// WebsocketsClient client;
-esp_websocket_client_handle_t client;
+char *wsServer;
+esp_websocket_client_handle_t blockNotifyClient = NULL;
 unsigned long int currentBlockHeight;
 
 void setupBlockNotify()
@@ -36,15 +35,17 @@ void setupBlockNotify()
         xTaskNotifyGive(blockUpdateTaskHandle);
     }
 
+   // std::strcpy(wsServer, String("wss://" + mempoolInstance + "/api/v1/ws").c_str());
+
     esp_websocket_client_config_t config = {
         .uri = "wss://mempool.bitcoin.nl/api/v1/ws",
     };
 
     Serial.printf("Connecting to %s\r\n", config.uri);
 
-    client = esp_websocket_client_init(&config);
-    esp_websocket_register_events(client, WEBSOCKET_EVENT_ANY, onWebsocketEvent, client);
-    esp_websocket_client_start(client);
+    blockNotifyClient = esp_websocket_client_init(&config);
+    esp_websocket_register_events(blockNotifyClient, WEBSOCKET_EVENT_ANY, onWebsocketEvent, blockNotifyClient);
+    esp_websocket_client_start(blockNotifyClient);
 }
 
 void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -58,7 +59,7 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_i
         Serial.println("Connected to Mempool.space WebSocket");
         
         sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
-        if (esp_websocket_client_send_text(client, sub.c_str(), sub.length(), portMAX_DELAY) == -1)
+        if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(), sub.length(), portMAX_DELAY) == -1)
         {
             Serial.println("Mempool.space WS Block Subscribe Error");
         }
@@ -92,8 +93,10 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
         Serial.print("New block found: ");
         Serial.println(block["height"].as<long>());
 
-        if (blockUpdateTaskHandle != nullptr)
+        if (blockUpdateTaskHandle != nullptr) {
             xTaskNotifyGive(blockUpdateTaskHandle);
+            queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
+        }
     }
 
     doc.clear();
@@ -102,4 +105,10 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
 unsigned long getBlockHeight()
 {
     return currentBlockHeight;
+}
+
+bool isBlockNotifyConnected() {
+    if (blockNotifyClient == NULL)
+        return false;
+    return esp_websocket_client_is_connected(blockNotifyClient);
 }

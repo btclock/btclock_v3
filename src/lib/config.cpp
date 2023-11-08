@@ -1,26 +1,21 @@
 #include "config.hpp"
 
-#ifndef NEOPIXEL_PIN
-#define NEOPIXEL_PIN 34
-#endif
-#ifndef NEOPIXEL_COUNT
-#define NEOPIXEL_COUNT 4
-#endif
+
 
 #define MAX_ATTEMPTS_WIFI_CONNECTION 20
 
 Preferences preferences;
 Adafruit_MCP23X17 mcp;
-Adafruit_NeoPixel pixels(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+std::map<int, std::string> screenNameMap;
 
 void setup()
 {
     setupHardware();
-    if (mcp.digitalRead(3) == LOW) {
+    if (mcp.digitalRead(3) == LOW)
+    {
         WiFi.eraseAP();
         blinkDelay(100, 3);
     }
-
 
     setupDisplays();
     tryImprovSetup();
@@ -47,9 +42,9 @@ void tryImprovSetup()
     //     blinkDelay(100, 3);
     // }
     // else
-    // {
-    //     WiFi.begin();
-    // }
+    {
+        WiFi.begin();
+    }
 
     uint8_t x_buffer[16];
     uint8_t x_position = 0;
@@ -69,7 +64,8 @@ void tryImprovSetup()
                 x_position = 0;
             }
         }
-       // vTaskDelay(1);
+
+        vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
@@ -91,6 +87,15 @@ void setupTime()
 void setupPreferences()
 {
     preferences.begin("btclock", false);
+
+    setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
+    setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
+
+    screenNameMap = {{SCREEN_BLOCK_HEIGHT, "Block Height"},
+                     {SCREEN_MSCW_TIME, "Sats per dollar"},
+                     {SCREEN_BTC_TICKER, "Ticker"},
+                     {SCREEN_TIME, "Time"},
+                     {SCREEN_HALVING_COUNTDOWN, "Halving countdown"}};
 }
 
 void setupWebsocketClients()
@@ -107,18 +112,16 @@ void setupTimers()
 
 void finishSetup()
 {
-    pixels.clear();
-    pixels.show();
+    clearLeds();
+}
+
+std::map<int, std::string> getScreenNameMap() {
+    return screenNameMap;
 }
 
 void setupHardware()
 {
-    pixels.begin();
-    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
-    pixels.setPixelColor(1, pixels.Color(0, 255, 0));
-    pixels.setPixelColor(2, pixels.Color(0, 0, 255));
-    pixels.setPixelColor(3, pixels.Color(255, 255, 255));
-    pixels.show();
+    setupLeds();
 
     if (psramInit())
     {
@@ -129,7 +132,6 @@ void setupHardware()
         Serial.println(F("PSRAM not available"));
     }
 
-    
     Wire.begin(35, 36, 400000);
 
     if (!mcp.begin_I2C(0x20))
@@ -153,7 +155,6 @@ void setupHardware()
         {
             mcp.pinMode(i, OUTPUT);
         }
-        
     }
 }
 
@@ -194,41 +195,20 @@ bool improv_connectWifi(std::string ssid, std::string password)
     return true;
 }
 
-void blinkDelay(int d, int times)
-{
-    for (int j = 0; j < times; j++)
-    {
-
-        pixels.setPixelColor(0, pixels.Color(255, 0, 0));
-        pixels.setPixelColor(1, pixels.Color(0, 255, 0));
-        pixels.setPixelColor(2, pixels.Color(255, 0, 0));
-        pixels.setPixelColor(3, pixels.Color(0, 255, 0));
-        pixels.show();
-        vTaskDelay(pdMS_TO_TICKS(d));
-
-        pixels.setPixelColor(0, pixels.Color(255, 255, 0));
-        pixels.setPixelColor(1, pixels.Color(0, 255, 255));
-        pixels.setPixelColor(2, pixels.Color(255, 255, 0));
-        pixels.setPixelColor(3, pixels.Color(0, 255, 255));
-        pixels.show();
-        vTaskDelay(pdMS_TO_TICKS(d));
-    }
-    pixels.clear();
-    pixels.show();
-}
 
 void onImprovErrorCallback(improv::Error err)
 {
-    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
-    pixels.setPixelColor(1, pixels.Color(255, 0, 0));
-    pixels.setPixelColor(2, pixels.Color(255, 0, 0));
-    pixels.setPixelColor(3, pixels.Color(255, 0, 0));
-    pixels.show();
-    vTaskDelay(pdMS_TO_TICKS(100));
+    blinkDelayColor(100, 1, 255,0,0);
+    // pixels.setPixelColor(0, pixels.Color(255, 0, 0));
+    // pixels.setPixelColor(1, pixels.Color(255, 0, 0));
+    // pixels.setPixelColor(2, pixels.Color(255, 0, 0));
+    // pixels.setPixelColor(3, pixels.Color(255, 0, 0));
+    // pixels.show();
+    // vTaskDelay(pdMS_TO_TICKS(100));
 
-    pixels.clear();
-    pixels.show();
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // pixels.clear();
+    // pixels.show();
+    // vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 std::vector<std::string> getLocalUrl()
@@ -272,7 +252,7 @@ bool onImprovCommandCallback(improv::ImprovCommand cmd)
 
         if (improv_connectWifi(cmd.ssid, cmd.password))
         {
-            
+
             blinkDelay(100, 3);
             // std::array<String, NUM_SCREENS> epdContent = {"S", "U", "C", "C", "E", "S", "S"};
             // setEpdContent(epdContent);

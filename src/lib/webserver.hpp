@@ -7,7 +7,7 @@
 #include "lib/block_notify.hpp"
 #include "lib/price_notify.hpp"
 #include "lib/screen_handler.hpp"
-
+#include "lib/led_handler.hpp"
 
 #include "webserver/OneParamRewrite.hpp"
 
@@ -24,6 +24,10 @@ void onApiActionPause(AsyncWebServerRequest *request);
 void onApiActionTimerRestart(AsyncWebServerRequest *request);
 void onApiSettingsGet(AsyncWebServerRequest *request);
 void onApiSettingsPost(AsyncWebServerRequest *request);
+
+void onApiLightsOff(AsyncWebServerRequest *request);
+void onApiLightsSetColor(AsyncWebServerRequest *request);
+
 
 void onApiRestart(AsyncWebServerRequest *request);
 

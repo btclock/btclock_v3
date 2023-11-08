@@ -18,22 +18,21 @@ void buttonTask(void *parameter)
             {
                 uint pin = mcp.getLastInterruptPin();
 
-                Serial.printf("Button pressed: %d", pin);
-                // switch (pin)
-                // {
-                // case 3:
-                //     toggleScreenTimer();
-                //     break;
-                // case 2:
-                //     nextScreen();
-                //     break;
-                // case 1:
-                //     previousScreen();
-                //     break;
-                // case 0:
-                //     showNetworkSettings();
-                //     break;
-                // }
+                switch (pin)
+                {
+                case 3:
+                    toggleTimerActive();
+                    break;
+                case 2:
+                    nextScreen();
+                    break;
+                case 1:
+                    previousScreen();
+                    break;
+                case 0:
+                    showSystemStatusScreen();
+                    break;
+                }
             }
             mcp.clearInterrupts();
             // Very ugly, but for some reason this is necessary

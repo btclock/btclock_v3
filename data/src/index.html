@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <link href="/css/style.css" rel="stylesheet">
+  <title>&#8383;TClock</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"
+    integrity="sha512-RNLkV3d+aLtfcpEyFG8jRbnWHxUqVZozacROI4J2F1sTaDqo1dPQYs01OMi1t1w9Y2FdbSCDSQ2ZVdAC8bzgAg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">&#8383;TClock</span>
+    </div>
+  </nav>
+  <script id="entry-template" type="text/x-handlebars-template">
+        <div class="entry">
+          <h1>Status</h1>
+          <div class="body">
+            <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+              {{#each screens }}
+              <input type="radio" class="btn-check" name="btnradio" id="btnradio{{ @index }}" autocomplete="off" {{#ifEquals @index ../currentScreen }} checked {{/ifEquals}} onclick="changeScreen({{ @index }})">
+              <label class="btn btn-outline-primary" for="btnradio{{ @index }}">{{ this }}</label>
+             {{/each}}
+        
+            </div>
+            <p>Rendered:</p>
+            {{#if rendered }}
+            <div class="btcclock-wrapper" id="btcclock-wrapper">
+              <div class="btclock">
+            {{#each data }}
+              {{{splitText this}}}
+            {{/each}}
+            </div></div>
+            {{/if}}
+            {{#if ledStatus }}
+            <p>LED status:</p>
+
+            {{#each ledStatus }}
+              <div style="background: #{{ this }}">&nbsp;</div>
+            {{/each}}
+            
+            {{/if}}
+            <div>
+              <p>Screen cycle: 
+                <span onclick="toggleTimer({{ timerRunning }})" id="toggleTimerArea">
+                {{#if timerRunning}}
+                &#9205;
+                {{else}}
+                &#9208;
+                {{/if}}
+                </span>
+              </p>
+            </div>
+            <hr>
+            <div>
+              <div class="progress" role="progressbar" aria-label="Memory usage" aria-valuenow="{{ memUsage }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar progress-bar-striped" style="width: {{ memUsage }}%">{{ memUsage }}%</div>
+              </div>
+              <div class="d-flex justify-content-between">
+                <div>Memory usage</div>
+                <div>{{ memFree }} / {{ memTotal }} KiB</div>
+              </div>
+            </div>
+            <hr>
+            <div>
+              <p>Uptime: {{#if uptime.h }}{{ uptime.h }}h {{/if}}{{ uptime.m }}m {{ uptime.s }}s</p>
+              <p>
+                Price connection:
+                <span>
+                {{#if connectionStatus.price}}
+                &#9989;
+                {{else}}
+                &#10060;
+                {{/if}}
+                </span>
+                - 
+                Mempool.space connection:
+                <span>
+                  {{#if connectionStatus.price}}
+                  &#9989;
+                  {{else}}
+                  &#10060;
+                  {{/if}}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </script>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col">
+        <div class="h-100 p-3 border bg-light">
+          <h1>Custom text</h1>
+          <form name="customText" id="customTextForm">
+            <div class="row">
+              <label for="customText" class="col-sm-4 col-form-label">Text</label>
+              <div class="col-sm-8">
+                <input type="text" class="form-control" id="customText" name="customText" maxlength="7">
+              </div>
+            </div>
+            <footer>
+              <button type="submit" class="btn btn-primary">Show Text</button>
+              <button type="button" class="btn btn-secondary" id="restartBtn">Restart</button>
+            </footer>
+          </form>
+          <hr>
+          <h2>LEDs</h2>
+          <form id="ledsForm" name="ledsForm">
+            <div class="row">
+              <label for="ledColorPicker" class="col-sm-6 col-form-label">LEDs color</label>
+              <div class="col-sm-6">
+                <input type="color" id="ledColorPicker" name="pickedColor" value="#ff8800">
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="turnOffLedsBtn">Turn off</button>
+            <button type="submit" class="btn btn-primary">Set color</button>
+          </form>
+        </div>
+      </div>
+      <div class="col">
+        <div id="output" class="p-3 border bg-light"></div>
+      </div>
+      <div class="col">
+        <div class="h-100 p-3 border bg-light">
+          <h1>Settings</h1>
+          <form method="post" action="/api/settings" name="settings" id="settingsForm">
+            <div class="row">
+              <label for="fgColor" class="col-sm-6 col-form-label">Text color</label>
+              <div class="col-sm-6">
+                <select class="form-select" id="fgColor" name="fgColor">
+                  <option value="0xF800">Red</option>
+                  <option value="0xFFFF">White</option>
+                  <option value="0x0">Black</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <label for="bgColor" class="col-sm-6 col-form-label">Background color</label>
+              <div class="col-sm-6">
+                <select class="form-select" id="bgColor" name="bgColor">
+                  <option value="0xF800">Red</option>
+                  <option value="0xFFFF">White</option>
+                  <option value="0x0">Black</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <label for="timePerScreen" class="col-sm-6 col-form-label">Time per screen</label>
+              <div class="col-sm-6">
+                <div class="input-group mb-3">
+                  <input type="text" name="timePerScreen" id="timePerScreen" class="form-control">
+                  <span class="input-group-text">minutes</span>
+                </div>
+
+              </div>
+            </div>
+            <div class="row">
+              <label for="fullRefreshMin" class="col-sm-6 col-form-label">Full refresh every</label>
+              <div class="col-sm-6">
+                <div class="input-group mb-3">
+                  <input type="text" name="fullRefreshMin" id="fullRefreshMin" class="form-control">
+                  <span class="input-group-text">minutes</span>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <label for="tzOffset" class="col-sm-6 col-form-label">Timezone offset</label>
+              <div class="col-sm-6">
+                <div class="input-group mb-3">
+                  <input type="number" name="tzOffset" id="tzOffset" class="form-control">
+                  <span class="input-group-text">min</span>
+                  <button class="btn btn-outline-secondary" type="button" id="getTzOffsetBtn">Auto</button>
+                </div>
+                <div class="form-text">A restart is required to apply TZ offset.</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class=" col-sm-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="ledFlashOnUpdate" name="ledFlashOnUpd" value="1">
+                  <label class="form-check-label" for="ledFlashOnUpdate">LED flash on update</label>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <label class="col-sm-6 col-form-label" for="ledBrightness">LED brightness</label>
+              <div class="col-sm-6">
+                <input type="range" class="form-range" id="ledBrightness" name="ledBrightness" value="128" min="0"
+                  max="255">
+              </div>
+            </div>
+            <div class="row">
+              <label for="mempoolInstance" class="col-sm-6 col-form-label">Mempool Instance</label>
+              <div class="col-sm-6">
+                <input type="text" name="mempoolInstance" id="mempoolInstance" class="form-control">
+              </div>
+            </div>
+            <script id="screens-template" type="text/x-handlebars-template">
+              {{#each screens }}
+              <div class="row">
+                <div class="col-sm-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="screen{{id}}" name="screen[{{id}}]" value="1" {{#if enabled}}checked{{/if}}>
+                  <label class="form-check-label" for="screen{{id}}">{{name}}</label>
+                </div>
+              </div>
+              {{/each}}
+            </script>
+            <h3>Screens</h3>
+            <div id="outputScreens"></div>
+            <button type="submit" class="btn btn-secondary">Reset</button>
+            <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Save</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <small>
+      <span id="gitRev"></span>
+      <span id="lastBuildTime"></span>
+    </small>
+  </footer>
+  <script src="/js/script.js"></script>
+</body>
+
+</html>

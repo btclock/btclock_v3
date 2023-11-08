@@ -76,7 +76,7 @@ void setupDisplays()
         int *taskParam = new int;
         *taskParam = i;
 
-        xTaskCreate(updateDisplay, "EpdUpd" + char(i), 4096, taskParam, 1, &tasks[i]); // create task
+        xTaskCreate(updateDisplay, "EpdUpd" + char(i), 4096, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
     }
 
     epdContent = {"B",
@@ -91,7 +91,7 @@ void setupDisplays()
         xTaskNotifyGive(tasks[i]);
     }
 
-    xTaskCreate(taskEpd, "epd_task", 2048, NULL, 1, NULL);
+    xTaskCreate(taskEpd, "epd_task", 2048, NULL, tskIDLE_PRIORITY, NULL);
 }
 
 void taskEpd(void *pvParameters)

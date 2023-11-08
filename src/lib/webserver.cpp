@@ -28,6 +28,10 @@ void setupWebserver()
     server.on("/api/show/screen", HTTP_GET, onApiShowScreen);
     server.on("/api/show/text", HTTP_GET, onApiShowText);
 
+    server.on("/api/lights/off", HTTP_GET, onApiLightsOff);
+    server.on("/api/lights/color", HTTP_GET, onApiLightsSetColor);
+    server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET, onApiLightsSetColor);
+
     server.on("/api/restart", HTTP_GET, onApiRestart);
 
     server.addRewrite(new OneParamRewrite("/api/show/screen/{s}", "/api/show/screen?s={s}"));
@@ -58,6 +62,10 @@ void onApiStatus(AsyncWebServerRequest *request)
     root["espHeapSize"] = ESP.getHeapSize();
     root["espFreePsram"] = ESP.getFreePsram();
     root["espPsramSize"] = ESP.getPsramSize();
+
+    JsonObject conStatus = root.createNestedObject("connectionStatus");
+    conStatus["price"] = isPriceNotifyConnected();
+    conStatus["blocks"] = isBlockNotifyConnected();
 
     JsonArray data = root.createNestedArray("data");
     JsonArray rendered = root.createNestedArray("rendered");
@@ -170,14 +178,16 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 #endif
     JsonArray screens = root.createNestedArray("screens");
 
-    // for (int i = 0; i < screenNameMap.size(); i++)
-    // {
-    //     JsonObject o = screens.createNestedObject();
-    //     String key = "screen" + String(i) + "Visible";
-    //     o["id"] = i;
-    //     o["name"] = screenNameMap[i];
-    //     o["enabled"] = preferences.getBool(key.c_str(), true);
-    // }
+    std::map<int, std::string> screenNameMap = getScreenNameMap();
+
+    for (int i = 0; i < screenNameMap.size(); i++)
+    {
+        JsonObject o = screens.createNestedObject();
+        String key = "screen" + String(i) + "Visible";
+        o["id"] = i;
+        o["name"] = screenNameMap[i];
+        o["enabled"] = preferences.getBool(key.c_str(), true);
+    }
 
     AsyncResponseStream *response = request->beginResponseStream("application/json");
     serializeJson(root, *response);
@@ -274,21 +284,23 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         settingsChanged = true;
     }
 
-    // for (int i = 0; i < screenNameMap.size(); i++)
-    // {
-    //     String key = "screen[" + String(i) + "]";
-    //     String prefKey = "screen" + String(i) + "Visible";
-    //     bool visible = false;
-    //     if (request->hasParam(key, true))
-    //     {
-    //         AsyncWebParameter *screenParam = request->getParam(key, true);
-    //         visible = screenParam->value().toInt();
-    //     }
-    //     Serial.print("Setting screen " + String(i) + " to ");
-    //     Serial.println(visible);
+    std::map<int, std::string> screenNameMap = getScreenNameMap();
 
-    //     preferences.putBool(prefKey.c_str(), visible);
-    // }
+    for (int i = 0; i < screenNameMap.size(); i++)
+    {
+        String key = "screen[" + String(i) + "]";
+        String prefKey = "screen" + String(i) + "Visible";
+        bool visible = false;
+        if (request->hasParam(key, true))
+        {
+            AsyncWebParameter *screenParam = request->getParam(key, true);
+            visible = screenParam->value().toInt();
+        }
+        Serial.print("Setting screen " + String(i) + " to ");
+        Serial.println(visible);
+
+        preferences.putBool(prefKey.c_str(), visible);
+    }
 
     if (request->hasParam("tzOffset", true))
     {
@@ -339,7 +351,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
     request->send(200);
     if (settingsChanged)
     {
-        //flashTemporaryLights(0, 255, 0);
+        queueLedEffect(LED_FLASH_SUCCESS);
 
         Serial.println(F("Settings changed"));
     }
@@ -360,6 +372,22 @@ void onApiSystemStatus(AsyncWebServerRequest *request)
 
     request->send(response);
 }
+
+void onApiLightsOff(AsyncWebServerRequest *request)
+{
+    setLights(0, 0, 0);
+    request->send(200);
+}
+
+void onApiLightsSetColor(AsyncWebServerRequest *request)
+{
+    String rgbColor = request->pathArg(0);
+    uint r, g, b;
+    sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
+    setLights(r, g, b);
+    request->send(200, "text/plain", rgbColor);
+}
+
 
 void onIndex(AsyncWebServerRequest *request) { request->send(LittleFS, "/index.html", String(), false); }
 

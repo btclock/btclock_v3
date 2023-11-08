@@ -5,3 +5,9 @@
 .vscode/ipch
 managed_components
 data/build/*
+data/build
+data/.yarn
+data/node_modules
+node_modules
+.DS_Store
+*.bin

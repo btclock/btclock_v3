@@ -1,0 +1,1 @@
+int modulo(int x,int N);

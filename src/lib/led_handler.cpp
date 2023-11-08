@@ -1,18 +1,216 @@
 #include "led_handler.hpp"
 
 TaskHandle_t ledTaskHandle = NULL;
+QueueHandle_t ledTaskQueue = NULL;
+Adafruit_NeoPixel pixels(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
 const TickType_t debounceDelay = pdMS_TO_TICKS(50);
+uint32_t notificationValue;
+unsigned long ledTaskParams;
 
 void ledTask(void *parameter)
 {
     while (1)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        
+        if (ledTaskQueue != NULL)
+        {
+            if (xQueueReceive(ledTaskQueue, &ledTaskParams, portMAX_DELAY) == pdPASS)
+            {
+                uint32_t oldLights[NEOPIXEL_COUNT];
+
+                // get current state
+                for (int i = 0; i < NEOPIXEL_COUNT; i++)
+                {
+                    oldLights[i] = pixels.getPixelColor(i);
+                }
+
+                switch (ledTaskParams)
+                {
+                case LED_FLASH_ERROR:
+                    blinkDelayColor(250, 3, 255, 0, 0);
+                    break;
+                case LED_FLASH_SUCCESS:
+                    blinkDelayColor(250, 3, 0, 255, 0);
+                    break;
+                case LED_FLASH_UPDATE:
+                    break;
+                case LED_FLASH_BLOCK_NOTIFY:
+                    blinkDelayTwoColor(250, 3, pixels.Color(224, 67, 0), pixels.Color(8, 2, 0));
+                    break;
+                case LED_EFFECT_PAUSE_TIMER:
+                    for (int i = NEOPIXEL_COUNT; i >= 0; i--)
+                    {
+                        for (int j = NEOPIXEL_COUNT; j >= 0; j--)
+                        {
+                            uint32_t c = pixels.Color(0, 0, 0);
+                            if (i == j)
+                                c = pixels.Color(0, 255, 0);
+                            pixels.setPixelColor(j, c);
+                        }
+
+                        pixels.show();
+
+                        delay(100);
+                    }
+
+                    delay(900);
+
+                    pixels.clear();
+                    pixels.show();
+                    break;
+                case LED_EFFECT_START_TIMER:
+                    pixels.clear();
+                    pixels.setPixelColor(NEOPIXEL_COUNT, pixels.Color(0, 255, 0));
+                    pixels.show();
+
+                    delay(900);
+
+                    for (int i = NEOPIXEL_COUNT; i--; i > 0)
+                    {
+
+                        for (int j = NEOPIXEL_COUNT; j--; j > 0)
+                        {
+                            uint32_t c = pixels.Color(0, 0, 0);
+                            if (i == j)
+                                c = pixels.Color(0, 255, 0);
+
+                            pixels.setPixelColor(j, c);
+                        }
+
+                        pixels.show();
+
+                        delay(100);
+                    }
+
+                    pixels.clear();
+                    pixels.show();
+                    break;
+                }
+
+                // revert to previous state
+                for (int i = 0; i < NEOPIXEL_COUNT; i++)
+                {
+                    pixels.setPixelColor(i, oldLights[i]);
+                }
+
+                pixels.show();
+            }
+        }
     }
+}
+
+void setupLeds()
+{
+    pixels.begin();
+    pixels.setBrightness(preferences.getUInt("ledBrightness", 128));
+    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
+    pixels.setPixelColor(1, pixels.Color(0, 255, 0));
+    pixels.setPixelColor(2, pixels.Color(0, 0, 255));
+    pixels.setPixelColor(3, pixels.Color(255, 255, 255));
+    pixels.show();
+    setupLedTask();
 }
 
 void setupLedTask()
 {
-    xTaskCreate(ledTask, "LedTask", 4096, NULL, tskIDLE_PRIORITY, &ledTaskHandle); // Create the FreeRTOS task
+    ledTaskQueue = xQueueCreate(10, sizeof(unsigned long));
+
+    xTaskCreate(ledTask, "LedTask", 4096, NULL, tskIDLE_PRIORITY, &ledTaskHandle);
+}
+
+void blinkDelay(int d, int times)
+{
+    for (int j = 0; j < times; j++)
+    {
+
+        pixels.setPixelColor(0, pixels.Color(255, 0, 0));
+        pixels.setPixelColor(1, pixels.Color(0, 255, 0));
+        pixels.setPixelColor(2, pixels.Color(255, 0, 0));
+        pixels.setPixelColor(3, pixels.Color(0, 255, 0));
+        pixels.show();
+        vTaskDelay(pdMS_TO_TICKS(d));
+
+        pixels.setPixelColor(0, pixels.Color(255, 255, 0));
+        pixels.setPixelColor(1, pixels.Color(0, 255, 255));
+        pixels.setPixelColor(2, pixels.Color(255, 255, 0));
+        pixels.setPixelColor(3, pixels.Color(0, 255, 255));
+        pixels.show();
+        vTaskDelay(pdMS_TO_TICKS(d));
+    }
+    pixels.clear();
+    pixels.show();
+}
+
+void blinkDelayColor(int d, int times, uint r, uint g, uint b)
+{
+    for (int j = 0; j < times; j++)
+    {
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+        {
+            pixels.setPixelColor(i, pixels.Color(r, g, b));
+        }
+
+        pixels.show();
+        vTaskDelay(pdMS_TO_TICKS(d));
+
+        pixels.clear();
+        pixels.show();
+        vTaskDelay(pdMS_TO_TICKS(d));
+    }
+    pixels.clear();
+    pixels.show();
+}
+
+void blinkDelayTwoColor(int d, int times, uint32_t c1, uint32_t c2)
+{
+    for (int j = 0; j < times; j++)
+    {
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+        {
+            pixels.setPixelColor(i, c1);
+        }
+        pixels.show();
+        vTaskDelay(pdMS_TO_TICKS(d));
+
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+        {
+            pixels.setPixelColor(i, c2);
+        }
+        pixels.show();
+        vTaskDelay(pdMS_TO_TICKS(d));
+    }
+    pixels.clear();
+    pixels.show();
+}
+
+void clearLeds()
+{
+    pixels.clear();
+    pixels.show();
+}
+
+void setLights(int r, int g, int b)
+{
+    for (int i = 0; i < NEOPIXEL_COUNT; i++)
+    {
+        pixels.setPixelColor(i, pixels.Color(r, g, b));
+    }
+
+    pixels.show();
+}
+
+QueueHandle_t getLedTaskQueue()
+{
+    return ledTaskQueue;
+}
+
+bool queueLedEffect(uint effect)
+{
+    if (ledTaskQueue == NULL)
+    {
+        return false;
+    }
+
+    unsigned long flashType = effect;
+    xQueueSend(ledTaskQueue, &flashType, portMAX_DELAY);
 }

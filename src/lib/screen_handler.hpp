@@ -16,6 +16,10 @@ extern TaskHandle_t taskScreenRotateTaskHandle;
 
 uint getCurrentScreen();
 void setCurrentScreen(uint newScreen);
+void nextScreen();
+void previousScreen();
+
+void showSystemStatusScreen();
 
 void setupTimeUpdateTimer(void *pvParameters);
 void setupScreenRotateTimer(void *pvParameters);
@@ -31,7 +35,6 @@ void taskScreenRotate(void *pvParameters);
 uint getTimerSeconds();
 bool isTimerActive();
 void setTimerActive(bool status);
-
+void toggleTimerActive();
 
 void setupTasks();
-const char* int64_to_iso8601(int64_t timestamp);
