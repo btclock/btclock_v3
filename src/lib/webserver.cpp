@@ -20,7 +20,7 @@ void setupWebserver()
                          }
                          // send event with message "hello!", id current millis
                          //  and set reconnect delay to 1 second
-                         eventSourceUpdate();
+                        client->send("welcome",NULL,millis(),1000);
                      });
     server.addHandler(&events);
 
@@ -58,15 +58,15 @@ void setupWebserver()
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
     server.begin();
-    if (!MDNS.begin(getMyHostname()))
-    {
-        Serial.println(F("Error setting up MDNS responder!"));
-        while (1)
-        {
-            delay(1000);
-        }
-    }
-    MDNS.addService("http", "tcp", 80);
+    // if (!MDNS.begin(getMyHostname()))
+    // {
+    //     Serial.println(F("Error setting up MDNS responder!"));
+    //     while (1)
+    //     {
+    //         delay(1000);
+    //     }
+    // }
+    // MDNS.addService("http", "tcp", 80);
 
     xTaskCreate(eventSourceTask, "eventSourceTask", 4096, NULL, tskIDLE_PRIORITY, &eventSourceTaskHandle);
 }

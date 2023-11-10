@@ -1,7 +1,5 @@
 #include "config.hpp"
 
-
-
 #define MAX_ATTEMPTS_WIFI_CONNECTION 20
 
 Preferences preferences;
@@ -14,6 +12,8 @@ void setup()
     setupHardware();
     if (mcp.digitalRead(3) == LOW)
     {
+        preferences.putBool("wifiConfigured", false);
+
         WiFi.eraseAP();
         blinkDelay(100, 3);
     }
@@ -29,43 +29,90 @@ void setup()
 
     setupTasks();
     setupTimers();
-    setupWebsocketClients();
+
+    xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 4096, NULL, tskIDLE_PRIORITY, NULL);
 
     setupButtonTask();
 }
 
 void tryImprovSetup()
 {
-    // if (mcp.digitalRead(3) == LOW)
-    // {
-    //     WiFi.persistent(false);
-    //     blinkDelay(100, 3);
-    // }
-    // else
+    if (!preferences.getBool("wifiConfigured", false))
     {
-        WiFi.begin();
-    }
+        queueLedEffect(LED_EFFECT_WIFI_WAIT_FOR_CONFIG);
 
-    uint8_t x_buffer[16];
-    uint8_t x_position = 0;
+        uint8_t x_buffer[16];
+        uint8_t x_position = 0;
 
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        if (Serial.available() > 0)
+        // Hold second button to start QR code wifi config
+        if (!mcp.digitalRead(2) == LOW)
         {
-            uint8_t b = Serial.read();
+            WiFiManager wm;
 
-            if (parse_improv_serial_byte(x_position, b, x_buffer, onImprovCommandCallback, onImprovErrorCallback))
+            byte mac[6];
+            WiFi.macAddress(mac);
+            String softAP_SSID = String("BTClock" + String(mac[5], 16) + String(mac[1], 16));
+            WiFi.setHostname(softAP_SSID.c_str());
+            String softAP_password = base64::encode(String(mac[2], 16) + String(mac[4], 16) + String(mac[5], 16) + String(mac[1], 16)).substring(2, 10);
+
+            wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", 600));
+            wm.setWiFiAutoReconnect(true);
+            wm.setAPCallback([&](WiFiManager *wifiManager)
+                             {
+
+                Serial.printf("Entered config mode:ip=%s, ssid='%s', pass='%s'\n", 
+                WiFi.softAPIP().toString().c_str(), 
+                wifiManager->getConfigPortalSSID().c_str(), 
+                softAP_password.c_str()); 
+//                vTaskDelay(pdMS_TO_TICKS(1000));
+                delay(1000);
+
+                const String qrText = "qrWIFI:S:" + wifiManager->getConfigPortalSSID() + ";T:WPA;P:" + softAP_password.c_str() + ";;";
+                const String explainText = "*SSID: *\r\n" + wifiManager->getConfigPortalSSID() + "\r\n\r\n*Password:*\r\n" + softAP_password;
+                std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "To setup\r\nscan QR or\r\nconnect\r\nmanually", "", explainText, "", qrText};
+                setEpdContent(epdContent);
+
+            });
+
+            wm.setSaveConfigCallback([]() {
+                preferences.putBool("wifiConfigured", true);
+            });
+
+
+            bool ac = wm.autoConnect(softAP_SSID.c_str(), softAP_password.c_str());
+            wm.server->stop();
+        }
+        else
+        {
+            while (WiFi.status() != WL_CONNECTED)
             {
-                x_buffer[x_position++] = b;
-            }
-            else
-            {
-                x_position = 0;
+                if (Serial.available() > 0)
+                {
+                    uint8_t b = Serial.read();
+
+                    if (parse_improv_serial_byte(x_position, b, x_buffer, onImprovCommandCallback, onImprovErrorCallback))
+                    {
+                        x_buffer[x_position++] = b;
+                    }
+                    else
+                    {
+                        x_position = 0;
+                    }
+                }
+                esp_task_wdt_reset();
             }
         }
-        esp_task_wdt_reset();
     }
+    else
+    {
+        WiFi.begin();
+
+        while (WiFi.status() != WL_CONNECTED)
+        {
+            vTaskDelay(pdMS_TO_TICKS(400));
+        }
+    }
+    queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
 }
 
 void setupTime()
@@ -90,17 +137,19 @@ void setupPreferences()
     setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
     setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
 
-    screenNameMap[SCREEN_BLOCK_HEIGHT]  =  "Block Height";
+    screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
     screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
-    screenNameMap[SCREEN_BTC_TICKER] =  "Ticker";
-    screenNameMap[SCREEN_TIME] =  "Time";
+    screenNameMap[SCREEN_BTC_TICKER] = "Ticker";
+    screenNameMap[SCREEN_TIME] = "Time";
     screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
 }
 
-void setupWebsocketClients()
+void setupWebsocketClients(void *pvParameters)
 {
     setupBlockNotify();
     setupPriceNotify();
+
+    vTaskDelete(NULL);
 }
 
 void setupTimers()
@@ -112,22 +161,27 @@ void setupTimers()
 void finishSetup()
 {
 
-    if (preferences.getBool("ledStatus", false)) {
+    if (preferences.getBool("ledStatus", false))
+    {
         setLights(preferences.getUInt("ledColor", 0xFFCC00));
-    } else {
+    }
+    else
+    {
         clearLeds();
     }
-
 }
 
-std::vector<std::string> getScreenNameMap() {
+std::vector<std::string> getScreenNameMap()
+{
     return screenNameMap;
 }
 
 void setupHardware()
 {
     setupLeds();
-    WiFi.setHostname(getMyHostname().c_str());;
+
+    WiFi.setHostname(getMyHostname().c_str());
+    ;
     if (psramInit())
     {
         Serial.println(F("PSRAM is correctly initialized"));
@@ -200,10 +254,9 @@ bool improv_connectWifi(std::string ssid, std::string password)
     return true;
 }
 
-
 void onImprovErrorCallback(improv::Error err)
 {
-    blinkDelayColor(100, 1, 255,0,0);
+    blinkDelayColor(100, 1, 255, 0, 0);
     // pixels.setPixelColor(0, pixels.Color(255, 0, 0));
     // pixels.setPixelColor(1, pixels.Color(255, 0, 0));
     // pixels.setPixelColor(2, pixels.Color(255, 0, 0));
@@ -254,13 +307,17 @@ bool onImprovCommandCallback(improv::ImprovCommand cmd)
         }
 
         improv_set_state(improv::STATE_PROVISIONING);
+        queueLedEffect(LED_EFFECT_WIFI_CONNECTING);
 
         if (improv_connectWifi(cmd.ssid, cmd.password))
         {
 
-            blinkDelay(100, 3);
+            queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
+
             // std::array<String, NUM_SCREENS> epdContent = {"S", "U", "C", "C", "E", "S", "S"};
             // setEpdContent(epdContent);
+
+            preferences.putBool("wifiConfigured", true);
 
             improv_set_state(improv::STATE_PROVISIONED);
             std::vector<uint8_t> data = improv::build_rpc_response(improv::WIFI_SETTINGS, getLocalUrl(), false);
@@ -269,6 +326,8 @@ bool onImprovCommandCallback(improv::ImprovCommand cmd)
         }
         else
         {
+            queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+
             improv_set_state(improv::STATE_STOPPED);
             improv_set_error(improv::Error::ERROR_UNABLE_TO_CONNECT);
         }

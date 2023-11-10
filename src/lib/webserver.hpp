@@ -1,9 +1,9 @@
 #pragma once
-
+#include "WebServer.h"
 #include "ESPAsyncWebServer.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-#include <ESPmDNS.h>
+// #include <ESPmDNS.h>
 
 #include "lib/block_notify.hpp"
 #include "lib/price_notify.hpp"

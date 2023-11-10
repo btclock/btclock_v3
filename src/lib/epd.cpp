@@ -63,6 +63,8 @@ int bgColor = GxEPD_BLACK;
 #define FONT_SMALL Antonio_SemiBold20pt7b
 #define FONT_BIG Antonio_SemiBold90pt7b
 
+uint8_t qrcode[800];
+
 void setupDisplays()
 {
     for (uint i = 0; i < NUM_SCREENS; i++)
@@ -78,7 +80,7 @@ void setupDisplays()
         int *taskParam = new int;
         *taskParam = i;
 
-        xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 4096, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
+        xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 10000, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
     }
 
     xTaskCreate(taskEpd, "epd_task", 2048, NULL, tskIDLE_PRIORITY, &epdTaskHandle);
@@ -92,10 +94,10 @@ void setupDisplays()
                   "K"};
 
     setEpdContent(epdContent);
-    // for (uint i = 0; i < NUM_SCREENS; i++)
-    // {
-    //     xTaskNotifyGive(tasks[i]);
-    // }
+    for (uint i = 0; i < NUM_SCREENS; i++)
+    {
+        xTaskNotifyGive(tasks[i]);
+    }
 }
 
 void taskEpd(void *pvParameters)
@@ -186,6 +188,14 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
                 splitText(epdIndex, top, bottom, updatePartial);
 #endif
             }
+            else if (epdContent[epdIndex].startsWith(F("qr")))
+            {
+                renderQr(epdIndex, epdContent[epdIndex], updatePartial);
+            }
+            else if (epdContent[epdIndex].length() > 5)
+            {
+                renderText(epdIndex, epdContent[epdIndex], updatePartial);
+            }
             else
             {
 
@@ -223,7 +233,7 @@ void updateDisplayAlt(int epdIndex)
 {
 }
 
-void splitText(const uint dispNum, String top, String bottom, bool partial)
+void splitText(const uint dispNum, const String &top, const String &bottom, bool partial)
 {
     displays[dispNum].setRotation(2);
     displays[dispNum].setFont(&FONT_SMALL);
@@ -383,4 +393,64 @@ std::array<String, NUM_SCREENS> getCurrentEpdContent()
     //     Serial.printf("%d = %s", i, currentEpdContent[i]);
     // }
     return currentEpdContent;
+}
+void renderText(const uint dispNum, const String &text, bool partial)
+{
+    displays[dispNum].setRotation(2);
+    displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(), displays[dispNum].height());
+    displays[dispNum].fillScreen(GxEPD_WHITE);
+    displays[dispNum].setTextColor(GxEPD_BLACK);
+    displays[dispNum].setCursor(0, 50);
+    //   displays[dispNum].setFont(&FreeSans9pt7b);
+
+    // std::regex pattern("/\*(.*)\*/");
+
+    std::stringstream ss;
+    ss.str(text.c_str());
+
+    std::string line;
+
+    while (std::getline(ss, line, '\n'))
+    {
+        if (line.rfind("*", 0) == 0)
+        {
+            line.erase(std::remove(line.begin(), line.end(), '*'), line.end());
+
+            displays[dispNum].setFont(&FreeSansBold9pt7b);
+            displays[dispNum].println(line.c_str());
+        }
+        else
+        {
+            displays[dispNum].setFont(&FreeSans9pt7b);
+            displays[dispNum].println(line.c_str());
+        }
+    }
+
+    displays[dispNum].display(partial);
+}
+
+void renderQr(const uint dispNum, const String &text, bool partial)
+{
+    uint8_t tempBuffer[800];
+    bool ok = qrcodegen_encodeText(text.substring(2).c_str(), tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+                                   qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+
+    const int size = qrcodegen_getSize(qrcode);
+
+    const int padding = floor(float(displays[dispNum].width() - (size * 4)) / 2);
+    const int paddingY = floor(float(displays[dispNum].height() - (size * 4)) / 2);
+    displays[dispNum].setRotation(2);
+
+    displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(), displays[dispNum].height());
+    displays[dispNum].fillScreen(GxEPD_WHITE);
+    const int border = 0;
+
+    for (int y = -border; y < size * 4 + border; y++)
+    {
+        for (int x = -border; x < size * 4 + border; x++)
+        {
+            displays[dispNum].drawPixel(padding + x, paddingY + y, qrcodegen_getModule(qrcode, floor(float(x) / 4), floor(float(y) / 4)) ? GxEPD_BLACK : GxEPD_WHITE);
+        }
+    }
+    displays[dispNum].display(partial);
 }

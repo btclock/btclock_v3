@@ -1,4 +1,8 @@
 #include "Arduino.h"
+#include <WiFiManager.h>
+#define WEBSERVER_H
+#include "ESPAsyncWebServer.h" 
+
 #include "lib/config.hpp"
 
 //char ptrTaskList[400];

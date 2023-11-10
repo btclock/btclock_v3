@@ -1,15 +1,14 @@
 #pragma once;
+#include <WiFiManager.h>
+#include "base64.h"
+
 #include <WiFiClientSecure.h>
 #include <Preferences.h>
 #include <Adafruit_MCP23X17.h>
 
 #include "shared.hpp"
-#include <esp_system.h>
-#include <esp_netif.h>
-#include <esp_sntp.h>
 #include "epd.hpp"
 #include "improv.hpp"
-#include "hal/wdt_hal.h" 
 #include "esp_task_wdt.h"
 
 #include <map>
@@ -20,6 +19,7 @@
 #include "lib/price_notify.hpp"
 #include "lib/button_handler.hpp"
 #include "lib/led_handler.hpp"
+
 
 #define NTP_SERVER "pool.ntp.org"
 #define DEFAULT_MEMPOOL_INSTANCE "mempool.space"
@@ -39,7 +39,7 @@
 void setup();
 void setupTime();
 void setupPreferences();
-void setupWebsocketClients();
+void setupWebsocketClients(void *pvParameters);
 void setupHardware();
 void tryImprovSetup();
 void setupTimers();

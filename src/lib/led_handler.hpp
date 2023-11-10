@@ -19,6 +19,10 @@ const int LED_FLASH_UPDATE = 2;
 const int LED_FLASH_BLOCK_NOTIFY = 3;
 const int LED_EFFECT_START_TIMER = 4;
 const int LED_EFFECT_PAUSE_TIMER = 5;
+const int LED_EFFECT_WIFI_WAIT_FOR_CONFIG = 100;
+const int LED_EFFECT_WIFI_CONNECTING = 101;
+const int LED_EFFECT_WIFI_CONNECT_ERROR = 102;
+const int LED_EFFECT_WIFI_CONNECT_SUCCESS = 103;
 
 extern TaskHandle_t ledTaskHandle;
 
