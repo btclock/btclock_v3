@@ -20,8 +20,7 @@ void setupWebserver()
                          }
                          // send event with message "hello!", id current millis
                          //  and set reconnect delay to 1 second
-                        client->send("welcome",NULL,millis(),1000);
-                     });
+                        client->send("welcome",NULL,millis(),1000); });
     server.addHandler(&events);
 
     server.serveStatic("/css", LittleFS, "/css/");
@@ -95,7 +94,8 @@ StaticJsonDocument<768> getStatusObject()
 
 void eventSourceUpdate()
 {
-    if (!events.count()) return;
+    if (!events.count())
+        return;
     StaticJsonDocument<768> root = getStatusObject();
     JsonArray data = root.createNestedArray("data");
     String epdContent[NUM_SCREENS];
@@ -221,6 +221,8 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
     root["ledFlashOnUpdate"] = preferences.getBool("ledFlashOnUpd", false);
     root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
+    root["stealFocusOnBlock"] = preferences.getBool("stealFocus", true);
+    root["mcapBigChar"] = preferences.getBool("mcapBigChar", true);
 
 #ifdef GIT_REV
     root["gitRev"] = String(GIT_REV);
@@ -284,14 +286,43 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *ledFlashOnUpdate = request->getParam("ledFlashOnUpd", true);
 
         preferences.putBool("ledFlashOnUpd", ledFlashOnUpdate->value().toInt());
-        Serial.print("Setting led flash on update to ");
-        Serial.println(ledFlashOnUpdate->value().c_str());
+        Serial.printf("Setting led flash on update to %d\r\n", ledFlashOnUpdate->value().toInt());
         settingsChanged = true;
     }
     else
     {
         preferences.putBool("ledFlashOnUpd", 0);
         Serial.print("Setting led flash on update to false");
+        settingsChanged = true;
+    }
+
+    if (request->hasParam("stealFocusOnBlock", true))
+    {
+        AsyncWebParameter *stealFocusOnBlock = request->getParam("stealFocusOnBlock", true);
+
+        preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
+        Serial.printf("Setting steal focus on new block to %d\r\n", stealFocusOnBlock->value().toInt());
+        settingsChanged = true;
+    }
+    else
+    {
+        preferences.putBool("stealFocus", 0);
+        Serial.print("Setting steal focus on new block to false");
+        settingsChanged = true;
+    }
+
+    if (request->hasParam("mcapBigChar", true))
+    {
+        AsyncWebParameter *mcapBigChar = request->getParam("mcapBigChar", true);
+
+        preferences.putBool("mcapBigChar", mcapBigChar->value().toInt());
+        Serial.printf("Setting big characters for market cap to %d\r\n", mcapBigChar->value().toInt());
+        settingsChanged = true;
+    }
+    else
+    {
+        preferences.putBool("mcapBigChar", 0);
+        Serial.print("Setting big characters for market cap to false");
         settingsChanged = true;
     }
 
@@ -318,7 +349,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *fullRefreshMin = request->getParam("fullRefreshMin", true);
 
         preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
-        Serial.printf("Set full refresh minutes to %d\r\n",fullRefreshMin->value().toInt());
+        Serial.printf("Set full refresh minutes to %d\r\n", fullRefreshMin->value().toInt());
         settingsChanged = true;
     }
 
@@ -357,7 +388,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         settingsChanged = true;
     }
 
-     if (request->hasParam("minSecPriceUpd", true))
+    if (request->hasParam("minSecPriceUpd", true))
     {
         AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
         int minSecPriceUpd = p->value().toInt();
@@ -459,7 +490,8 @@ void onNotFound(AsyncWebServerRequest *request)
     }
 };
 
-void eventSourceTask(void *pvParameters) {
+void eventSourceTask(void *pvParameters)
+{
     for (;;)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);

@@ -94,8 +94,12 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
 
         if (blockUpdateTaskHandle != nullptr) {
             xTaskNotifyGive(blockUpdateTaskHandle);
-            if (preferences.getBool("ledFlashOnUpd", false)) {
+
+            if (getCurrentScreen() != SCREEN_BLOCK_HEIGHT && preferences.getBool("stealFocus", true)) {
                 setCurrentScreen(SCREEN_BLOCK_HEIGHT);
+            }
+
+            if (getCurrentScreen() == SCREEN_BLOCK_HEIGHT && preferences.getBool("ledFlashOnUpd", false)) {
                 vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
                 queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
             }

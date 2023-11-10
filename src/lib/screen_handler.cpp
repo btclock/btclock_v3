@@ -49,31 +49,41 @@ void taskPriceUpdate(void *pvParameters)
         {
             double supply = getSupplyAtBlock(getBlockHeight());
             int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
-            std::string stringValue = std::to_string(marketCap);
-            size_t mcLength = stringValue.length();
-            size_t leadingSpaces = (3 - mcLength % 3) % 3;
-            stringValue = std::string(leadingSpaces, ' ') + stringValue;
+           
 
             taskEpdContent[0] = "USD/MCAP";
 
-            uint groups = (mcLength + leadingSpaces) / 3;
-
-            if (groups < NUM_SCREENS) {
+            if (preferences.getBool("mcapBigChar", true)) {
                 firstIndex = 1;
-            }
 
-            for (int i = firstIndex; i <  NUM_SCREENS-groups-1; i++) {
-                taskEpdContent[i] = "";
-            }
+                priceString = "$" + formatNumberWithSuffix(marketCap);
+                priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
 
-            taskEpdContent[NUM_SCREENS-groups-1] = " $ ";
-            for (uint i = 0; i < groups; i ++)
-            {
-                taskEpdContent[(NUM_SCREENS-groups+i)] = stringValue.substr(i*3, 3).c_str();
+            } else {
+                std::string stringValue = std::to_string(marketCap);
+                size_t mcLength = stringValue.length();
+                size_t leadingSpaces = (3 - mcLength % 3) % 3;
+                stringValue = std::string(leadingSpaces, ' ') + stringValue;
+
+                uint groups = (mcLength + leadingSpaces) / 3;
+
+                if (groups < NUM_SCREENS) {
+                    firstIndex = 1;
+                }
+
+                for (int i = firstIndex; i <  NUM_SCREENS-groups-1; i++) {
+                    taskEpdContent[i] = "";
+                }
+
+                taskEpdContent[NUM_SCREENS-groups-1] = " $ ";
+                for (uint i = 0; i < groups; i ++)
+                {
+                    taskEpdContent[(NUM_SCREENS-groups+i)] = stringValue.substr(i*3, 3).c_str();
+                }
             }
         }
 
-        if (getCurrentScreen() != SCREEN_MARKET_CAP) {
+        if (!(getCurrentScreen() == SCREEN_MARKET_CAP && !preferences.getBool("mcapBigChar", true))) {
             for (uint i = firstIndex; i < NUM_SCREENS; i++)
             {
                 taskEpdContent[i] = priceString[i];

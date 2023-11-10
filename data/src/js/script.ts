@@ -100,6 +100,12 @@ fetch('/api/settings', {
         if (jsonData.ledFlashOnUpdate)
             document.getElementById('ledFlashOnUpdate').checked = true;
 
+        if (jsonData.stealFocusOnBlock)
+            document.getElementById('stealFocusOnBlock').checked = true;
+
+        if (jsonData.mcapBigChar)
+            document.getElementById('mcapBigChar').checked = true;
+
         if (jsonData.useBitcoinNode)
             document.getElementById('useBitcoinNode').checked = true;
 

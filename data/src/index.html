@@ -95,7 +95,7 @@
       </script>
   <div class="container-fluid">
     <div class="row">
-      <div class="col">
+      <div class="col-sm-3">
         <div class="h-100 p-3 border bg-light">
           <h1>Custom text</h1>
           <form name="customText" id="customTextForm">
@@ -124,10 +124,10 @@
           </form>
         </div>
       </div>
-      <div class="col">
+      <div class="col-sm-5">
         <div id="output" class="p-3 border bg-light">Loading, please wait...</div>
       </div>
-      <div class="col">
+      <div class="col-sm-4">
         <div class="h-100 p-3 border bg-light">
           <h1>Settings</h1>
           <form method="post" action="/api/settings" name="settings" id="settingsForm">
@@ -192,10 +192,26 @@
               </div>
             </div>
             <div class="row">
-              <div class=" col-sm-6">
+              <div class="col-sm-12">
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" id="ledFlashOnUpdate" name="ledFlashOnUpd" value="1">
                   <label class="form-check-label" for="ledFlashOnUpdate">LED flash on new block</label>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="stealFocusOnBlock" name="stealFocusOnBlock" value="1">
+                  <label class="form-check-label" for="stealFocusOnBlock">Steal focus on new block</label>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="mcapBigChar" name="mcapBigChar" value="1">
+                  <label class="form-check-label" for="mcapBigChar">Use big characters for market cap</label>
                 </div>
               </div>
             </div>
