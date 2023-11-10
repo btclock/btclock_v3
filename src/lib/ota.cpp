@@ -46,6 +46,6 @@ void handleOTATask(void *parameter) {
   for (;;) {
     // Task 1 code
     ArduinoOTA.handle();  // Allow OTA updates to occur
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(2500));
   }
 }
