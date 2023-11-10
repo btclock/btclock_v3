@@ -1,8 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 #include "shared.hpp"
 #include "screen_handler.hpp"
 

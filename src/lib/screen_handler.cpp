@@ -34,7 +34,7 @@ void taskPriceUpdate(void *pvParameters)
                 firstIndex = 1;
             }
         }
-        else
+        else if (getCurrentScreen() == SCREEN_MSCW_TIME)
         {
             priceString = String(int(round(1 / float(price) * 10e7))).c_str();
 
@@ -45,10 +45,39 @@ void taskPriceUpdate(void *pvParameters)
                 firstIndex = 1;
             }
         }
-
-        for (uint i = firstIndex; i < NUM_SCREENS; i++)
+        else
         {
-            taskEpdContent[i] = priceString[i];
+            double supply = getSupplyAtBlock(getBlockHeight());
+            int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
+            std::string stringValue = std::to_string(marketCap);
+            size_t mcLength = stringValue.length();
+            size_t leadingSpaces = (3 - mcLength % 3) % 3;
+            stringValue = std::string(leadingSpaces, ' ') + stringValue;
+
+            taskEpdContent[0] = "USD/MCAP";
+
+            uint groups = (mcLength + leadingSpaces) / 3;
+
+            if (groups < NUM_SCREENS) {
+                firstIndex = 1;
+            }
+
+            for (int i = firstIndex; i <  NUM_SCREENS-groups-1; i++) {
+                taskEpdContent[i] = "";
+            }
+
+            taskEpdContent[NUM_SCREENS-groups-1] = " $ ";
+            for (uint i = 0; i < groups; i ++)
+            {
+                taskEpdContent[(NUM_SCREENS-groups+i)] = stringValue.substr(i*3, 3).c_str();
+            }
+        }
+
+        if (getCurrentScreen() != SCREEN_MARKET_CAP) {
+            for (uint i = firstIndex; i < NUM_SCREENS; i++)
+            {
+                taskEpdContent[i] = priceString[i];
+            }
         }
 
         setEpdContent(taskEpdContent);
@@ -179,7 +208,7 @@ void IRAM_ATTR screenRotateTimerISR(void *arg)
 
 void setupTasks()
 {
-    xTaskCreate(taskPriceUpdate, "updatePrice", 2048, NULL, tskIDLE_PRIORITY, &priceUpdateTaskHandle);
+    xTaskCreate(taskPriceUpdate, "updatePrice", 3072, NULL, tskIDLE_PRIORITY, &priceUpdateTaskHandle);
     xTaskCreate(taskBlockUpdate, "updateBlock", 2048, NULL, tskIDLE_PRIORITY, &blockUpdateTaskHandle);
     xTaskCreate(taskTimeUpdate, "updateTime", 4096, NULL, tskIDLE_PRIORITY, &timeUpdateTaskHandle);
     xTaskCreate(taskScreenRotate, "rotateScreen", 2048, NULL, tskIDLE_PRIORITY, &taskScreenRotateTaskHandle);
@@ -283,6 +312,7 @@ void setCurrentScreen(uint newScreen)
     case SCREEN_BLOCK_HEIGHT:
         xTaskNotifyGive(blockUpdateTaskHandle);
         break;
+    case SCREEN_MARKET_CAP:
     case SCREEN_MSCW_TIME:
     case SCREEN_BTC_TICKER:
         xTaskNotifyGive(priceUpdateTaskHandle);
@@ -308,6 +338,7 @@ void nextScreen()
 
 void previousScreen()
 {
+
     int newCurrentScreen = modulo(getCurrentScreen() - 1, SCREEN_COUNT);
     String key = "screen" + String(newCurrentScreen) + "Visible";
 

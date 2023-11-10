@@ -5,8 +5,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include "lib/block_notify.hpp"
-#include "lib/price_notify.hpp"
+#include "shared.hpp"
 #include "lib/epd.hpp"
 
 extern TaskHandle_t priceUpdateTaskHandle;

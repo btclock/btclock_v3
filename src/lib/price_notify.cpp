@@ -3,8 +3,8 @@
 const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 // WebsocketsClient client;
 esp_websocket_client_handle_t clientPrice = NULL;
-unsigned long int currentPrice;
-unsigned long int lastPriceUpdate = 0;
+unsigned long int currentPrice = 30000;
+unsigned long int lastPriceUpdate;
 
 void setupPriceNotify()
 {
@@ -57,7 +57,7 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t* event_data)
 
                 lastPriceUpdate = currentTime;
             // if (abs((int)(oldPrice-currentPrice)) > round(0.0015*oldPrice)) {
-                    if (priceUpdateTaskHandle != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER || getCurrentScreen() == SCREEN_MSCW_TIME))
+                    if (priceUpdateTaskHandle != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER || getCurrentScreen() == SCREEN_MSCW_TIME || getCurrentScreen() == SCREEN_MARKET_CAP))
                         xTaskNotifyGive(priceUpdateTaskHandle);
                 //}
             }

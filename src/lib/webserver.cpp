@@ -186,7 +186,7 @@ void onApiShowText(AsyncWebServerRequest *request)
 
         setEpdContent(textEpdContent);
     }
-    // setCurrentScreen(SCREEN_CUSTOM);
+    setCurrentScreen(SCREEN_CUSTOM);
     request->send(200);
 }
 
@@ -203,7 +203,7 @@ void onApiRestart(AsyncWebServerRequest *request)
  */
 void onApiSettingsGet(AsyncWebServerRequest *request)
 {
-    StaticJsonDocument<768> root;
+    StaticJsonDocument<1536> root;
     root["numScreens"] = NUM_SCREENS;
     root["fgColor"] = getFgColor();
     root["bgColor"] = getBgColor();
@@ -214,11 +214,11 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
     root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
     root["useBitcoinNode"] = preferences.getBool("useNode", false);
-    root["rpcPort"] = preferences.getUInt("rpcPort", BITCOIND_PORT);
-    root["rpcUser"] = preferences.getString("rpcUser", BITCOIND_RPC_USER);
-    root["rpcHost"] = preferences.getString("rpcHost", BITCOIND_HOST);
+    // root["rpcPort"] = preferences.getUInt("rpcPort", BITCOIND_PORT);
+    // root["rpcUser"] = preferences.getString("rpcUser", BITCOIND_RPC_USER);
+    // root["rpcHost"] = preferences.getString("rpcHost", BITCOIND_HOST);
     root["mempoolInstance"] = preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
-
+    root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
     root["ledFlashOnUpdate"] = preferences.getBool("ledFlashOnUpd", false);
     root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
 
@@ -374,33 +374,33 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         settingsChanged = true;
     }
 
-    if (request->hasParam("useBitcoinNode", true))
-    {
-        AsyncWebParameter *p = request->getParam("useBitcoinNode", true);
-        bool useBitcoinNode = p->value().toInt();
-        preferences.putBool("useNode", useBitcoinNode);
-        settingsChanged = true;
+    // if (request->hasParam("useBitcoinNode", true))
+    // {
+    //     AsyncWebParameter *p = request->getParam("useBitcoinNode", true);
+    //     bool useBitcoinNode = p->value().toInt();
+    //     preferences.putBool("useNode", useBitcoinNode);
+    //     settingsChanged = true;
 
-        String rpcVars[] = {"rpcHost", "rpcPort", "rpcUser", "rpcPass"};
+    //     String rpcVars[] = {"rpcHost", "rpcPort", "rpcUser", "rpcPass"};
 
-        for (String v : rpcVars)
-        {
-            if (request->hasParam(v, true))
-            {
-                AsyncWebParameter *pv = request->getParam(v, true);
-                // Don't store an empty password, probably new settings save
-                if (!(v.equals("rpcPass") && pv->value().length() == 0))
-                {
-                    preferences.putString(v.c_str(), pv->value().c_str());
-                }
-            }
-        }
-    }
-    else
-    {
-        preferences.putBool("useNode", false);
-        settingsChanged = true;
-    }
+    //     for (String v : rpcVars)
+    //     {
+    //         if (request->hasParam(v, true))
+    //         {
+    //             AsyncWebParameter *pv = request->getParam(v, true);
+    //             // Don't store an empty password, probably new settings save
+    //             if (!(v.equals("rpcPass") && pv->value().length() == 0))
+    //             {
+    //                 preferences.putString(v.c_str(), pv->value().c_str());
+    //             }
+    //         }
+    //     }
+    // }
+    // else
+    // {
+    //     preferences.putBool("useNode", false);
+    //     settingsChanged = true;
+    // }
 
     request->send(200);
     if (settingsChanged)

@@ -5,6 +5,9 @@ Handlebars.registerHelper('splitText', function (aString) {
       var c = aString.split("/").map((el) => { return "<div class=\"flex-items\">" + el + "</div>"; }).join('');
       return "<div class=\"splitText\">" + c + "</div>";
     }
+    if (aString.length > 1) {
+      return "<div class=\"mediumText\">" + aString + "</div>";
+    }
     if (aString.length == 0 || aString === " ") {
       aString = "&nbsp;&nbsp;";
     }

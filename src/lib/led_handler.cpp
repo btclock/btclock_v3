@@ -3,7 +3,7 @@
 TaskHandle_t ledTaskHandle = NULL;
 QueueHandle_t ledTaskQueue = NULL;
 Adafruit_NeoPixel pixels(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
-unsigned long ledTaskParams;
+uint ledTaskParams;
 
 void ledTask(void *parameter)
 {
@@ -23,6 +23,14 @@ void ledTask(void *parameter)
 
                 switch (ledTaskParams)
                 {
+                case LED_POWER_TEST:
+                    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
+                    pixels.setPixelColor(1, pixels.Color(0, 255, 0));
+                    pixels.setPixelColor(2, pixels.Color(0, 0, 255));
+                    pixels.setPixelColor(3, pixels.Color(255, 255, 255));
+                    pixels.show();
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    break;
                 case LED_EFFECT_WIFI_CONNECT_ERROR:
                 case LED_FLASH_ERROR:
                     blinkDelayColor(250, 3, 255, 0, 0);
@@ -38,6 +46,9 @@ void ledTask(void *parameter)
                     break;
                 case LED_EFFECT_WIFI_WAIT_FOR_CONFIG:
                     blinkDelayTwoColor(100, 1, pixels.Color(8, 161, 236), pixels.Color(156, 225, 240));
+                    break;
+                case LED_EFFECT_WIFI_ERASE_SETTINGS:
+                    blinkDelay(100, 3);
                     break;
                 case LED_EFFECT_WIFI_CONNECTING:
                     for (int i = NEOPIXEL_COUNT; i >= 0; i--)
@@ -109,13 +120,16 @@ void ledTask(void *parameter)
                     break;
                 }
 
-                // revert to previous state
-                for (int i = 0; i < NEOPIXEL_COUNT; i++)
-                {
-                    pixels.setPixelColor(i, oldLights[i]);
-                }
+                // revert to previous state unless power test
 
-                pixels.show();
+                if (ledTaskParams != LED_POWER_TEST) {
+                    for (int i = 0; i < NEOPIXEL_COUNT; i++)
+                    {
+                        pixels.setPixelColor(i, oldLights[i]);
+                    }
+
+                    pixels.show();
+                }
             }
         }
     }
@@ -124,25 +138,24 @@ void ledTask(void *parameter)
 void setupLeds()
 {
     pixels.begin();
-    if (preferences.getBool("ledTestOnPower", true))
-    {
-        pixels.setBrightness(preferences.getUInt("ledBrightness", 128));
-        pixels.setPixelColor(0, pixels.Color(255, 0, 0));
-        pixels.setPixelColor(1, pixels.Color(0, 255, 0));
-        pixels.setPixelColor(2, pixels.Color(0, 0, 255));
-        pixels.setPixelColor(3, pixels.Color(255, 255, 255));
-    }
-    else
-    {
-        pixels.clear();
-    }
+    pixels.setBrightness(preferences.getUInt("ledBrightness", 128));
+    pixels.clear();
     pixels.show();
     setupLedTask();
+    if (preferences.getBool("ledTestOnPower", true))
+    {
+        while (!ledTaskQueue)
+        {
+            delay(1);
+            // wait until queue is available
+        }
+        queueLedEffect(LED_POWER_TEST);
+    }
 }
 
 void setupLedTask()
 {
-    ledTaskQueue = xQueueCreate(2, sizeof(char));
+    ledTaskQueue = xQueueCreate(5, sizeof(uint));
 
     xTaskCreate(ledTask, "LedTask", 2048, NULL, tskIDLE_PRIORITY, &ledTaskHandle);
 }
@@ -249,6 +262,6 @@ bool queueLedEffect(uint effect)
         return false;
     }
 
-    char flashType = effect;
+    uint flashType = effect;
     xQueueSend(ledTaskQueue, &flashType, portMAX_DELAY);
 }

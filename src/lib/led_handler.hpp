@@ -1,8 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 #include <Adafruit_NeoPixel.h>
 #include "shared.hpp"
 
@@ -23,7 +21,8 @@ const int LED_EFFECT_WIFI_WAIT_FOR_CONFIG = 100;
 const int LED_EFFECT_WIFI_CONNECTING = 101;
 const int LED_EFFECT_WIFI_CONNECT_ERROR = 102;
 const int LED_EFFECT_WIFI_CONNECT_SUCCESS = 103;
-
+const int LED_EFFECT_WIFI_ERASE_SETTINGS = 104;
+const int LED_POWER_TEST = 999;
 extern TaskHandle_t ledTaskHandle;
 
 void ledTask(void *pvParameters);

@@ -10,15 +10,19 @@ void setup()
 {
     setupPreferences();
     setupHardware();
+    setupDisplays();
+    if (preferences.getBool("ledTestOnPower", true))
+    {
+        queueLedEffect(LED_POWER_TEST);
+    }
     if (mcp.digitalRead(3) == LOW)
     {
         preferences.putBool("wifiConfigured", false);
 
         WiFi.eraseAP();
-        blinkDelay(100, 3);
+        queueLedEffect(LED_EFFECT_WIFI_ERASE_SETTINGS);
     }
 
-    setupDisplays();
     tryImprovSetup();
 
     setupWebserver();
@@ -33,19 +37,23 @@ void setup()
     xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 4096, NULL, tskIDLE_PRIORITY, NULL);
 
     setupButtonTask();
+    Serial.printf("Number of free Preferences entries %d", preferences.freeEntries());
+
 }
 
 void tryImprovSetup()
 {
     if (!preferences.getBool("wifiConfigured", false))
     {
+        setFgColor(GxEPD_BLACK);
+        setBgColor(GxEPD_WHITE);
         queueLedEffect(LED_EFFECT_WIFI_WAIT_FOR_CONFIG);
 
         uint8_t x_buffer[16];
         uint8_t x_position = 0;
 
         // Hold second button to start QR code wifi config
-        if (!mcp.digitalRead(2) == LOW)
+        if (mcp.digitalRead(2) == LOW)
         {
             WiFiManager wm;
 
@@ -65,25 +73,32 @@ void tryImprovSetup()
                 wifiManager->getConfigPortalSSID().c_str(), 
                 softAP_password.c_str()); 
 //                vTaskDelay(pdMS_TO_TICKS(1000));
-                delay(1000);
+                delay(6000);
 
                 const String qrText = "qrWIFI:S:" + wifiManager->getConfigPortalSSID() + ";T:WPA;P:" + softAP_password.c_str() + ";;";
                 const String explainText = "*SSID: *\r\n" + wifiManager->getConfigPortalSSID() + "\r\n\r\n*Password:*\r\n" + softAP_password;
                 std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "To setup\r\nscan QR or\r\nconnect\r\nmanually", "", explainText, "", qrText};
                 setEpdContent(epdContent);
+                delay(3000);
+                Serial.println("xTask");
+                xTaskNotifyGive(epdTaskHandle); });
 
-            });
-
-            wm.setSaveConfigCallback([]() {
+            wm.setSaveConfigCallback([]()
+                                     {
                 preferences.putBool("wifiConfigured", true);
-            });
 
+                delay(1000);
+                // just restart after succes
+                ESP.restart(); });
 
             bool ac = wm.autoConnect(softAP_SSID.c_str(), softAP_password.c_str());
-            wm.server->stop();
         }
         else
         {
+            waitUntilNoneBusy();
+            std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "Use\r\nweb-interface\r\nto configure", "", "Or restart\r\nwhile\r\nholding\r\n2nd button\r\r\nto start\r\n QR-config", "", ""};
+            setEpdContent(epdContent);
+            esp_task_wdt_init(30, false);
             while (WiFi.status() != WL_CONNECTED)
             {
                 if (Serial.available() > 0)
@@ -99,9 +114,12 @@ void tryImprovSetup()
                         x_position = 0;
                     }
                 }
-                esp_task_wdt_reset();
             }
+            esp_task_wdt_deinit();
+            esp_task_wdt_reset();
         }
+        setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
+        setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
     }
     else
     {
@@ -112,7 +130,7 @@ void tryImprovSetup()
             vTaskDelay(pdMS_TO_TICKS(400));
         }
     }
-    queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
+   // queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
 }
 
 void setupTime()
@@ -134,6 +152,7 @@ void setupPreferences()
 {
     preferences.begin("btclock", false);
 
+
     setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
     setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
 
@@ -142,6 +161,7 @@ void setupPreferences()
     screenNameMap[SCREEN_BTC_TICKER] = "Ticker";
     screenNameMap[SCREEN_TIME] = "Time";
     screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
+    screenNameMap[SCREEN_MARKET_CAP] = "Market Cap";
 }
 
 void setupWebsocketClients(void *pvParameters)

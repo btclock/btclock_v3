@@ -20,6 +20,7 @@
  *   out of or in connection with the Software or the use or other dealings in the
  *   Software.
  */
+#ifdef USE_QR
 
 #pragma once
 
@@ -382,4 +383,7 @@ bool qrcodegen_getModule(const uint8_t qrcode[], int x, int y);
 
 #ifdef __cplusplus
 }
+#endif
+
+
 #endif

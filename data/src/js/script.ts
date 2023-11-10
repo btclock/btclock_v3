@@ -1,6 +1,6 @@
 import './helpers.js';
 
-var screens = ["Block Height", "Moscow Time", "Ticker", "Time", "Halving countdown"];
+var screens = ["Block Height", "Moscow Time", "Ticker", "Time", "Halving countdown", "Market Cap"];
 
 toTime = (secs) => {
     var hours = Math.floor(secs / (60 * 60));

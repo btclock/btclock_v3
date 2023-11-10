@@ -4,6 +4,7 @@
 #include "ESPAsyncWebServer.h" 
 
 #include "lib/config.hpp"
+#define USE_QR
 
 //char ptrTaskList[400];
 

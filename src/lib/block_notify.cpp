@@ -2,10 +2,12 @@
 
 char *wsServer;
 esp_websocket_client_handle_t blockNotifyClient = NULL;
-unsigned long int currentBlockHeight;
+unsigned long int currentBlockHeight = 816000;
 
 void setupBlockNotify()
 {
+    currentBlockHeight = preferences.getULong("blockHeight", 816000);
+
     IPAddress result;
 
     int dnsErr = -1;
@@ -87,7 +89,8 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
 
         currentBlockHeight = block["height"].as<long>();
 
-         Serial.printf("New block found: %d\r\n", block["height"].as<long>());
+        Serial.printf("New block found: %d\r\n", block["height"].as<long>());
+        preferences.putULong("blockHeight", currentBlockHeight);
 
         if (blockUpdateTaskHandle != nullptr) {
             xTaskNotifyGive(blockUpdateTaskHandle);

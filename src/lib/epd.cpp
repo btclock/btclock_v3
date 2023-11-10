@@ -80,7 +80,7 @@ void setupDisplays()
         int *taskParam = new int;
         *taskParam = i;
 
-        xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 10000, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
+        xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 4096, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
     }
 
     xTaskCreate(taskEpd, "epd_task", 2048, NULL, tskIDLE_PRIORITY, &epdTaskHandle);
@@ -202,7 +202,11 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
 #ifdef PAGED_WRITE
                 showDigitPaged(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
 #else
+                if (epdContent[epdIndex].length() > 1) {
+                showChars(epdIndex, epdContent[epdIndex], updatePartial, &Antonio_SemiBold30pt7b);
+                } else {
                 showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+                }
 #endif
             }
 
@@ -335,6 +339,21 @@ void showDigit(const uint dispNum, char chr, bool partial, const GFXfont *font)
     displays[dispNum].print(str);
 }
 
+void showChars(const uint dispNum, const String& chars, bool partial, const GFXfont *font) {
+    displays[dispNum].setRotation(2);
+    displays[dispNum].setFont(font);
+    displays[dispNum].setTextColor(getFgColor());
+    int16_t tbx, tby;
+    uint16_t tbw, tbh;
+    displays[dispNum].getTextBounds(chars, 0, 0, &tbx, &tby, &tbw, &tbh);
+    // center the bounding box by transposition of the origin:
+    uint16_t x = ((displays[dispNum].width() - tbw) / 2) - tbx;
+    uint16_t y = ((displays[dispNum].height() - tbh) / 2) - tby;
+    displays[dispNum].fillScreen(getBgColor());
+    displays[dispNum].setCursor(x, y);
+    displays[dispNum].print(chars);
+}
+
 void showDigitPaged(const uint dispNum, char chr, bool partial, const GFXfont *font)
 {
     String str(chr);
@@ -426,11 +445,13 @@ void renderText(const uint dispNum, const String &text, bool partial)
         }
     }
 
-    displays[dispNum].display(partial);
+    //displays[dispNum].display(partial);
 }
 
 void renderQr(const uint dispNum, const String &text, bool partial)
 {
+    #ifdef USE_QR
+
     uint8_t tempBuffer[800];
     bool ok = qrcodegen_encodeText(text.substring(2).c_str(), tempBuffer, qrcode, qrcodegen_Ecc_LOW,
                                    qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
@@ -452,5 +473,17 @@ void renderQr(const uint dispNum, const String &text, bool partial)
             displays[dispNum].drawPixel(padding + x, paddingY + y, qrcodegen_getModule(qrcode, floor(float(x) / 4), floor(float(y) / 4)) ? GxEPD_BLACK : GxEPD_WHITE);
         }
     }
-    displays[dispNum].display(partial);
+    //displays[dispNum].display(partial);
+
+    //free(tempBuffer);
+    //free(qrcode);
+    #endif
+}
+
+void waitUntilNoneBusy() {
+    for (int i = 0; i < NUM_SCREENS; i++) {
+        while (EPD_BUSY[i].digitalRead()) {
+            vTaskDelay(10);
+        }
+    }
 }

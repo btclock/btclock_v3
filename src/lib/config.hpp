@@ -6,6 +6,7 @@
 #include <Preferences.h>
 #include <Adafruit_MCP23X17.h>
 
+#include <Arduino.h>
 #include "shared.hpp"
 #include "epd.hpp"
 #include "improv.hpp"
