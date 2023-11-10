@@ -119,3 +119,8 @@ bool isBlockNotifyConnected() {
         return false;
     return esp_websocket_client_is_connected(blockNotifyClient);
 }
+
+void stopBlockNotify() {
+    esp_websocket_client_stop(blockNotifyClient);
+    esp_websocket_client_destroy(blockNotifyClient);
+}

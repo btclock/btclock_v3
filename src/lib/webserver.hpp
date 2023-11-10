@@ -14,6 +14,7 @@
 
 extern TaskHandle_t eventSourceTaskHandle;
 
+void stopWebServer();
 void setupWebserver();
 bool processEpdColorSettings(AsyncWebServerRequest *request);
 

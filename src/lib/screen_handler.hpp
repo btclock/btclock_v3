@@ -13,6 +13,10 @@ extern TaskHandle_t blockUpdateTaskHandle;
 extern TaskHandle_t timeUpdateTaskHandle;
 extern TaskHandle_t taskScreenRotateTaskHandle;
 
+extern esp_timer_handle_t screenRotateTimer;
+extern esp_timer_handle_t minuteTimer;
+
+
 uint getCurrentScreen();
 void setCurrentScreen(uint newScreen);
 void nextScreen();

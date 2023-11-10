@@ -44,7 +44,7 @@ jobs:
         run: pip install --upgrade esptool
 
       - name: Create merged firmware binary
-        run: mkdir -p output && esptool.py --chip esp32s3 merge_bin -o output/full-firmware.bin --flash_mode dio 0x0000 .pio/build/lolin_s3_mini_qr/bootloader.bin 0x8000 .pio/build/lolin_s3_mini_qr/partitions.bin 0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 .pio/build/lolin_s3_mini_qr/firmware.bin 0x330000 .pio/build/lolin_s3_mini_qr/littlefs.bin
+        run: mkdir -p output && esptool.py --chip esp32s3 merge_bin -o output/full-firmware.bin --flash_mode dio 0x0000 .pio/build/lolin_s3_mini_qr/bootloader.bin 0x8000 .pio/build/lolin_s3_mini_qr/partitions.bin 0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 .pio/build/lolin_s3_mini_qr/firmware.bin 0x369000 .pio/build/lolin_s3_mini_qr/littlefs.bin
 
       - name: Create checksum for merged binary
         run: shasum -a 256 output/full-firmware.bin | awk '{print $1}' > output/full-firmware.sha256

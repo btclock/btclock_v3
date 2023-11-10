@@ -37,8 +37,7 @@ void setup()
     xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 4096, NULL, tskIDLE_PRIORITY, NULL);
 
     setupButtonTask();
-    Serial.printf("Number of free Preferences entries %d", preferences.freeEntries());
-
+    setupOTA();
 }
 
 void tryImprovSetup()

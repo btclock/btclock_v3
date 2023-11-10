@@ -14,6 +14,7 @@
 
 #include <map>
 
+#include "ota.hpp"
 #include "lib/screen_handler.hpp"
 #include "lib/webserver.hpp"
 #include "lib/block_notify.hpp"

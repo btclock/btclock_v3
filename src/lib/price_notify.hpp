@@ -16,3 +16,4 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t* event_data);
 
 unsigned long getPrice();
 bool isPriceNotifyConnected();
+void stopPriceNotify();

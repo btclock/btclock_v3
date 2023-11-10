@@ -70,6 +70,10 @@ void setupWebserver()
     xTaskCreate(eventSourceTask, "eventSourceTask", 4096, NULL, tskIDLE_PRIORITY, &eventSourceTaskHandle);
 }
 
+void stopWebServer() {
+    server.end();
+}
+
 StaticJsonDocument<768> getStatusObject()
 {
     StaticJsonDocument<768> root;

@@ -20,3 +20,4 @@ void onWebsocketMessage(esp_websocket_event_data_t* event_data);
 
 unsigned long getBlockHeight();
 bool isBlockNotifyConnected();
+void stopBlockNotify();

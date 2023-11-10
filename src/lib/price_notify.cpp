@@ -74,3 +74,8 @@ bool isPriceNotifyConnected() {
         return false;
     return esp_websocket_client_is_connected(clientPrice);
 }
+
+void stopPriceNotify() {
+    esp_websocket_client_stop(clientPrice);
+    esp_websocket_client_destroy(clientPrice);
+}
