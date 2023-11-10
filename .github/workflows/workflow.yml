@@ -35,16 +35,16 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build BTClock firmware
-        run: pio run -e lolin_s3_mini 
+        run: pio run -e lolin_s3_mini_qr 
 
       - name: Build BTClock filesystem
-        run: pio run -e lolin_s3_mini --target buildfs
+        run: pio run -e lolin_s3_mini_qr --target buildfs
 
       - name: Install esptools.py
         run: pip install --upgrade esptool
 
       - name: Create merged firmware binary
-        run: mkdir -p output && esptool.py --chip esp32s3 merge_bin -o output/full-firmware.bin --flash_mode dio 0x0000 .pio/build/lolin_s3_mini/bootloader.bin 0x8000 .pio/build/lolin_s3_mini/partitions.bin 0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 .pio/build/lolin_s3_mini/firmware.bin 0x330000 .pio/build/lolin_s3_mini/littlefs.bin
+        run: mkdir -p output && esptool.py --chip esp32s3 merge_bin -o output/full-firmware.bin --flash_mode dio 0x0000 .pio/build/lolin_s3_mini_qr/bootloader.bin 0x8000 .pio/build/lolin_s3_mini_qr/partitions.bin 0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 .pio/build/lolin_s3_mini_qr/firmware.bin 0x330000 .pio/build/lolin_s3_mini_qr/littlefs.bin
 
       - name: Create checksum for merged binary
         run: shasum -a 256 output/full-firmware.bin | awk '{print $1}' > output/full-firmware.sha256
@@ -59,14 +59,14 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           path: |
-            .pio/build/lolin_s3_mini/*.bin
+            .pio/build/lolin_s3_mini_qr/*.bin
             output/full-firmware.bin
             output/full-firmware.sha256
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
           name: release-${{ steps.dateAndTime.outputs.dateAndTime }}
-          artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini/*.bin"
+          artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini_qr/*.bin"
           allowUpdates: true
           removeArtifacts: true
           makeLatest: true
