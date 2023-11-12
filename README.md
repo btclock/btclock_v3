@@ -13,7 +13,7 @@ Biggest differences are:
 
 Most [information](https://github.com/btclock/btclock_v2/wiki) about BTClock v2 is still valid for this version.
 
-**NOTE**: The software assumes that the hardware is run in a controlled private network. The Web UI and the OTA update mechanism are not password protected and accessible to anyone in the network.
+**NOTE**: The software assumes that the hardware is run in a controlled private network. The Web UI and the OTA update mechanism are not password protected and accessible to anyone in the network. Also, since the device only fetches numbers through WebSockets it will skip server ceritificate verification to save resources.
 
 ## Known issues
 - After starting it might take a while before the correct data is displayed
