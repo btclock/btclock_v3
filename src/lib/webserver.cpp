@@ -24,6 +24,7 @@ void setupWebserver()
 
     server.on("/api/status", HTTP_GET, onApiStatus);
     server.on("/api/system_status", HTTP_GET, onApiSystemStatus);
+    server.on("/api/full_refresh", HTTP_GET, onApiFullRefresh);
 
     server.on("/api/action/pause", HTTP_GET, onApiActionPause);
     server.on("/api/action/timer_restart", HTTP_GET, onApiActionTimerRestart);
@@ -50,15 +51,22 @@ void setupWebserver()
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
     server.begin();
-    // if (!MDNS.begin(getMyHostname()))
-    // {
-    //     Serial.println(F("Error setting up MDNS responder!"));
-    //     while (1)
-    //     {
-    //         delay(1000);
-    //     }
-    // }
-    // MDNS.addService("http", "tcp", 80);
+
+    if (preferences.getBool("mdnsEnabled", true))
+    {
+        if (!MDNS.begin(getMyHostname()))
+        {
+            Serial.println(F("Error setting up MDNS responder!"));
+            while (1)
+            {
+                delay(1000);
+            }
+        }
+        MDNS.addService("http", "tcp", 80);
+        MDNS.addServiceTxt("http", "tcp", "model", "BTClock");
+        MDNS.addServiceTxt("http", "tcp", "version", "3.0");
+        MDNS.addServiceTxt("http", "tcp", "rev", GIT_REV);
+    }
 
     xTaskCreate(eventSourceTask, "eventSourceTask", 4096, NULL, tskIDLE_PRIORITY, &eventSourceTaskHandle);
 }
@@ -152,6 +160,20 @@ void onApiActionTimerRestart(AsyncWebServerRequest *request)
     request->send(200);
 }
 
+/**
+ * @Api
+ * @Path("/api/full_refresh")
+ */
+void onApiFullRefresh(AsyncWebServerRequest *request)
+{
+    forceFullRefresh();
+    std::array<String, NUM_SCREENS> newEpdContent = getCurrentEpdContent();
+
+    setEpdContent(newEpdContent, true);
+
+    request->send(200);
+}
+
 void onApiShowScreen(AsyncWebServerRequest *request)
 {
     if (request->hasParam("s"))
@@ -186,6 +208,12 @@ void onApiShowText(AsyncWebServerRequest *request)
 void onApiRestart(AsyncWebServerRequest *request)
 {
     request->send(200);
+
+    if (events.count())
+        events.send("closing");
+
+    delay(500);
+
     esp_restart();
 }
 
@@ -207,15 +235,17 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
     root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
     root["useBitcoinNode"] = preferences.getBool("useNode", false);
-    // root["rpcPort"] = preferences.getUInt("rpcPort", BITCOIND_PORT);
-    // root["rpcUser"] = preferences.getString("rpcUser", BITCOIND_RPC_USER);
-    // root["rpcHost"] = preferences.getString("rpcHost", BITCOIND_HOST);
     root["mempoolInstance"] = preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
     root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
     root["ledFlashOnUpdate"] = preferences.getBool("ledFlashOnUpd", false);
     root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
     root["stealFocusOnBlock"] = preferences.getBool("stealFocus", true);
     root["mcapBigChar"] = preferences.getBool("mcapBigChar", true);
+    root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", true);
+    root["otaEnabled"] = preferences.getBool("otaEnabled", true);
+
+    root["hostname"] = getMyHostname();
+    root["ip"] = WiFi.localIP();
 
 #ifdef GIT_REV
     root["gitRev"] = String(GIT_REV);
@@ -274,18 +304,55 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
 
     settingsChanged = processEpdColorSettings(request);
 
+    if (request->hasParam("ledTestOnPower", true))
+    {
+        AsyncWebParameter *ledTestOnPower = request->getParam("ledTestOnPower", true);
+
+        preferences.putBool("ledTestOnPower", ledTestOnPower->value().toInt());
+        settingsChanged = true;
+    }
+    else
+    {
+        preferences.putBool("ledTestOnPower", 0);
+        settingsChanged = true;
+    }
+
     if (request->hasParam("ledFlashOnUpd", true))
     {
         AsyncWebParameter *ledFlashOnUpdate = request->getParam("ledFlashOnUpd", true);
 
         preferences.putBool("ledFlashOnUpd", ledFlashOnUpdate->value().toInt());
-//        Serial.printf("Setting led flash on update to %d\r\n", ledFlashOnUpdate->value().toInt());
         settingsChanged = true;
     }
     else
     {
         preferences.putBool("ledFlashOnUpd", 0);
-//        Serial.print("Setting led flash on update to false");
+        settingsChanged = true;
+    }
+
+    if (request->hasParam("mdnsEnabled", true))
+    {
+        AsyncWebParameter *mdnsEnabled = request->getParam("mdnsEnabled", true);
+
+        preferences.putBool("mdnsEnabled", mdnsEnabled->value().toInt());
+        settingsChanged = true;
+    }
+    else
+    {
+        preferences.putBool("mdnsEnabled", 0);
+        settingsChanged = true;
+    }
+
+    if (request->hasParam("otaEnabled", true))
+    {
+        AsyncWebParameter *otaEnabled = request->getParam("otaEnabled", true);
+
+        preferences.putBool("otaEnabled", otaEnabled->value().toInt());
+        settingsChanged = true;
+    }
+    else
+    {
+        preferences.putBool("otaEnabled", 0);
         settingsChanged = true;
     }
 
@@ -294,13 +361,11 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *stealFocusOnBlock = request->getParam("stealFocusOnBlock", true);
 
         preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
-//        Serial.printf("Setting steal focus on new block to %d\r\n", stealFocusOnBlock->value().toInt());
         settingsChanged = true;
     }
     else
     {
         preferences.putBool("stealFocus", 0);
-//        Serial.print("Setting steal focus on new block to false");
         settingsChanged = true;
     }
 
@@ -309,13 +374,11 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *mcapBigChar = request->getParam("mcapBigChar", true);
 
         preferences.putBool("mcapBigChar", mcapBigChar->value().toInt());
-        Serial.printf("Setting big characters for market cap to %d\r\n", mcapBigChar->value().toInt());
         settingsChanged = true;
     }
     else
     {
         preferences.putBool("mcapBigChar", 0);
-//        Serial.print("Setting big characters for market cap to false");
         settingsChanged = true;
     }
 
@@ -324,7 +387,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *mempoolInstance = request->getParam("mempoolInstance", true);
 
         preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
-//        Serial.printf("Setting mempool instance to %s\r\n", mempoolInstance->value().c_str());
         settingsChanged = true;
     }
 
@@ -333,7 +395,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *ledBrightness = request->getParam("ledBrightness", true);
 
         preferences.putUInt("ledBrightness", ledBrightness->value().toInt());
-//        Serial.printf("Setting brightness to %d\r\n", ledBrightness->value().toInt());
         settingsChanged = true;
     }
 
@@ -342,7 +403,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *fullRefreshMin = request->getParam("fullRefreshMin", true);
 
         preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
-//        Serial.printf("Set full refresh minutes to %d\r\n", fullRefreshMin->value().toInt());
         settingsChanged = true;
     }
 
@@ -351,7 +411,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *wpTimeout = request->getParam("wpTimeout", true);
 
         preferences.putUInt("wpTimeout", wpTimeout->value().toInt());
-//        Serial.printf("Set WiFi portal timeout seconds to %ld\r\n", wpTimeout->value().toInt());
         settingsChanged = true;
     }
 
@@ -367,7 +426,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
             AsyncWebParameter *screenParam = request->getParam(key, true);
             visible = screenParam->value().toInt();
         }
-//        Serial.printf("Setting screen %d to %d\r\n", i, visible);
 
         preferences.putBool(prefKey.c_str(), visible);
     }
@@ -377,7 +435,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *p = request->getParam("tzOffset", true);
         int tzOffsetSeconds = p->value().toInt() * 60;
         preferences.putInt("gmtOffset", tzOffsetSeconds);
-//        Serial.printf("Setting tz offset to %d\r\n", tzOffsetSeconds);
         settingsChanged = true;
     }
 
@@ -386,7 +443,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
         int minSecPriceUpd = p->value().toInt();
         preferences.putUInt("minSecPriceUpd", minSecPriceUpd);
-//        Serial.printf("Setting minSecPriceUpd to %d\r\n", minSecPriceUpd);
         settingsChanged = true;
     }
 
@@ -397,34 +453,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         preferences.putUInt("timerSeconds", timerSeconds);
         settingsChanged = true;
     }
-
-    // if (request->hasParam("useBitcoinNode", true))
-    // {
-    //     AsyncWebParameter *p = request->getParam("useBitcoinNode", true);
-    //     bool useBitcoinNode = p->value().toInt();
-    //     preferences.putBool("useNode", useBitcoinNode);
-    //     settingsChanged = true;
-
-    //     String rpcVars[] = {"rpcHost", "rpcPort", "rpcUser", "rpcPass"};
-
-    //     for (String v : rpcVars)
-    //     {
-    //         if (request->hasParam(v, true))
-    //         {
-    //             AsyncWebParameter *pv = request->getParam(v, true);
-    //             // Don't store an empty password, probably new settings save
-    //             if (!(v.equals("rpcPass") && pv->value().length() == 0))
-    //             {
-    //                 preferences.putString(v.c_str(), pv->value().c_str());
-    //             }
-    //         }
-    //     }
-    // }
-    // else
-    // {
-    //     preferences.putBool("useNode", false);
-    //     settingsChanged = true;
-    // }
 
     request->send(200);
     if (settingsChanged)
@@ -460,9 +488,14 @@ void onApiLightsSetColor(AsyncWebServerRequest *request)
     if (request->hasParam("c"))
     {
         String rgbColor = request->getParam("c")->value();
-        uint r, g, b;
-        sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
-        setLights(r, g, b);
+
+        if (rgbColor.compareTo("off") == 0) {
+            setLights(0, 0, 0);
+        } else {
+            uint r, g, b;
+            sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
+            setLights(r, g, b);
+        }
         request->send(200, "text/plain", rgbColor);
     }
 }

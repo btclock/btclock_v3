@@ -127,3 +127,10 @@ nav {
 #toggleTimerArea {
     cursor: pointer;
 }
+
+#system_info {
+    padding: 0;
+    li {
+        list-style: none;
+    }
+}

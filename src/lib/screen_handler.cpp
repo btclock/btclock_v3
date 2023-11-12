@@ -27,7 +27,7 @@ const int usPerMinute = 60 * usPerSecond;
 // } WorkItem;
 
 #define WORK_QUEUE_SIZE 10
-QueueHandle_t workQueue;
+QueueHandle_t workQueue = NULL;
 
 uint currentScreen;
 
@@ -257,6 +257,7 @@ void setupTasks()
 
     xTaskCreate(taskScreenRotate, "rotateScreen", 2048, NULL, tskIDLE_PRIORITY, &taskScreenRotateTaskHandle);
 
+    waitUntilNoneBusy();
     setCurrentScreen(preferences.getUInt("currentScreen", 0));
 }
 

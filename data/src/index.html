@@ -107,7 +107,6 @@
             </div>
             <footer>
               <button type="submit" class="btn btn-primary">Show Text</button>
-              <button type="button" class="btn btn-secondary" id="restartBtn">Restart</button>
             </footer>
           </form>
           <hr>
@@ -122,7 +121,19 @@
             <button type="button" class="btn btn-secondary" id="turnOffLedsBtn">Turn off</button>
             <button type="submit" class="btn btn-primary">Set color</button>
           </form>
+          <hr>
+          <h2>System info</h2>
+          <ul class="small" id="system_info">
+            <li>Version: <span id="gitRev"></span></li>
+            <li>Build time: <span id="lastBuildTime"></span></li>
+            <li>IP: <span id="ipAddress"></span></li>
+            <li>Hostname: <span id="hostname"></span></li>
+          </ul>
+          <button type="button" class="btn btn-danger" id="restartBtn">Restart</button>
+          <button type="button" class="btn btn-warning" id="forceFullRefresh">Force full refresh</button>
+
         </div>
+        
       </div>
       <div class="col-sm-5">
         <div id="output" class="p-3 border bg-light">Loading, please wait...</div>
@@ -194,6 +205,14 @@
             <div class="row">
               <div class="col-sm-12">
                 <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="ledTestOnPower" name="ledTestOnPower" value="1">
+                  <label class="form-check-label" for="ledTestOnPower">LED power-on test</label>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" id="ledFlashOnUpdate" name="ledFlashOnUpd" value="1">
                   <label class="form-check-label" for="ledFlashOnUpdate">LED flash on new block</label>
                 </div>
@@ -216,6 +235,21 @@
               </div>
             </div>
             <div class="row">
+              <div class="col-sm-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="otaEnabled" name="otaEnabled" value="1">
+                  <label class="form-check-label" for="otaEnabled">OTA updates (restart required)</label>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="mdnsEnabled" name="mdnsEnabled" value="1">
+                  <label class="form-check-label" for="mdnsEnabled">mDNS (restart required)</label>
+                </div>
+              </div>
+            <div class="row">
               <label class="col-sm-6 col-form-label" for="ledBrightness">LED brightness</label>
               <div class="col-sm-6">
                 <input type="range" class="form-range" id="ledBrightness" name="ledBrightness" value="128" min="0"
@@ -232,9 +266,10 @@
               {{#each screens }}
               <div class="row">
                 <div class="col-sm-12">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="screen{{id}}" name="screen[{{id}}]" value="1" {{#if enabled}}checked{{/if}}>
-                  <label class="form-check-label" for="screen{{id}}">{{name}}</label>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="screen{{id}}" name="screen[{{id}}]" value="1" {{#if enabled}}checked{{/if}}>
+                    <label class="form-check-label" for="screen{{id}}">{{name}}</label>
+                  </div>
                 </div>
               </div>
               {{/each}}
@@ -250,10 +285,7 @@
     </div>
   </div>
   <footer>
-    <small>
-      <span id="gitRev"></span>
-      <span id="lastBuildTime"></span>
-    </small>
+   
   </footer>
   <script src="/js/script.js"></script>
 </body>

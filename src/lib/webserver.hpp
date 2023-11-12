@@ -3,7 +3,7 @@
 #include "ESPAsyncWebServer.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-// #include <ESPmDNS.h>
+#include <ESPmDNS.h>
 
 #include "lib/block_notify.hpp"
 #include "lib/price_notify.hpp"
@@ -28,6 +28,7 @@ void onApiActionPause(AsyncWebServerRequest *request);
 void onApiActionTimerRestart(AsyncWebServerRequest *request);
 void onApiSettingsGet(AsyncWebServerRequest *request);
 void onApiSettingsPost(AsyncWebServerRequest *request);
+void onApiFullRefresh(AsyncWebServerRequest *request);
 
 void onApiLightsOff(AsyncWebServerRequest *request);
 void onApiLightsSetColor(AsyncWebServerRequest *request);

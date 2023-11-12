@@ -20,16 +20,13 @@ typedef struct
     char dispNum;
 } UpdateDisplayTaskItem;
 
+void forceFullRefresh();
 void setupDisplays();
-// void taskEpd(void *pvParameters);
 
 void splitText(const uint dispNum, const String&  top, const String&  bottom, bool partial);
-//void splitTextPaged(const uint dispNum, String top, String bottom, bool partial);
 
 void showDigit(const uint dispNum, char chr, bool partial, const GFXfont *font);
 void showChars(const uint dispNum, const String& chars, bool partial, const GFXfont *font);
-
-//void showDigitPaged(const uint dispNum, char chr, bool partial, const GFXfont *font);
 
 extern "C" void updateDisplay(void *pvParameters) noexcept;
 void updateDisplayAlt(int epdIndex);
@@ -43,6 +40,7 @@ void setFgColor(int color);
 void renderText(const uint dispNum, const String& text, bool partial);
 void renderQr(const uint dispNum, const String& text, bool partial);
 
+void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent, bool forceUpdate);
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent);
 std::array<String, NUM_SCREENS> getCurrentEpdContent();
 void waitUntilNoneBusy();

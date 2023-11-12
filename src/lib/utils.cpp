@@ -6,9 +6,13 @@ int modulo(int x, int N)
 }
 
 String getMyHostname() {
-    byte mac[6];
-    WiFi.macAddress(mac);
-    return "btclock" + String(mac[4], 16) = String(mac[5], 16);
+    uint8_t mac[6];
+    //WiFi.macAddress(mac);
+    esp_efuse_mac_get_default(mac);
+    char hostname[15]; 
+    snprintf(hostname, sizeof(hostname), "btclock-%02x%02x%02x",
+             mac[3], mac[4], mac[5]);
+    return hostname;
 }
 
 double getSupplyAtBlock(uint blockNr) {

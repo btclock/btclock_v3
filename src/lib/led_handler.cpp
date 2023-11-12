@@ -24,20 +24,28 @@ void ledTask(void *parameter)
                 switch (ledTaskParams)
                 {
                 case LED_POWER_TEST:
-                    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
-                    pixels.setPixelColor(1, pixels.Color(0, 255, 0));
-                    pixels.setPixelColor(2, pixels.Color(0, 0, 255));
-                    pixels.setPixelColor(3, pixels.Color(255, 255, 255));
-                    pixels.show();
-                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    ledRainbow(20);
+                    pixels.clear();
                     break;
                 case LED_EFFECT_WIFI_CONNECT_ERROR:
+                    blinkDelayTwoColor(100, 1, pixels.Color(8, 161, 236), pixels.Color(255, 0, 0));
+                    break;
                 case LED_FLASH_ERROR:
                     blinkDelayColor(250, 3, 255, 0, 0);
                     break;
                 case LED_EFFECT_WIFI_CONNECT_SUCCESS:
                 case LED_FLASH_SUCCESS:
                     blinkDelayColor(150, 3, 0, 255, 0);
+                    break;
+                case LED_PROGRESS_100:
+                    pixels.setPixelColor(0, pixels.Color(0, 255, 0));
+                case LED_PROGRESS_75:
+                    pixels.setPixelColor(1, pixels.Color(0, 255, 0));
+                case LED_PROGRESS_50:
+                    pixels.setPixelColor(2, pixels.Color(0, 255, 0));
+                case LED_PROGRESS_25:
+                    pixels.setPixelColor(3, pixels.Color(0, 255, 0));
+                    pixels.show();
                     break;
                 case LED_FLASH_UPDATE:
                     break;
@@ -122,14 +130,12 @@ void ledTask(void *parameter)
 
                 // revert to previous state unless power test
 
-                if (ledTaskParams != LED_POWER_TEST) {
-                    for (int i = 0; i < NEOPIXEL_COUNT; i++)
-                    {
-                        pixels.setPixelColor(i, oldLights[i]);
-                    }
-
-                    pixels.show();
+                for (int i = 0; i < NEOPIXEL_COUNT; i++)
+                {
+                    pixels.setPixelColor(i, oldLights[i]);
                 }
+
+                pixels.show();
             }
         }
     }
@@ -240,7 +246,13 @@ void setLights(int r, int g, int b)
 void setLights(uint32_t color)
 {
     preferences.putUInt("ledColor", color);
-    preferences.putBool("ledStatus", true);
+
+    bool ledStatus = true;
+    if (color == pixels.Color(0, 0, 0))
+    {
+        ledStatus = false;
+    }
+    preferences.putBool("ledStatus", false);
 
     for (int i = 0; i < NEOPIXEL_COUNT; i++)
     {
@@ -264,4 +276,74 @@ bool queueLedEffect(uint effect)
 
     uint flashType = effect;
     xQueueSend(ledTaskQueue, &flashType, portMAX_DELAY);
+}
+
+void ledRainbow(int wait)
+{
+    // Hue of first pixel runs 5 complete loops through the color wheel.
+    // Color wheel has a range of 65536 but it's OK if we roll over, so
+    // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
+    // means we'll make 5*65536/256 = 1280 passes through this loop:
+    for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256)
+    {
+        // strip.rainbow() can take a single argument (first pixel hue) or
+        // optionally a few extras: number of rainbow repetitions (default 1),
+        // saturation and value (brightness) (both 0-255, similar to the
+        // ColorHSV() function, default 255), and a true/false flag for whether
+        // to apply gamma correction to provide 'truer' colors (default true).
+        pixels.rainbow(firstPixelHue);
+        // Above line is equivalent to:
+        // strip.rainbow(firstPixelHue, 1, 255, 255, true);
+        pixels.show(); // Update strip with new contents
+        delayMicroseconds(wait);
+        //        vTaskDelay(pdMS_TO_TICKS(wait)); // Pause for a moment
+    }
+}
+
+void ledTheaterChase(uint32_t color, int wait)
+{
+    for (int a = 0; a < 10; a++)
+    { // Repeat 10 times...
+        for (int b = 0; b < 3; b++)
+        {                   //  'b' counts from 0 to 2...
+            pixels.clear(); //   Set all pixels in RAM to 0 (off)
+            // 'c' counts up from 'b' to end of strip in steps of 3...
+            for (int c = b; c < pixels.numPixels(); c += 3)
+            {
+                pixels.setPixelColor(c, color); // Set pixel 'c' to value 'color'
+            }
+            pixels.show();                   // Update strip with new contents
+            vTaskDelay(pdMS_TO_TICKS(wait)); // Pause for a moment
+        }
+    }
+}
+
+void ledTheaterChaseRainbow(int wait)
+{
+    int firstPixelHue = 0; // First pixel starts at red (hue 0)
+    for (int a = 0; a < 30; a++)
+    { // Repeat 30 times...
+        for (int b = 0; b < 3; b++)
+        {                   //  'b' counts from 0 to 2...
+            pixels.clear(); //   Set all pixels in RAM to 0 (off)
+            // 'c' counts up from 'b' to end of strip in increments of 3...
+            for (int c = b; c < pixels.numPixels(); c += 3)
+            {
+                // hue of pixel 'c' is offset by an amount to make one full
+                // revolution of the color wheel (range 65536) along the length
+                // of the strip (strip.numPixels() steps):
+                int hue = firstPixelHue + c * 65536L / pixels.numPixels();
+                uint32_t color = pixels.gamma32(pixels.ColorHSV(hue)); // hue -> RGB
+                pixels.setPixelColor(c, color);                        // Set pixel 'c' to value 'color'
+            }
+            pixels.show();                   // Update strip with new contents
+            vTaskDelay(pdMS_TO_TICKS(wait)); // Pause for a moment
+            firstPixelHue += 65536 / 90;     // One cycle of color wheel over 90 frames
+        }
+    }
+}
+
+Adafruit_NeoPixel getPixels()
+{
+    return pixels;
 }

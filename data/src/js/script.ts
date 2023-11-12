@@ -43,25 +43,38 @@ let processStatusData = (jsonData) => {
 
 
 if (!!window.EventSource) {
-    var source = new EventSource('/events');
+    const connectEventSource = () => {
+        let source = new EventSource('/events');
 
-    source.addEventListener('open', function (e) {
-        console.log("Status EventSource Connected");
-        if (e.data) {
+        source.addEventListener('open', (e)  => {
+            console.log("Status EventSource Connected");
+            if (e.data) {
+                processStatusData(JSON.parse(e.data));
+            }
+        }, false);
+
+        source.addEventListener('error', (e) => {
+            if (e.target.readyState != EventSource.OPEN) {
+                console.log("Status EventSource Disconnected");
+                setTimeout(connectEventSource, 10000);
+            }
+            source.close();
+        }, false);
+
+        source.addEventListener('status', (e) => {
             processStatusData(JSON.parse(e.data));
-        }
-    }, false);
+        }, false);
 
-    source.addEventListener('error', function (e) {
-        if (e.target.readyState != EventSource.OPEN) {
-            console.log("Status EventSource Disconnected");
-        }
-        source.close();
-    }, false);
+        source.addEventListener('message', (e) => {
+            if (e.data == "closing") {
+                console.log("Closing EventSource, trying to reconnect in 10 seconds")
+                source.close();
+                setTimeout(connectEventSource, 10000);
+            }
+        }, false);
+    };
 
-    source.addEventListener('status', function (e) {
-        processStatusData(JSON.parse(e.data));
-    }, false);
+    connectEventSource();
 }
 
 
@@ -106,8 +119,14 @@ fetch('/api/settings', {
         if (jsonData.mcapBigChar)
             document.getElementById('mcapBigChar').checked = true;
 
-        if (jsonData.useBitcoinNode)
-            document.getElementById('useBitcoinNode').checked = true;
+        if (jsonData.mdnsEnabled)
+            document.getElementById('mdnsEnabled').checked = true;
+
+        if (jsonData.otaEnabled)
+            document.getElementById('otaEnabled').checked = true;
+
+        if (jsonData.ledTestOnPower)
+            document.getElementById('ledTestOnPower').checked = true;
 
         // let nodeFields = ["rpcHost", "rpcPort", "rpcUser", "tzOffset"];
 
@@ -123,10 +142,16 @@ fetch('/api/settings', {
         document.getElementById('minSecPriceUpd').value = jsonData.minSecPriceUpd;
 
         if (jsonData.gitRev)
-            document.getElementById('gitRev').innerHTML = "Version: " + jsonData.gitRev;
+            document.getElementById('gitRev').innerHTML = jsonData.gitRev;
+
+        if (jsonData.hostname)
+            document.getElementById('hostname').innerHTML = jsonData.hostname;
+
+        if (jsonData.ip)
+            document.getElementById('ipAddress').innerHTML = jsonData.ip;
 
         if (jsonData.lastBuildTime)
-            document.getElementById('lastBuildTime').innerHTML = " / " + new Date((jsonData.lastBuildTime * 1000)).toLocaleString();
+            document.getElementById('lastBuildTime').innerHTML = new Date((jsonData.lastBuildTime * 1000)).toLocaleString();
 
         var source = document.getElementById("screens-template").innerHTML;
         var template = Handlebars.compile(source);
@@ -157,6 +182,11 @@ settingsForm.onsubmit = (event) => {
 
 document.getElementById('restartBtn').onclick = (event) => {
     fetch('/api/restart');
+    return false;
+}
+
+document.getElementById('forceFullRefresh').onclick = (event) => {
+    fetch('/api/full_refresh');
     return false;
 }
 
