@@ -119,6 +119,8 @@ void tryImprovSetup()
     }
     else
     {
+        WiFi.setAutoConnect(true);
+        WiFi.setAutoReconnect(true);
         WiFi.begin();
 
         while (WiFi.status() != WL_CONNECTED)
