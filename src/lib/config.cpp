@@ -71,16 +71,13 @@ void tryImprovSetup()
                 WiFi.softAPIP().toString().c_str(), 
                 wifiManager->getConfigPortalSSID().c_str(), 
                 softAP_password.c_str()); 
-//                vTaskDelay(pdMS_TO_TICKS(1000));
                 delay(6000);
 
                 const String qrText = "qrWIFI:S:" + wifiManager->getConfigPortalSSID() + ";T:WPA;P:" + softAP_password.c_str() + ";;";
                 const String explainText = "*SSID: *\r\n" + wifiManager->getConfigPortalSSID() + "\r\n\r\n*Password:*\r\n" + softAP_password;
                 std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "To setup\r\nscan QR or\r\nconnect\r\nmanually", "", explainText, "", qrText};
                 setEpdContent(epdContent);
-                delay(3000);
-                Serial.println("xTask");
-                xTaskNotifyGive(epdTaskHandle); });
+                 });
 
             wm.setSaveConfigCallback([]()
                                      {
@@ -143,8 +140,6 @@ void setupTime()
         delay(500);
         Serial.println(F("Retry set time"));
     }
-
-    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
 
 void setupPreferences()
@@ -154,6 +149,8 @@ void setupPreferences()
 
     setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
     setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
+    setBlockHeight(preferences.getUInt("blockHeight", 816000));
+    setPrice(preferences.getUInt("lastPrice", 30000));
 
     screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
     screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
@@ -201,12 +198,8 @@ void setupHardware()
 
     WiFi.setHostname(getMyHostname().c_str());
     ;
-    if (psramInit())
-    {
-        Serial.println(F("PSRAM is correctly initialized"));
-    }
-    else
-    {
+    if (!psramInit())
+      {
         Serial.println(F("PSRAM not available"));
     }
 

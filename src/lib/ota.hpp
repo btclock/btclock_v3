@@ -6,3 +6,4 @@
 void setupOTA();
 void onOTAStart();
 void handleOTATask(void *parameter);
+void downloadUpdate();

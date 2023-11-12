@@ -1,9 +1,10 @@
 #include "screen_handler.hpp"
 
-TaskHandle_t priceUpdateTaskHandle;
-TaskHandle_t blockUpdateTaskHandle;
-TaskHandle_t timeUpdateTaskHandle;
+// TaskHandle_t priceUpdateTaskHandle;
+// TaskHandle_t blockUpdateTaskHandle;
+// TaskHandle_t timeUpdateTaskHandle;
 TaskHandle_t taskScreenRotateTaskHandle;
+TaskHandle_t workerTaskHandle;
 esp_timer_handle_t screenRotateTimer;
 esp_timer_handle_t minuteTimer;
 
@@ -11,88 +12,195 @@ std::array<String, NUM_SCREENS> taskEpdContent = {"", "", "", "", "", "", ""};
 std::string priceString;
 const int usPerSecond = 1000000;
 const int usPerMinute = 60 * usPerSecond;
-int64_t next_callback_time = 0;
+
+// typedef enum
+// {
+//     TASK_PRICE_UPDATE,
+//     TASK_BLOCK_UPDATE,
+//     TASK_TIME_UPDATE
+// } TaskType;
+
+// typedef struct
+// {
+//     TaskType type;
+//     unsigned long data;
+// } WorkItem;
+
+#define WORK_QUEUE_SIZE 10
+QueueHandle_t workQueue;
 
 uint currentScreen;
 
-void taskPriceUpdate(void *pvParameters)
+void workerTask(void *pvParameters)
 {
-    for (;;)
+    WorkItem receivedItem;
+
+    while (1)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-        unsigned long price = getPrice();
-        uint firstIndex = 0;
-        if (getCurrentScreen() == SCREEN_BTC_TICKER)
+        // Wait for a work item to be available in the queue
+        if (xQueueReceive(workQueue, &receivedItem, portMAX_DELAY))
         {
-            priceString = ("$" + String(price)).c_str();
+            uint firstIndex = 0;
 
-            if (priceString.length() < (NUM_SCREENS))
+            // Process the work item based on its type
+            switch (receivedItem.type)
             {
-                priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                taskEpdContent[0] = "BTC/USD";
-                firstIndex = 1;
-            }
-        }
-        else if (getCurrentScreen() == SCREEN_MSCW_TIME)
-        {
-            priceString = String(int(round(1 / float(price) * 10e7))).c_str();
-
-            if (priceString.length() < (NUM_SCREENS))
+            case TASK_PRICE_UPDATE:
             {
-                priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                taskEpdContent[0] = "MSCW/TIME";
-                firstIndex = 1;
-            }
-        }
-        else
-        {
-            double supply = getSupplyAtBlock(getBlockHeight());
-            int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
-           
-
-            taskEpdContent[0] = "USD/MCAP";
-
-            if (preferences.getBool("mcapBigChar", true)) {
-                firstIndex = 1;
-
-                priceString = "$" + formatNumberWithSuffix(marketCap);
-                priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-
-            } else {
-                std::string stringValue = std::to_string(marketCap);
-                size_t mcLength = stringValue.length();
-                size_t leadingSpaces = (3 - mcLength % 3) % 3;
-                stringValue = std::string(leadingSpaces, ' ') + stringValue;
-
-                uint groups = (mcLength + leadingSpaces) / 3;
-
-                if (groups < NUM_SCREENS) {
-                    firstIndex = 1;
-                }
-
-                for (int i = firstIndex; i <  NUM_SCREENS-groups-1; i++) {
-                    taskEpdContent[i] = "";
-                }
-
-                taskEpdContent[NUM_SCREENS-groups-1] = " $ ";
-                for (uint i = 0; i < groups; i ++)
+                firstIndex = 0;
+                uint price = getPrice();
+                if (getCurrentScreen() == SCREEN_BTC_TICKER)
                 {
-                    taskEpdContent[(NUM_SCREENS-groups+i)] = stringValue.substr(i*3, 3).c_str();
+                    priceString = ("$" + String(price)).c_str();
+
+                    if (priceString.length() < (NUM_SCREENS))
+                    {
+                        priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
+                        taskEpdContent[0] = "BTC/USD";
+                        firstIndex = 1;
+                    }
                 }
-            }
-        }
+                else if (getCurrentScreen() == SCREEN_MSCW_TIME)
+                {
+                    priceString = String(int(round(1 / float(price) * 10e7))).c_str();
 
-        if (!(getCurrentScreen() == SCREEN_MARKET_CAP && !preferences.getBool("mcapBigChar", true))) {
-            for (uint i = firstIndex; i < NUM_SCREENS; i++)
+                    if (priceString.length() < (NUM_SCREENS))
+                    {
+                        priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
+                        taskEpdContent[0] = "MSCW/TIME";
+                        firstIndex = 1;
+                    }
+                }
+                else
+                {
+                    double supply = getSupplyAtBlock(getBlockHeight());
+                    int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
+
+                    taskEpdContent[0] = "USD/MCAP";
+
+                    if (preferences.getBool("mcapBigChar", true))
+                    {
+                        firstIndex = 1;
+
+                        priceString = "$" + formatNumberWithSuffix(marketCap);
+                        priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
+                    }
+                    else
+                    {
+                        std::string stringValue = std::to_string(marketCap);
+                        size_t mcLength = stringValue.length();
+                        size_t leadingSpaces = (3 - mcLength % 3) % 3;
+                        stringValue = std::string(leadingSpaces, ' ') + stringValue;
+
+                        uint groups = (mcLength + leadingSpaces) / 3;
+
+                        if (groups < NUM_SCREENS)
+                        {
+                            firstIndex = 1;
+                        }
+
+                        for (int i = firstIndex; i < NUM_SCREENS - groups - 1; i++)
+                        {
+                            taskEpdContent[i] = "";
+                        }
+
+                        taskEpdContent[NUM_SCREENS - groups - 1] = " $ ";
+                        for (uint i = 0; i < groups; i++)
+                        {
+                            taskEpdContent[(NUM_SCREENS - groups + i)] = stringValue.substr(i * 3, 3).c_str();
+                        }
+                    }
+                }
+
+                if (!(getCurrentScreen() == SCREEN_MARKET_CAP && !preferences.getBool("mcapBigChar", true)))
+                {
+                    for (uint i = firstIndex; i < NUM_SCREENS; i++)
+                    {
+                        taskEpdContent[i] = priceString[i];
+                    }
+                }
+
+                setEpdContent(taskEpdContent);
+                break;
+            }
+            case TASK_BLOCK_UPDATE:
             {
-                taskEpdContent[i] = priceString[i];
+                std::string blockNrString = String(getBlockHeight()).c_str();
+                firstIndex = 0;
+
+                if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN)
+                {
+                    if (blockNrString.length() < NUM_SCREENS)
+                    {
+                        blockNrString.insert(blockNrString.begin(), NUM_SCREENS - blockNrString.length(), ' ');
+                        taskEpdContent[0] = "BLOCK/HEIGHT";
+                        firstIndex = 1;
+                    }
+
+                    for (uint i = firstIndex; i < NUM_SCREENS; i++)
+                    {
+                        taskEpdContent[i] = blockNrString[i];
+                    }
+                }
+                else
+                {
+                    const uint nextHalvingBlock = 210000 - (getBlockHeight() % 210000);
+                    const uint minutesToHalving = nextHalvingBlock * 10;
+
+                    const int years = floor(minutesToHalving / 525600);
+                    const int days = floor((minutesToHalving - (years * 525600)) / (24 * 60));
+                    const int hours = floor((minutesToHalving - (years * 525600) - (days * (24 * 60))) / 60);
+                    const int mins = floor(minutesToHalving - (years * 525600) - (days * (24 * 60)) - (hours * 60));
+                    taskEpdContent[0] = "BIT/COIN";
+                    taskEpdContent[1] = "HALV/ING";
+                    taskEpdContent[(NUM_SCREENS - 5)] = String(years) + "/YRS";
+                    taskEpdContent[(NUM_SCREENS - 4)] = String(days) + "/DAYS";
+                    taskEpdContent[(NUM_SCREENS - 3)] = String(days) + "/HRS";
+                    taskEpdContent[(NUM_SCREENS - 2)] = String(mins) + "/MINS";
+                    taskEpdContent[(NUM_SCREENS - 1)] = "TO/GO";
+                }
+
+                if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN || getCurrentScreen() == SCREEN_BLOCK_HEIGHT)
+                {
+                    setEpdContent(taskEpdContent);
+                }
+                break;
+            }
+            case TASK_TIME_UPDATE:
+            {
+                if (getCurrentScreen() == SCREEN_TIME)
+                {
+                    time_t currentTime;
+                    struct tm timeinfo;
+                    time(&currentTime);
+                    localtime_r(&currentTime, &timeinfo);
+                    std::string timeString;
+
+                    String minute = String(timeinfo.tm_min);
+                    if (minute.length() < 2)
+                    {
+                        minute = "0" + minute;
+                    }
+
+                    timeString = std::to_string(timeinfo.tm_hour) + ":" + minute.c_str();
+                    timeString.insert(timeString.begin(), NUM_SCREENS - timeString.length(), ' ');
+                    taskEpdContent[0] = String(timeinfo.tm_mday) + "/" + String(timeinfo.tm_mon + 1);
+
+                    for (uint i = 1; i < NUM_SCREENS; i++)
+                    {
+                        taskEpdContent[i] = timeString[i];
+                    }
+                    setEpdContent(taskEpdContent);
+                }
+
+                break;
+            }
+                // Add more cases for additional task types
             }
         }
-
-        setEpdContent(taskEpdContent);
     }
 }
+
 
 void taskScreenRotate(void *pvParameters)
 {
@@ -113,97 +221,16 @@ void taskScreenRotate(void *pvParameters)
     }
 }
 
-void taskBlockUpdate(void *pvParameters)
-{
-    for (;;)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-        std::string blockNrString = String(getBlockHeight()).c_str();
-        uint firstIndex = 0;
-
-        if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN)
-        {
-            if (blockNrString.length() < NUM_SCREENS)
-            {
-                blockNrString.insert(blockNrString.begin(), NUM_SCREENS - blockNrString.length(), ' ');
-                taskEpdContent[0] = "BLOCK/HEIGHT";
-                firstIndex = 1;
-            }
-
-            for (uint i = firstIndex; i < NUM_SCREENS; i++)
-            {
-                taskEpdContent[i] = blockNrString[i];
-            }
-        }
-        else
-        {
-            const uint nextHalvingBlock = 210000 - (getBlockHeight() % 210000);
-            const uint minutesToHalving = nextHalvingBlock * 10;
-
-            const int years = floor(minutesToHalving / 525600);
-            const int days = floor((minutesToHalving - (years * 525600)) / (24 * 60));
-            const int hours = floor((minutesToHalving - (years * 525600) - (days * (24 * 60))) / 60);
-            const int mins = floor(minutesToHalving - (years * 525600) - (days * (24 * 60)) - (hours * 60));
-            taskEpdContent[0] = "BIT/COIN";
-            taskEpdContent[1] = "HALV/ING";
-            taskEpdContent[(NUM_SCREENS - 5)] = String(years) + "/YRS";
-            taskEpdContent[(NUM_SCREENS - 4)] = String(days) + "/DAYS";
-            taskEpdContent[(NUM_SCREENS - 3)] = String(days) + "/HRS";
-            taskEpdContent[(NUM_SCREENS - 2)] = String(mins) + "/MINS";
-            taskEpdContent[(NUM_SCREENS - 1)] = "TO/GO";
-        }
-
-        if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN || getCurrentScreen() == SCREEN_BLOCK_HEIGHT)
-        {
-            setEpdContent(taskEpdContent);
-        }
-    }
-}
-
-void taskTimeUpdate(void *pvParameters)
-{
-    for (;;)
-    {
-        if (getCurrentScreen() == SCREEN_TIME)
-        {
-            time_t currentTime;
-            struct tm timeinfo;
-            time(&currentTime);
-            localtime_r(&currentTime, &timeinfo);
-            std::string timeString;
-
-            String minute = String(timeinfo.tm_min);
-            if (minute.length() < 2)
-            {
-                minute = "0" + minute;
-            }
-
-            timeString = std::to_string(timeinfo.tm_hour) + ":" + minute.c_str();
-            timeString.insert(timeString.begin(), NUM_SCREENS - timeString.length(), ' ');
-            taskEpdContent[0] = String(timeinfo.tm_mday) + "/" + String(timeinfo.tm_mon + 1);
-
-            for (uint i = 1; i < NUM_SCREENS; i++)
-            {
-                taskEpdContent[i] = timeString[i];
-            }
-            setEpdContent(taskEpdContent);
-        }
-
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    }
-}
-
 void IRAM_ATTR minuteTimerISR(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(timeUpdateTaskHandle, &xHigherPriorityTaskWoken);
+//    vTaskNotifyGiveFromISR(timeUpdateTaskHandle, &xHigherPriorityTaskWoken);
+    WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
+    xQueueSendFromISR(workQueue, &timeUpdate, &xHigherPriorityTaskWoken);
     if (xHigherPriorityTaskWoken == pdTRUE)
     {
         portYIELD_FROM_ISR();
     }
-    int64_t current_time = esp_timer_get_time();
-    next_callback_time = current_time + usPerMinute;
 }
 
 void IRAM_ATTR screenRotateTimerISR(void *arg)
@@ -218,9 +245,13 @@ void IRAM_ATTR screenRotateTimerISR(void *arg)
 
 void setupTasks()
 {
-    xTaskCreate(taskPriceUpdate, "updatePrice", 3072, NULL, tskIDLE_PRIORITY, &priceUpdateTaskHandle);
-    xTaskCreate(taskBlockUpdate, "updateBlock", 2048, NULL, tskIDLE_PRIORITY, &blockUpdateTaskHandle);
-    xTaskCreate(taskTimeUpdate, "updateTime", 4096, NULL, tskIDLE_PRIORITY, &timeUpdateTaskHandle);
+    workQueue = xQueueCreate(WORK_QUEUE_SIZE, sizeof(WorkItem));
+
+    // xTaskCreate(taskPriceUpdate, "updatePrice", 1024, NULL, tskIDLE_PRIORITY, &priceUpdateTaskHandle);
+    // xTaskCreate(taskBlockUpdate, "updateBlock", 1024, NULL, tskIDLE_PRIORITY, &blockUpdateTaskHandle);
+    // xTaskCreate(taskTimeUpdate, "updateTime", 1024, NULL, tskIDLE_PRIORITY, &timeUpdateTaskHandle);
+    xTaskCreate(workerTask, "workerTask", 4096, NULL, tskIDLE_PRIORITY, &workerTaskHandle);
+
     xTaskCreate(taskScreenRotate, "rotateScreen", 2048, NULL, tskIDLE_PRIORITY, &taskScreenRotateTaskHandle);
 
     setCurrentScreen(preferences.getUInt("currentScreen", 0));
@@ -244,7 +275,10 @@ void setupTimeUpdateTimer(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS((secondsUntilNextMinute * 1000)));
 
     esp_timer_start_periodic(minuteTimer, usPerMinute);
-    xTaskNotifyGive(timeUpdateTaskHandle);
+    
+    WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
+    xQueueSend(workQueue, &timeUpdate, portMAX_DELAY);
+//    xTaskNotifyGive(timeUpdateTaskHandle);
 
     vTaskDelete(NULL);
 }
@@ -316,17 +350,29 @@ void setCurrentScreen(uint newScreen)
     switch (currentScreen)
     {
     case SCREEN_TIME:
-        xTaskNotifyGive(timeUpdateTaskHandle);
+    {
+        WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
+        xQueueSend(workQueue, &timeUpdate, portMAX_DELAY);
+      //  xTaskNotifyGive(timeUpdateTaskHandle);
         break;
+    }
     case SCREEN_HALVING_COUNTDOWN:
     case SCREEN_BLOCK_HEIGHT:
-        xTaskNotifyGive(blockUpdateTaskHandle);
+    {
+        WorkItem blockUpdate = {TASK_BLOCK_UPDATE, 0};
+        xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
+        //xTaskNotifyGive(blockUpdateTaskHandle);
         break;
+    }
     case SCREEN_MARKET_CAP:
     case SCREEN_MSCW_TIME:
     case SCREEN_BTC_TICKER:
-        xTaskNotifyGive(priceUpdateTaskHandle);
+    {
+        WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
+        xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
+        //xTaskNotifyGive(priceUpdateTaskHandle);
         break;
+    }
     }
 
     if (eventSourceTaskHandle != NULL)

@@ -29,9 +29,9 @@ void onOTAStart()
     esp_timer_stop(minuteTimer);
 
     // Stop or suspend all tasks
-    vTaskSuspend(priceUpdateTaskHandle);
-    vTaskSuspend(blockUpdateTaskHandle);
-    vTaskSuspend(timeUpdateTaskHandle);
+  //  vTaskSuspend(priceUpdateTaskHandle);
+//    vTaskSuspend(blockUpdateTaskHandle);
+    vTaskSuspend(workerTaskHandle);
     vTaskSuspend(taskScreenRotateTaskHandle);
 
     vTaskSuspend(ledTaskHandle);
@@ -48,4 +48,7 @@ void handleOTATask(void *parameter) {
     ArduinoOTA.handle();  // Allow OTA updates to occur
     vTaskDelay(pdMS_TO_TICKS(2500));
   }
+}
+
+void downloadUpdate() {
 }

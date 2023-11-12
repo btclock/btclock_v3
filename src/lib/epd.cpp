@@ -53,7 +53,10 @@ std::array<String, NUM_SCREENS> currentEpdContent;
 std::array<String, NUM_SCREENS> epdContent;
 uint32_t lastFullRefresh[NUM_SCREENS];
 TaskHandle_t tasks[NUM_SCREENS];
-TaskHandle_t epdTaskHandle = NULL;
+// TaskHandle_t epdTaskHandle = NULL;
+
+#define UPDATE_QUEUE_SIZE 14
+QueueHandle_t updateQueue;
 
 SemaphoreHandle_t epdUpdateSemaphore[NUM_SCREENS];
 
@@ -72,6 +75,10 @@ void setupDisplays()
         displays[i].init();
     }
 
+    updateQueue = xQueueCreate(UPDATE_QUEUE_SIZE, sizeof(UpdateDisplayTaskItem));
+
+    xTaskCreate(prepareDisplayUpdateTask, "PrepareUpd", 4096, NULL, tskIDLE_PRIORITY, NULL);
+
     for (uint i = 0; i < NUM_SCREENS; i++)
     {
         epdUpdateSemaphore[i] = xSemaphoreCreateBinary();
@@ -80,10 +87,8 @@ void setupDisplays()
         int *taskParam = new int;
         *taskParam = i;
 
-        xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 4096, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
+        xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 2048, taskParam, tskIDLE_PRIORITY, &tasks[i]); // create task
     }
-
-    xTaskCreate(taskEpd, "epd_task", 2048, NULL, tskIDLE_PRIORITY, &epdTaskHandle);
 
     epdContent = {"B",
                   "T",
@@ -94,99 +99,59 @@ void setupDisplays()
                   "K"};
 
     setEpdContent(epdContent);
-    for (uint i = 0; i < NUM_SCREENS; i++)
-    {
-        xTaskNotifyGive(tasks[i]);
-    }
-}
-
-void taskEpd(void *pvParameters)
-{
-    while (1)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-        bool updatedThisCycle = false;
-
-        for (uint i = 0; i < NUM_SCREENS; i++)
-        {
-            if (epdContent[i].compareTo(currentEpdContent[i]) != 0)
-            {
-                if (!updatedThisCycle)
-                {
-                    updatedThisCycle = true;
-                }
-
-                if (xSemaphoreTake(epdUpdateSemaphore[i], pdMS_TO_TICKS(5000)) == pdTRUE)
-                {
-                    xTaskNotifyGive(tasks[i]);
-                }
-                else
-                {
-                    Serial.println("Couldnt get screen" + String(i));
-                }
-            }
-        }
-    }
 }
 
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent)
 {
     epdContent = newEpdContent;
-    if (epdTaskHandle != NULL)
-        xTaskNotifyGive(epdTaskHandle);
+
+    for (uint i = 0; i < NUM_SCREENS; i++)
+    {
+        if (epdContent[i].compareTo(currentEpdContent[i]) != 0)
+        {
+            UpdateDisplayTaskItem dispUpdate = {i};
+            xQueueSend(updateQueue, &dispUpdate, portMAX_DELAY);
+            // if (xSemaphoreTake(epdUpdateSemaphore[i], pdMS_TO_TICKS(5000)) == pdTRUE)
+            // {
+            //     xTaskNotifyGive(tasks[i]);
+            // }
+        }
+    }
+
     if (eventSourceTaskHandle != NULL)
         xTaskNotifyGive(eventSourceTaskHandle);
 }
 
-extern "C" void updateDisplay(void *pvParameters) noexcept
+void prepareDisplayUpdateTask(void *pvParameters)
 {
-    const int epdIndex = *(int *)pvParameters;
-    delete (int *)pvParameters;
+    UpdateDisplayTaskItem receivedItem;
 
-    for (;;)
+    while (1)
     {
-        // Wait for the task notification
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-        if (epdContent[epdIndex].compareTo(currentEpdContent[epdIndex]) != 0)
+        // Wait for a work item to be available in the queue
+        if (xQueueReceive(updateQueue, &receivedItem, portMAX_DELAY))
         {
-
-            displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
-            uint count = 0;
-            while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
+            uint epdIndex = receivedItem.dispNum;
+            if (epdContent[epdIndex].compareTo(currentEpdContent[epdIndex]) != 0)
             {
-                vTaskDelay(pdMS_TO_TICKS(100));
-                if (count >= 9)
-                {
-                    displays[epdIndex].init(0, false);
-                }
-                count++;
+
+                displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
             }
 
             bool updatePartial = true;
 
-            // Full Refresh every half hour
-            if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
-            {
-                updatePartial = false;
-                lastFullRefresh[epdIndex] = millis();
-            }
-
-            // if (updatePartial)
+            // // Full Refresh every half hour
+            // if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
             // {
-            //     displays[epdIndex].setPartialWindow(0, 0, displays[i].width(), display[i].height());
+            //     updatePartial = false;
+            //     lastFullRefresh[epdIndex] = millis();
             // }
 
             if (strstr(epdContent[epdIndex].c_str(), "/") != NULL)
             {
                 String top = epdContent[epdIndex].substring(0, epdContent[epdIndex].indexOf("/"));
                 String bottom = epdContent[epdIndex].substring(epdContent[epdIndex].indexOf("/") + 1);
-#ifdef PAGED_WRITE
-                splitTextPaged(epdIndex, top, bottom, updatePartial);
-#else
                 splitText(epdIndex, top, bottom, updatePartial);
-#endif
             }
             else if (epdContent[epdIndex].startsWith(F("qr")))
             {
@@ -199,20 +164,101 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
             else
             {
 
-#ifdef PAGED_WRITE
-                showDigitPaged(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
-#else
-                if (epdContent[epdIndex].length() > 1) {
-                showChars(epdIndex, epdContent[epdIndex], updatePartial, &Antonio_SemiBold30pt7b);
-                } else {
-                showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+                if (epdContent[epdIndex].length() > 1)
+                {
+                    showChars(epdIndex, epdContent[epdIndex], updatePartial, &Antonio_SemiBold30pt7b);
                 }
-#endif
+                else
+                {
+                    showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+                }
             }
 
-#ifdef PAGED_WRITE
-            currentEpdContent[epdIndex] = epdContent[epdIndex];
-#else
+            if (xSemaphoreTake(epdUpdateSemaphore[epdIndex], pdMS_TO_TICKS(5000)) == pdTRUE)
+            {
+                xTaskNotifyGive(tasks[epdIndex]);
+            }
+        }
+    }
+}
+
+extern "C" void updateDisplay(void *pvParameters) noexcept
+{
+    const int epdIndex = *(int *)pvParameters;
+    delete (int *)pvParameters;
+
+    for (;;)
+    {
+        // Wait for the task notification
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        // if (epdContent[epdIndex].compareTo(currentEpdContent[epdIndex]) != 0)
+        // {
+
+        //     displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
+            uint count = 0;
+            while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
+            {
+                vTaskDelay(pdMS_TO_TICKS(100));
+                // if (count >= 9)
+                // {
+                //     displays[epdIndex].init(0, false);
+                // }
+                count++;
+            }
+
+            bool updatePartial = true;
+
+            // Full Refresh every half hour
+            if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
+            {
+                updatePartial = false;
+                lastFullRefresh[epdIndex] = millis();
+            }
+
+//             // if (updatePartial)
+//             // {
+//             //     displays[epdIndex].setPartialWindow(0, 0, displays[i].width(), display[i].height());
+//             // }
+
+//             if (strstr(epdContent[epdIndex].c_str(), "/") != NULL)
+//             {
+//                 String top = epdContent[epdIndex].substring(0, epdContent[epdIndex].indexOf("/"));
+//                 String bottom = epdContent[epdIndex].substring(epdContent[epdIndex].indexOf("/") + 1);
+// #ifdef PAGED_WRITE
+//                 splitTextPaged(epdIndex, top, bottom, updatePartial);
+// #else
+//                 splitText(epdIndex, top, bottom, updatePartial);
+// #endif
+//             }
+//             else if (epdContent[epdIndex].startsWith(F("qr")))
+//             {
+//                 renderQr(epdIndex, epdContent[epdIndex], updatePartial);
+//             }
+//             else if (epdContent[epdIndex].length() > 5)
+//             {
+//                 renderText(epdIndex, epdContent[epdIndex], updatePartial);
+//             }
+//             else
+//             {
+
+// #ifdef PAGED_WRITE
+//                 showDigitPaged(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+// #else
+//                 if (epdContent[epdIndex].length() > 1)
+//                 {
+//                     showChars(epdIndex, epdContent[epdIndex], updatePartial, &Antonio_SemiBold30pt7b);
+//                 }
+//                 else
+//                 {
+//                     showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial, &FONT_BIG);
+//                 }
+// #endif
+//             }
+
+// #ifdef PAGED_WRITE
+//             currentEpdContent[epdIndex] = epdContent[epdIndex];
+// #else
             char tries = 0;
             while (tries < 3)
             {
@@ -227,8 +273,8 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
             }
             currentEpdContent[epdIndex] = epdContent[epdIndex];
 
-#endif
-        }
+// #endif
+        // }
         xSemaphoreGive(epdUpdateSemaphore[epdIndex]);
     }
 }
@@ -273,54 +319,54 @@ void splitText(const uint dispNum, const String &top, const String &bottom, bool
     displays[dispNum].print(bottom);
 }
 
-void splitTextPaged(const uint dispNum, String top, String bottom, bool partial)
-{
-    displays[dispNum].setRotation(2);
-    displays[dispNum].setFont(&FONT_SMALL);
-    displays[dispNum].setTextColor(getFgColor());
+// void splitTextPaged(const uint dispNum, String top, String bottom, bool partial)
+// {
+//     displays[dispNum].setRotation(2);
+//     displays[dispNum].setFont(&FONT_SMALL);
+//     displays[dispNum].setTextColor(getFgColor());
 
-    // Top text
-    int16_t ttbx, ttby;
-    uint16_t ttbw, ttbh;
-    displays[dispNum].getTextBounds(top, 0, 0, &ttbx, &ttby, &ttbw, &ttbh);
-    uint16_t tx = ((displays[dispNum].width() - ttbw) / 2) - ttbx;
-    uint16_t ty = ((displays[dispNum].height() - ttbh) / 2) - ttby - ttbh / 2 - 12;
+//     // Top text
+//     int16_t ttbx, ttby;
+//     uint16_t ttbw, ttbh;
+//     displays[dispNum].getTextBounds(top, 0, 0, &ttbx, &ttby, &ttbw, &ttbh);
+//     uint16_t tx = ((displays[dispNum].width() - ttbw) / 2) - ttbx;
+//     uint16_t ty = ((displays[dispNum].height() - ttbh) / 2) - ttby - ttbh / 2 - 12;
 
-    // Bottom text
-    int16_t tbbx, tbby;
-    uint16_t tbbw, tbbh;
-    displays[dispNum].getTextBounds(bottom, 0, 0, &tbbx, &tbby, &tbbw, &tbbh);
-    uint16_t bx = ((displays[dispNum].width() - tbbw) / 2) - tbbx;
-    uint16_t by = ((displays[dispNum].height() - tbbh) / 2) - tbby + tbbh / 2 + 12;
+//     // Bottom text
+//     int16_t tbbx, tbby;
+//     uint16_t tbbw, tbbh;
+//     displays[dispNum].getTextBounds(bottom, 0, 0, &tbbx, &tbby, &tbbw, &tbbh);
+//     uint16_t bx = ((displays[dispNum].width() - tbbw) / 2) - tbbx;
+//     uint16_t by = ((displays[dispNum].height() - tbbh) / 2) - tbby + tbbh / 2 + 12;
 
-    // Make separator as wide as the shortest text.
-    uint16_t lineWidth, lineX;
-    if (tbbw < ttbh)
-        lineWidth = tbbw;
-    else
-        lineWidth = ttbw;
-    lineX = round((displays[dispNum].width() - lineWidth) / 2);
+//     // Make separator as wide as the shortest text.
+//     uint16_t lineWidth, lineX;
+//     if (tbbw < ttbh)
+//         lineWidth = tbbw;
+//     else
+//         lineWidth = ttbw;
+//     lineX = round((displays[dispNum].width() - lineWidth) / 2);
 
-    if (partial)
-    {
-        displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(), displays[dispNum].height());
-    }
-    else
-    {
-        displays[dispNum].setFullWindow();
-    }
-    displays[dispNum].firstPage();
+//     if (partial)
+//     {
+//         displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(), displays[dispNum].height());
+//     }
+//     else
+//     {
+//         displays[dispNum].setFullWindow();
+//     }
+//     displays[dispNum].firstPage();
 
-    do
-    {
-        displays[dispNum].fillScreen(getBgColor());
-        displays[dispNum].setCursor(tx, ty);
-        displays[dispNum].print(top);
-        displays[dispNum].fillRoundRect(lineX, displays[dispNum].height() / 2 - 3, lineWidth, 6, 3, getFgColor());
-        displays[dispNum].setCursor(bx, by);
-        displays[dispNum].print(bottom);
-    } while (displays[dispNum].nextPage());
-}
+//     do
+//     {
+//         displays[dispNum].fillScreen(getBgColor());
+//         displays[dispNum].setCursor(tx, ty);
+//         displays[dispNum].print(top);
+//         displays[dispNum].fillRoundRect(lineX, displays[dispNum].height() / 2 - 3, lineWidth, 6, 3, getFgColor());
+//         displays[dispNum].setCursor(bx, by);
+//         displays[dispNum].print(bottom);
+//     } while (displays[dispNum].nextPage());
+// }
 
 void showDigit(const uint dispNum, char chr, bool partial, const GFXfont *font)
 {
@@ -339,7 +385,8 @@ void showDigit(const uint dispNum, char chr, bool partial, const GFXfont *font)
     displays[dispNum].print(str);
 }
 
-void showChars(const uint dispNum, const String& chars, bool partial, const GFXfont *font) {
+void showChars(const uint dispNum, const String &chars, bool partial, const GFXfont *font)
+{
     displays[dispNum].setRotation(2);
     displays[dispNum].setFont(font);
     displays[dispNum].setTextColor(getFgColor());
@@ -354,35 +401,35 @@ void showChars(const uint dispNum, const String& chars, bool partial, const GFXf
     displays[dispNum].print(chars);
 }
 
-void showDigitPaged(const uint dispNum, char chr, bool partial, const GFXfont *font)
-{
-    String str(chr);
-    displays[dispNum].setRotation(2);
-    displays[dispNum].setFont(font);
-    displays[dispNum].setTextColor(getFgColor());
-    int16_t tbx, tby;
-    uint16_t tbw, tbh;
-    displays[dispNum].getTextBounds(str, 0, 0, &tbx, &tby, &tbw, &tbh);
-    // center the bounding box by transposition of the origin:
-    uint16_t x = ((displays[dispNum].width() - tbw) / 2) - tbx;
-    uint16_t y = ((displays[dispNum].height() - tbh) / 2) - tby;
-    if (partial)
-    {
-        displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(), displays[dispNum].height());
-    }
-    else
-    {
-        displays[dispNum].setFullWindow();
-    }
-    displays[dispNum].firstPage();
+// void showDigitPaged(const uint dispNum, char chr, bool partial, const GFXfont *font)
+// {
+//     String str(chr);
+//     displays[dispNum].setRotation(2);
+//     displays[dispNum].setFont(font);
+//     displays[dispNum].setTextColor(getFgColor());
+//     int16_t tbx, tby;
+//     uint16_t tbw, tbh;
+//     displays[dispNum].getTextBounds(str, 0, 0, &tbx, &tby, &tbw, &tbh);
+//     // center the bounding box by transposition of the origin:
+//     uint16_t x = ((displays[dispNum].width() - tbw) / 2) - tbx;
+//     uint16_t y = ((displays[dispNum].height() - tbh) / 2) - tby;
+//     if (partial)
+//     {
+//         displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(), displays[dispNum].height());
+//     }
+//     else
+//     {
+//         displays[dispNum].setFullWindow();
+//     }
+//     displays[dispNum].firstPage();
 
-    do
-    {
-        displays[dispNum].fillScreen(getBgColor());
-        displays[dispNum].setCursor(x, y);
-        displays[dispNum].print(str);
-    } while (displays[dispNum].nextPage());
-}
+//     do
+//     {
+//         displays[dispNum].fillScreen(getBgColor());
+//         displays[dispNum].setCursor(x, y);
+//         displays[dispNum].print(str);
+//     } while (displays[dispNum].nextPage());
+// }
 
 int getBgColor()
 {
@@ -406,11 +453,6 @@ void setFgColor(int color)
 
 std::array<String, NUM_SCREENS> getCurrentEpdContent()
 {
-    //  Serial.println("currentEpdContent");
-
-    // for (int i = 0; i < NUM_SCREENS; i++) {
-    //     Serial.printf("%d = %s", i, currentEpdContent[i]);
-    // }
     return currentEpdContent;
 }
 void renderText(const uint dispNum, const String &text, bool partial)
@@ -445,12 +487,12 @@ void renderText(const uint dispNum, const String &text, bool partial)
         }
     }
 
-    //displays[dispNum].display(partial);
+    // displays[dispNum].display(partial);
 }
 
 void renderQr(const uint dispNum, const String &text, bool partial)
 {
-    #ifdef USE_QR
+#ifdef USE_QR
 
     uint8_t tempBuffer[800];
     bool ok = qrcodegen_encodeText(text.substring(2).c_str(), tempBuffer, qrcode, qrcodegen_Ecc_LOW,
@@ -473,16 +515,19 @@ void renderQr(const uint dispNum, const String &text, bool partial)
             displays[dispNum].drawPixel(padding + x, paddingY + y, qrcodegen_getModule(qrcode, floor(float(x) / 4), floor(float(y) / 4)) ? GxEPD_BLACK : GxEPD_WHITE);
         }
     }
-    //displays[dispNum].display(partial);
+// displays[dispNum].display(partial);
 
-    //free(tempBuffer);
-    //free(qrcode);
-    #endif
+// free(tempBuffer);
+// free(qrcode);
+#endif
 }
 
-void waitUntilNoneBusy() {
-    for (int i = 0; i < NUM_SCREENS; i++) {
-        while (EPD_BUSY[i].digitalRead()) {
+void waitUntilNoneBusy()
+{
+    for (int i = 0; i < NUM_SCREENS; i++)
+    {
+        while (EPD_BUSY[i].digitalRead())
+        {
             vTaskDelay(10);
         }
     }

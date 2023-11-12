@@ -13,14 +13,7 @@ void setupWebserver()
     }
 
     events.onConnect([](AsyncEventSourceClient *client)
-                     {
-                         if (client->lastId())
-                         {
-                             Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
-                         }
-                         // send event with message "hello!", id current millis
-                         //  and set reconnect delay to 1 second
-                        client->send("welcome",NULL,millis(),1000); });
+                     { client->send("welcome", NULL, millis(), 1000); });
     server.addHandler(&events);
 
     server.serveStatic("/css", LittleFS, "/css/");
@@ -70,7 +63,8 @@ void setupWebserver()
     xTaskCreate(eventSourceTask, "eventSourceTask", 4096, NULL, tskIDLE_PRIORITY, &eventSourceTaskHandle);
 }
 
-void stopWebServer() {
+void stopWebServer()
+{
     server.end();
 }
 
@@ -145,8 +139,6 @@ void onApiStatus(AsyncWebServerRequest *request)
 void onApiActionPause(AsyncWebServerRequest *request)
 {
     setTimerActive(false);
-    Serial.println(F("Update timer paused"));
-
     request->send(200);
 };
 
@@ -156,10 +148,7 @@ void onApiActionPause(AsyncWebServerRequest *request)
  */
 void onApiActionTimerRestart(AsyncWebServerRequest *request)
 {
-    // moment = millis();
     setTimerActive(true);
-    Serial.println(F("Update timer restarted"));
-
     request->send(200);
 }
 
@@ -290,13 +279,13 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *ledFlashOnUpdate = request->getParam("ledFlashOnUpd", true);
 
         preferences.putBool("ledFlashOnUpd", ledFlashOnUpdate->value().toInt());
-        Serial.printf("Setting led flash on update to %d\r\n", ledFlashOnUpdate->value().toInt());
+//        Serial.printf("Setting led flash on update to %d\r\n", ledFlashOnUpdate->value().toInt());
         settingsChanged = true;
     }
     else
     {
         preferences.putBool("ledFlashOnUpd", 0);
-        Serial.print("Setting led flash on update to false");
+//        Serial.print("Setting led flash on update to false");
         settingsChanged = true;
     }
 
@@ -305,13 +294,13 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *stealFocusOnBlock = request->getParam("stealFocusOnBlock", true);
 
         preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
-        Serial.printf("Setting steal focus on new block to %d\r\n", stealFocusOnBlock->value().toInt());
+//        Serial.printf("Setting steal focus on new block to %d\r\n", stealFocusOnBlock->value().toInt());
         settingsChanged = true;
     }
     else
     {
         preferences.putBool("stealFocus", 0);
-        Serial.print("Setting steal focus on new block to false");
+//        Serial.print("Setting steal focus on new block to false");
         settingsChanged = true;
     }
 
@@ -326,7 +315,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
     else
     {
         preferences.putBool("mcapBigChar", 0);
-        Serial.print("Setting big characters for market cap to false");
+//        Serial.print("Setting big characters for market cap to false");
         settingsChanged = true;
     }
 
@@ -335,7 +324,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *mempoolInstance = request->getParam("mempoolInstance", true);
 
         preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
-        Serial.printf("Setting mempool instance to %s\r\n", mempoolInstance->value().c_str());
+//        Serial.printf("Setting mempool instance to %s\r\n", mempoolInstance->value().c_str());
         settingsChanged = true;
     }
 
@@ -344,7 +333,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *ledBrightness = request->getParam("ledBrightness", true);
 
         preferences.putUInt("ledBrightness", ledBrightness->value().toInt());
-        Serial.printf("Setting brightness to %d\r\n", ledBrightness->value().toInt());
+//        Serial.printf("Setting brightness to %d\r\n", ledBrightness->value().toInt());
         settingsChanged = true;
     }
 
@@ -353,7 +342,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *fullRefreshMin = request->getParam("fullRefreshMin", true);
 
         preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
-        Serial.printf("Set full refresh minutes to %d\r\n", fullRefreshMin->value().toInt());
+//        Serial.printf("Set full refresh minutes to %d\r\n", fullRefreshMin->value().toInt());
         settingsChanged = true;
     }
 
@@ -362,7 +351,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *wpTimeout = request->getParam("wpTimeout", true);
 
         preferences.putUInt("wpTimeout", wpTimeout->value().toInt());
-        Serial.printf("Set WiFi portal timeout seconds to %d\r\n", wpTimeout->value().toInt());
+//        Serial.printf("Set WiFi portal timeout seconds to %ld\r\n", wpTimeout->value().toInt());
         settingsChanged = true;
     }
 
@@ -378,7 +367,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
             AsyncWebParameter *screenParam = request->getParam(key, true);
             visible = screenParam->value().toInt();
         }
-        Serial.printf("Setting screen %d to %d\r\n", i, visible);
+//        Serial.printf("Setting screen %d to %d\r\n", i, visible);
 
         preferences.putBool(prefKey.c_str(), visible);
     }
@@ -388,7 +377,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *p = request->getParam("tzOffset", true);
         int tzOffsetSeconds = p->value().toInt() * 60;
         preferences.putInt("gmtOffset", tzOffsetSeconds);
-        Serial.printf("Setting tz offset to %d\r\n", tzOffsetSeconds);
+//        Serial.printf("Setting tz offset to %d\r\n", tzOffsetSeconds);
         settingsChanged = true;
     }
 
@@ -397,7 +386,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
         int minSecPriceUpd = p->value().toInt();
         preferences.putUInt("minSecPriceUpd", minSecPriceUpd);
-        Serial.printf("Setting minSecPriceUpd to %d\r\n", minSecPriceUpd);
+//        Serial.printf("Setting minSecPriceUpd to %d\r\n", minSecPriceUpd);
         settingsChanged = true;
     }
 
@@ -441,8 +430,6 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
     if (settingsChanged)
     {
         queueLedEffect(LED_FLASH_SUCCESS);
-
-        Serial.println(F("Settings changed"));
     }
 }
 
