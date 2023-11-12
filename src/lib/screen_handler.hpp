@@ -5,6 +5,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "price_fetch.hpp"
 #include "shared.hpp"
 #include "lib/epd.hpp"
 

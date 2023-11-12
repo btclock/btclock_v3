@@ -163,6 +163,7 @@ void setupPreferences()
 void setupWebsocketClients(void *pvParameters)
 {
     setupBlockNotify();
+  //  setupPriceFetchTask();
     setupPriceNotify();
 
     vTaskDelete(NULL);
