@@ -58,13 +58,15 @@ TaskHandle_t tasks[NUM_SCREENS];
 #define UPDATE_QUEUE_SIZE 14
 QueueHandle_t updateQueue;
 
-SemaphoreHandle_t epdUpdateSemaphore[NUM_SCREENS];
+//SemaphoreHandle_t epdUpdateSemaphore[NUM_SCREENS];
 
 int fgColor = GxEPD_WHITE;
 int bgColor = GxEPD_BLACK;
 
 #define FONT_SMALL Antonio_SemiBold20pt7b
 #define FONT_BIG Antonio_SemiBold90pt7b
+
+std::mutex epdUpdateMutex;
 
 uint8_t qrcode[800];
 
@@ -89,8 +91,8 @@ void setupDisplays()
 
     for (uint i = 0; i < NUM_SCREENS; i++)
     {
-        epdUpdateSemaphore[i] = xSemaphoreCreateBinary();
-        xSemaphoreGive(epdUpdateSemaphore[i]);
+        // epdUpdateSemaphore[i] = xSemaphoreCreateBinary();
+        // xSemaphoreGive(epdUpdateSemaphore[i]);
 
         int *taskParam = new int;
         *taskParam = i;
@@ -116,6 +118,8 @@ void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent)
 
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent, bool forceUpdate)
 {
+    std::lock_guard<std::mutex> lock(epdUpdateMutex);
+
     for (uint i = 0; i < NUM_SCREENS; i++)
     {
         if (newEpdContent[i].compareTo(currentEpdContent[i]) != 0 || forceUpdate)
@@ -123,15 +127,8 @@ void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent, bool forceUpda
             epdContent[i] = newEpdContent[i];
             UpdateDisplayTaskItem dispUpdate = {i};
             xQueueSend(updateQueue, &dispUpdate, portMAX_DELAY);
-            // if (xSemaphoreTake(epdUpdateSemaphore[i], pdMS_TO_TICKS(5000)) == pdTRUE)
-            // {
-            //     xTaskNotifyGive(tasks[i]);
-            // }
         }
     }
-
-    if (eventSourceTaskHandle != NULL)
-        xTaskNotifyGive(eventSourceTaskHandle);
 }
 
 void prepareDisplayUpdateTask(void *pvParameters)
@@ -191,22 +188,17 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
         // Wait for the task notification
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        // if (xSemaphoreTake(epdUpdateSemaphore[epdIndex], pdMS_TO_TICKS(5000)) == pdTRUE)
-        // {
+        
             uint count = 0;
             while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
             {
                 vTaskDelay(pdMS_TO_TICKS(100));
-                // if (count >= 9)
-                // {
-                //     displays[epdIndex].init(0, false);
-                // }
                 count++;
             }
 
             bool updatePartial = true;
 
-            // Full Refresh every half hour
+            // Full Refresh every x minutes
             if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
             {
                 updatePartial = false;
@@ -222,14 +214,15 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
                     if (!updatePartial) 
                         lastFullRefresh[epdIndex] = millis();
                     break;
+
+
+                    if (eventSourceTaskHandle != NULL)
+                        xTaskNotifyGive(eventSourceTaskHandle);
                 }
 
                 vTaskDelay(pdMS_TO_TICKS(100));
                 tries++;
             }
-
-        //     xSemaphoreGive(epdUpdateSemaphore[epdIndex]);
-        // }
     }
 }
 
@@ -334,9 +327,6 @@ void renderText(const uint dispNum, const String &text, bool partial)
     displays[dispNum].fillScreen(GxEPD_WHITE);
     displays[dispNum].setTextColor(GxEPD_BLACK);
     displays[dispNum].setCursor(0, 50);
-    //   displays[dispNum].setFont(&FreeSans9pt7b);
-
-    // std::regex pattern("/\*(.*)\*/");
 
     std::stringstream ss;
     ss.str(text.c_str());
@@ -358,8 +348,6 @@ void renderText(const uint dispNum, const String &text, bool partial)
             displays[dispNum].println(line.c_str());
         }
     }
-
-    // displays[dispNum].display(partial);
 }
 
 void renderQr(const uint dispNum, const String &text, bool partial)
@@ -387,10 +375,6 @@ void renderQr(const uint dispNum, const String &text, bool partial)
             displays[dispNum].drawPixel(padding + x, paddingY + y, qrcodegen_getModule(qrcode, floor(float(x) / 4), floor(float(y) / 4)) ? GxEPD_BLACK : GxEPD_WHITE);
         }
     }
-// displays[dispNum].display(partial);
-
-// free(tempBuffer);
-// free(qrcode);
 #endif
 }
 
@@ -403,8 +387,11 @@ void waitUntilNoneBusy()
         {
             count++;
             vTaskDelay(10);
-            if (count > 200) {
+            if (count == 200) {
                 displays[i].init(0, false);
+                vTaskDelay(100);
+            } else if (count > 205) {
+                break;
             }
         }
     }

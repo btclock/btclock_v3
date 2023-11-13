@@ -10,8 +10,7 @@ esp_timer_handle_t minuteTimer;
 
 std::array<String, NUM_SCREENS> taskEpdContent = {"", "", "", "", "", "", ""};
 std::string priceString;
-const int usPerSecond = 1000000;
-const int usPerMinute = 60 * usPerSecond;
+
 
 // typedef enum
 // {

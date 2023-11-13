@@ -9,6 +9,7 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <regex>
+#include <mutex>
 
 #ifdef USE_QR
 #include "qrcodegen.h"

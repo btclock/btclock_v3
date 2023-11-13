@@ -12,6 +12,7 @@ void setupWebserver()
         return;
     }
 
+
     events.onConnect([](AsyncEventSourceClient *client)
                      { client->send("welcome", NULL, millis(), 1000); });
     server.addHandler(&events);
@@ -280,8 +281,8 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
         AsyncWebParameter *fgColor = request->getParam("fgColor", true);
         preferences.putUInt("fgColor", strtol(fgColor->value().c_str(), NULL, 16));
         setFgColor(int(strtol(fgColor->value().c_str(), NULL, 16)));
-        Serial.print(F("Setting foreground color to "));
-        Serial.println(fgColor->value().c_str());
+        // Serial.print(F("Setting foreground color to "));
+        // Serial.println(fgColor->value().c_str());
         settingsChanged = true;
     }
     if (request->hasParam("bgColor", true))
@@ -290,8 +291,8 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
 
         preferences.putUInt("bgColor", strtol(bgColor->value().c_str(), NULL, 16));
         setBgColor(int(strtol(bgColor->value().c_str(), NULL, 16)));
-        Serial.print(F("Setting background color to "));
-        Serial.println(bgColor->value().c_str());
+        // Serial.print(F("Setting background color to "));
+        // Serial.println(bgColor->value().c_str());
         settingsChanged = true;
     }
 

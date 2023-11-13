@@ -119,7 +119,6 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_i
         break;
     case WEBSOCKET_EVENT_DATA:
         onWebsocketMessage(data);
-        // Handle the received WebSocket message (block notifications) here
         break;
     case WEBSOCKET_EVENT_ERROR:
         Serial.println(F("Mempool.space WS Connnection error"));
@@ -143,8 +142,7 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
         currentBlockHeight = block["height"].as<uint>();
 
         Serial.printf("New block found: %d\r\n", block["height"].as<uint>());
-        size_t prefWrite = preferences.putUInt("blockHeight", currentBlockHeight);
-        Serial.printf("Wrote %d for block\r\n", prefWrite);
+        preferences.putUInt("blockHeight", currentBlockHeight);
 
         if (workQueue != nullptr)
         {
@@ -154,7 +152,16 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data)
 
             if (getCurrentScreen() != SCREEN_BLOCK_HEIGHT && preferences.getBool("stealFocus", true))
             {
+                uint64_t timerPeriod = 0;
+                if (isTimerActive()) {
+                    // store timer periode before making inactive to prevent artifacts
+                    timerPeriod = getTimerSeconds();
+                    esp_timer_stop(screenRotateTimer);
+                }
                 setCurrentScreen(SCREEN_BLOCK_HEIGHT);
+                if (timerPeriod > 0) {
+                    esp_timer_start_periodic(screenRotateTimer, timerPeriod * usPerSecond);
+                }
             }
 
             if (getCurrentScreen() == SCREEN_BLOCK_HEIGHT && preferences.getBool("ledFlashOnUpd", false))

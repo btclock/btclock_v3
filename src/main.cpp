@@ -5,6 +5,7 @@
 
 #include "lib/config.hpp"
 #define USE_QR
+
 //char ptrTaskList[400];
 
 extern "C" void app_main()

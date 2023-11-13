@@ -21,6 +21,8 @@ const PROGMEM int SCREEN_COUNTDOWN = 98;
 const PROGMEM int SCREEN_CUSTOM = 99;
 const int SCREEN_COUNT = 6;
 const PROGMEM int screens[SCREEN_COUNT] = { SCREEN_BLOCK_HEIGHT, SCREEN_MSCW_TIME, SCREEN_BTC_TICKER, SCREEN_TIME, SCREEN_HALVING_COUNTDOWN, SCREEN_MARKET_CAP };
+const int usPerSecond = 1000000;
+const int usPerMinute = 60 * usPerSecond;
 
 struct SpiRamAllocator {
   void* allocate(size_t size) {
