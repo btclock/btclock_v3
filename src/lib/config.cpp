@@ -38,6 +38,9 @@ void setup()
 
     setupButtonTask();
     setupOTA();
+
+    waitUntilNoneBusy();
+    forceFullRefresh();
 }
 
 void tryImprovSetup()

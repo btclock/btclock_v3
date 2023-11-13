@@ -11,7 +11,6 @@ esp_timer_handle_t minuteTimer;
 std::array<String, NUM_SCREENS> taskEpdContent = {"", "", "", "", "", "", ""};
 std::string priceString;
 
-
 // typedef enum
 // {
 //     TASK_PRICE_UPDATE,
@@ -49,20 +48,23 @@ void workerTask(void *pvParameters)
                 firstIndex = 0;
                 uint price = getPrice();
                 char priceSymbol = '$';
+                if (preferences.getBool("fetchEurPrice", false))
+                {
+                    priceSymbol = '[';
+                }
                 if (getCurrentScreen() == SCREEN_BTC_TICKER)
                 {
-                    if (preferences.getBool("fetchEurPrice", false)) {
-                        priceSymbol = '[';
-                    }
-
                     priceString = (priceSymbol + String(price)).c_str();
 
                     if (priceString.length() < (NUM_SCREENS))
                     {
                         priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                        if (preferences.getBool("fetchEurPrice", false)) {
+                        if (preferences.getBool("fetchEurPrice", false))
+                        {
                             taskEpdContent[0] = "BTC/EUR";
-                        } else {
+                        }
+                        else
+                        {
                             taskEpdContent[0] = "BTC/USD";
                         }
                         firstIndex = 1;
@@ -75,7 +77,12 @@ void workerTask(void *pvParameters)
                     if (priceString.length() < (NUM_SCREENS))
                     {
                         priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                        taskEpdContent[0] = "MSCW/TIME";
+                        if (preferences.getBool("fetchEurPrice", false))
+                        {
+                            taskEpdContent[0] = "SATS/EUR";
+                        } else {
+                            taskEpdContent[0] = "MSCW/TIME";
+                        }
                         firstIndex = 1;
                     }
                 }
@@ -84,13 +91,20 @@ void workerTask(void *pvParameters)
                     double supply = getSupplyAtBlock(getBlockHeight());
                     int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
 
-                    taskEpdContent[0] = "USD/MCAP";
+                    if (preferences.getBool("fetchEurPrice", false))
+                    {
+                        taskEpdContent[0] = "EUR/MCAP";
+                    }
+                    else
+                    {
+                        taskEpdContent[0] = "USD/MCAP";
+                    }
 
                     if (preferences.getBool("mcapBigChar", true))
                     {
                         firstIndex = 1;
 
-                        priceString = "$" + formatNumberWithSuffix(marketCap);
+                        priceString = priceSymbol + formatNumberWithSuffix(marketCap);
                         priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
                     }
                     else
@@ -209,7 +223,6 @@ void workerTask(void *pvParameters)
     }
 }
 
-
 void taskScreenRotate(void *pvParameters)
 {
     for (;;)
@@ -232,10 +245,11 @@ void taskScreenRotate(void *pvParameters)
 void IRAM_ATTR minuteTimerISR(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-//    vTaskNotifyGiveFromISR(timeUpdateTaskHandle, &xHigherPriorityTaskWoken);
+    //    vTaskNotifyGiveFromISR(timeUpdateTaskHandle, &xHigherPriorityTaskWoken);
     WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
     xQueueSendFromISR(workQueue, &timeUpdate, &xHigherPriorityTaskWoken);
-    if (priceFetchTaskHandle != NULL) {
+    if (priceFetchTaskHandle != NULL)
+    {
         vTaskNotifyGiveFromISR(priceFetchTaskHandle, &xHigherPriorityTaskWoken);
     }
     if (xHigherPriorityTaskWoken == pdTRUE)
@@ -287,10 +301,10 @@ void setupTimeUpdateTimer(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS((secondsUntilNextMinute * 1000)));
 
     esp_timer_start_periodic(minuteTimer, usPerMinute);
-    
+
     WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
     xQueueSend(workQueue, &timeUpdate, portMAX_DELAY);
-//    xTaskNotifyGive(timeUpdateTaskHandle);
+    //    xTaskNotifyGive(timeUpdateTaskHandle);
 
     vTaskDelete(NULL);
 }
@@ -365,7 +379,7 @@ void setCurrentScreen(uint newScreen)
     {
         WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
         xQueueSend(workQueue, &timeUpdate, portMAX_DELAY);
-      //  xTaskNotifyGive(timeUpdateTaskHandle);
+        //  xTaskNotifyGive(timeUpdateTaskHandle);
         break;
     }
     case SCREEN_HALVING_COUNTDOWN:
@@ -373,7 +387,7 @@ void setCurrentScreen(uint newScreen)
     {
         WorkItem blockUpdate = {TASK_BLOCK_UPDATE, 0};
         xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
-        //xTaskNotifyGive(blockUpdateTaskHandle);
+        // xTaskNotifyGive(blockUpdateTaskHandle);
         break;
     }
     case SCREEN_MARKET_CAP:
@@ -382,7 +396,7 @@ void setCurrentScreen(uint newScreen)
     {
         WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
         xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
-        //xTaskNotifyGive(priceUpdateTaskHandle);
+        // xTaskNotifyGive(priceUpdateTaskHandle);
         break;
     }
     }

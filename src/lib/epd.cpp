@@ -67,6 +67,7 @@ int bgColor = GxEPD_BLACK;
 #define FONT_BIG Antonio_SemiBold90pt7b
 
 std::mutex epdUpdateMutex;
+std::mutex epdMutex[NUM_SCREENS];
 
 uint8_t qrcode[800];
 
@@ -160,7 +161,7 @@ void prepareDisplayUpdateTask(void *pvParameters)
         if (xQueueReceive(updateQueue, &receivedItem, portMAX_DELAY))
         {
             uint epdIndex = receivedItem.dispNum;
-
+            std::lock_guard<std::mutex> lock(epdMutex[epdIndex]);
            // displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
 
             bool updatePartial = true;
@@ -206,6 +207,8 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
     {
         // Wait for the task notification
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        std::lock_guard<std::mutex> lock(epdMutex[epdIndex]);
 
         uint count = 0;
         while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
@@ -411,6 +414,7 @@ void waitUntilNoneBusy()
             }
             else if (count > 205)
             {
+                Serial.printf("Busy timeout %d", i);
                 break;
             }
         }
