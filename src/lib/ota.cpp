@@ -9,7 +9,7 @@ void setupOTA()
     ArduinoOTA.onStart(onOTAStart);
 
     ArduinoOTA.onProgress(onOTAProgress);
-
+    ArduinoOTA.onError(onOTAError);
     ArduinoOTA.onEnd(onOTAComplete);
 
     ArduinoOTA.setHostname(getMyHostname().c_str());
@@ -78,6 +78,14 @@ void handleOTATask(void *parameter)
 
 void downloadUpdate()
 {
+}
+
+void onOTAError(ota_error_t error) {
+  Serial.println("\nOTA update error, restarting");
+  Wire.end();
+  SPI.end();
+  delay(1000);
+  ESP.restart(); 
 }
 
 void onOTAComplete()
