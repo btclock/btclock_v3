@@ -245,14 +245,15 @@ void setLights(int r, int g, int b)
 
 void setLights(uint32_t color)
 {
-    preferences.putUInt("ledColor", color);
 
     bool ledStatus = true;
     if (color == pixels.Color(0, 0, 0))
     {
         ledStatus = false;
+    } else {
+        preferences.putUInt("ledColor", color);
     }
-    preferences.putBool("ledStatus", false);
+    preferences.putBool("ledStatus", ledStatus);
 
     for (int i = 0; i < NEOPIXEL_COUNT; i++)
     {

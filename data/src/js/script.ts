@@ -98,10 +98,10 @@ fetch('/api/settings', {
     .then(response => response.json())
     .then(jsonData => {
         var fgColor = ("0x" + jsonData.fgColor.toString(16).toUpperCase());
-        if (jsonData.epdColors == 2) {
-            document.getElementById('fgColor').querySelector('[value="0xF800"]').remove();
-            document.getElementById('bgColor').querySelector('[value="0xF800"]').remove();
-        }
+        // if (jsonData.epdColors == 2) {
+        //     document.getElementById('fgColor').querySelector('[value="0xF800"]').remove();
+        //     document.getElementById('bgColor').querySelector('[value="0xF800"]').remove();
+        // }
 
         document.getElementById('customText').setAttribute('maxlength', jsonData.numScreens);
         document.getElementById('output').classList.add("fg-" + jsonData.fgColor.toString(16));
