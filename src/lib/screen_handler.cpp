@@ -216,12 +216,12 @@ void taskScreenRotate(void *pvParameters)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        int nextScreen = (currentScreen + 1) % 5;
+        int nextScreen = (currentScreen + 1) % SCREEN_COUNT;
         String key = "screen" + String(nextScreen) + "Visible";
 
         while (!preferences.getBool(key.c_str(), true))
         {
-            nextScreen = (nextScreen + 1) % 5;
+            nextScreen = (nextScreen + 1) % SCREEN_COUNT;
             key = "screen" + String(nextScreen) + "Visible";
         }
 
