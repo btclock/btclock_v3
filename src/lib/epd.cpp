@@ -58,7 +58,7 @@ TaskHandle_t tasks[NUM_SCREENS];
 #define UPDATE_QUEUE_SIZE 14
 QueueHandle_t updateQueue;
 
-//SemaphoreHandle_t epdUpdateSemaphore[NUM_SCREENS];
+// SemaphoreHandle_t epdUpdateSemaphore[NUM_SCREENS];
 
 int fgColor = GxEPD_WHITE;
 int bgColor = GxEPD_BLACK;
@@ -96,7 +96,7 @@ void setupDisplays()
 
         int *taskParam = new int;
         *taskParam = i;
-        
+
         xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 2048, taskParam, 11, &tasks[i]); // create task
     }
 
@@ -141,7 +141,7 @@ void prepareDisplayUpdateTask(void *pvParameters)
         if (xQueueReceive(updateQueue, &receivedItem, portMAX_DELAY))
         {
             uint epdIndex = receivedItem.dispNum;
-            
+
             displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
 
             bool updatePartial = true;
@@ -188,44 +188,42 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
         // Wait for the task notification
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        
-            uint count = 0;
-            while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
+        uint count = 0;
+        while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
+        {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            count++;
+        }
+
+        bool updatePartial = true;
+
+        // Full Refresh every x minutes
+        if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
+        {
+            updatePartial = false;
+        }
+
+        char tries = 0;
+        while (tries < 3)
+        {
+            if (displays[epdIndex].displayWithReturn(updatePartial))
             {
-                vTaskDelay(pdMS_TO_TICKS(100));
-                count++;
+                displays[epdIndex].powerOff();
+                currentEpdContent[epdIndex] = epdContent[epdIndex];
+                if (!updatePartial)
+                    lastFullRefresh[epdIndex] = millis();
+
+                if (eventSourceTaskHandle != NULL)
+                    xTaskNotifyGive(eventSourceTaskHandle);
+
+                break;
             }
 
-            bool updatePartial = true;
-
-            // Full Refresh every x minutes
-            if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
-            {
-                updatePartial = false;
-            }
-
-            char tries = 0;
-            while (tries < 3)
-            {
-                if (displays[epdIndex].displayWithReturn(updatePartial))
-                {
-                    displays[epdIndex].hibernate();
-                    currentEpdContent[epdIndex] = epdContent[epdIndex];
-                    if (!updatePartial) 
-                        lastFullRefresh[epdIndex] = millis();
-                    break;
-
-
-                    if (eventSourceTaskHandle != NULL)
-                        xTaskNotifyGive(eventSourceTaskHandle);
-                }
-
-                vTaskDelay(pdMS_TO_TICKS(100));
-                tries++;
-            }
+            vTaskDelay(pdMS_TO_TICKS(100));
+            tries++;
+        }
     }
 }
-
 
 void splitText(const uint dispNum, const String &top, const String &bottom, bool partial)
 {
@@ -387,10 +385,13 @@ void waitUntilNoneBusy()
         {
             count++;
             vTaskDelay(10);
-            if (count == 200) {
+            if (count == 200)
+            {
                 displays[i].init(0, false);
                 vTaskDelay(100);
-            } else if (count > 205) {
+            }
+            else if (count > 205)
+            {
                 break;
             }
         }
