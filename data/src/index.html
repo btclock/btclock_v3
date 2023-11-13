@@ -71,7 +71,7 @@
             <div>
               <p>Uptime: {{#if uptime.h }}{{ uptime.h }}h {{/if}}{{ uptime.m }}m {{ uptime.s }}s</p>
               <p>
-                Price connection:
+                WS Price connection:
                 <span>
                 {{#if connectionStatus.price}}
                 &#9989;
@@ -80,14 +80,15 @@
                 {{/if}}
                 </span>
                 - 
-                Mempool.space connection:
+                WS Mempool.space connection:
                 <span>
                   {{#if connectionStatus.blocks}}
                   &#9989;
                   {{else}}
                   &#10060;
                   {{/if}}
-                </span>
+                </span><br>
+                <small>If you use "Fetch &euro; price" the WS Price connection will show &#10060; since it uses another data source.</small>
               </p>
             </div>
           </div>
@@ -262,7 +263,16 @@
                   <label class="form-check-label" for="mdnsEnabled">mDNS (restart required)</label>
                 </div>
               </div>
-              
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="fetchEurPrice" name="fetchEurPrice" value="1">
+                  <label class="form-check-label" for="fetchEurPrice">Fetch &euro; price (restart required)</label>
+                </div>
+              </div>
+            </div>
+            <div>
               <script id="screens-template" type="text/x-handlebars-template">
               <div class="row">
                 <div class="col-sm-6">

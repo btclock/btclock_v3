@@ -120,6 +120,8 @@ void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent, bool forceUpda
 {
     std::lock_guard<std::mutex> lock(epdUpdateMutex);
 
+    waitUntilNoneBusy();
+
     for (uint i = 0; i < NUM_SCREENS; i++)
     {
         if (newEpdContent[i].compareTo(currentEpdContent[i]) != 0 || forceUpdate)
@@ -387,7 +389,7 @@ void waitUntilNoneBusy()
             vTaskDelay(10);
             if (count == 200)
             {
-                displays[i].init(0, false);
+                //displays[i].init(0, false);
                 vTaskDelay(100);
             }
             else if (count > 205)

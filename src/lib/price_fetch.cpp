@@ -27,17 +27,17 @@ void taskPriceFetch(void *pvParameters)
             String payload = http->getString();
             StaticJsonDocument<96> doc;
             deserializeJson(doc, payload);
-            usdPrice = doc["bitcoin"]["usd"];
-            eurPrice = doc["bitcoin"]["eur"];
+//            usdPrice = doc["bitcoin"]["usd"];
+            eurPrice = doc["bitcoin"]["eur"].as<uint>();
 
-            setPrice(usdPrice);
+            setPrice(eurPrice);
             if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER || getCurrentScreen() == SCREEN_MSCW_TIME || getCurrentScreen() == SCREEN_MARKET_CAP))
             {
                 WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
                 xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
             }
 
-            preferences.putUInt("lastPrice", usdPrice);
+            preferences.putUInt("lastPrice", eurPrice);
         }
         else
         {

@@ -167,8 +167,12 @@ void setupPreferences()
 void setupWebsocketClients(void *pvParameters)
 {
     setupBlockNotify();
-  //  setupPriceFetchTask();
-    setupPriceNotify();
+
+    if (preferences.getBool("fetchEurPrice", false)) {
+        setupPriceFetchTask();
+    } else {
+        setupPriceNotify();
+    }
 
     vTaskDelete(NULL);
 }

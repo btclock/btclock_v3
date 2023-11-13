@@ -48,14 +48,23 @@ void workerTask(void *pvParameters)
             {
                 firstIndex = 0;
                 uint price = getPrice();
+                char priceSymbol = '$';
                 if (getCurrentScreen() == SCREEN_BTC_TICKER)
                 {
-                    priceString = ("$" + String(price)).c_str();
+                    if (preferences.getBool("fetchEurPrice", false)) {
+                        priceSymbol = '[';
+                    }
+
+                    priceString = (priceSymbol + String(price)).c_str();
 
                     if (priceString.length() < (NUM_SCREENS))
                     {
                         priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                        taskEpdContent[0] = "BTC/USD";
+                        if (preferences.getBool("fetchEurPrice", false)) {
+                            taskEpdContent[0] = "BTC/EUR";
+                        } else {
+                            taskEpdContent[0] = "BTC/USD";
+                        }
                         firstIndex = 1;
                     }
                 }
@@ -154,7 +163,7 @@ void workerTask(void *pvParameters)
                     taskEpdContent[1] = "HALV/ING";
                     taskEpdContent[(NUM_SCREENS - 5)] = String(years) + "/YRS";
                     taskEpdContent[(NUM_SCREENS - 4)] = String(days) + "/DAYS";
-                    taskEpdContent[(NUM_SCREENS - 3)] = String(days) + "/HRS";
+                    taskEpdContent[(NUM_SCREENS - 3)] = String(hours) + "/HRS";
                     taskEpdContent[(NUM_SCREENS - 2)] = String(mins) + "/MINS";
                     taskEpdContent[(NUM_SCREENS - 1)] = "TO/GO";
                 }

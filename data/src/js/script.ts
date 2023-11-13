@@ -23,6 +23,13 @@ let processStatusData = (jsonData) => {
     var source = document.getElementById("entry-template").innerHTML;
     var template = Handlebars.compile(source);
 
+
+    let index = jsonData.data.findIndex(d => d === '[');
+
+    if (index !== -1) {
+        jsonData.data[index] = '&euro;';
+    }
+
     var context = {
         timerRunning: jsonData.timerRunning,
         memFreePercent: Math.round(jsonData.espFreeHeap / jsonData.espHeapSize * 100),
@@ -46,7 +53,7 @@ if (!!window.EventSource) {
     const connectEventSource = () => {
         let source = new EventSource('/events');
 
-        source.addEventListener('open', (e)  => {
+        source.addEventListener('open', (e) => {
             console.log("Status EventSource Connected");
             if (e.data) {
                 processStatusData(JSON.parse(e.data));
@@ -127,6 +134,9 @@ fetch('/api/settings', {
 
         if (jsonData.ledTestOnPower)
             document.getElementById('ledTestOnPower').checked = true;
+
+        if (jsonData.fetchEurPrice)
+            document.getElementById('fetchEurPrice').checked = true;
 
         // let nodeFields = ["rpcHost", "rpcPort", "rpcUser", "tzOffset"];
 

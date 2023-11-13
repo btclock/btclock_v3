@@ -244,7 +244,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["mcapBigChar"] = preferences.getBool("mcapBigChar", true);
     root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", true);
     root["otaEnabled"] = preferences.getBool("otaEnabled", true);
-
+    root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", false);
     root["hostname"] = getMyHostname();
     root["ip"] = WiFi.localIP();
 
@@ -304,6 +304,19 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
     bool settingsChanged = false;
 
     settingsChanged = processEpdColorSettings(request);
+
+    if (request->hasParam("fetchEurPrice", true))
+    {
+        AsyncWebParameter *fetchEurPrice = request->getParam("fetchEurPrice", true);
+
+        preferences.putBool("fetchEurPrice", fetchEurPrice->value().toInt());
+        settingsChanged = true;
+    }
+    else
+    {
+        preferences.putBool("fetchEurPrice", 0);
+        settingsChanged = true;
+    }
 
     if (request->hasParam("ledTestOnPower", true))
     {
