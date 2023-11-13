@@ -5,6 +5,7 @@
 Preferences preferences;
 Adafruit_MCP23X17 mcp;
 std::vector<std::string> screenNameMap(SCREEN_COUNT);
+std::mutex mcpMutex;
 
 void setup()
 {
@@ -15,12 +16,15 @@ void setup()
     {
         queueLedEffect(LED_POWER_TEST);
     }
-    if (mcp.digitalRead(3) == LOW)
     {
-        preferences.putBool("wifiConfigured", false);
+        std::lock_guard<std::mutex> lockMcp(mcpMutex);
+        if (mcp.digitalRead(3) == LOW)
+        {
+            preferences.putBool("wifiConfigured", false);
 
-        WiFi.eraseAP();
-        queueLedEffect(LED_EFFECT_WIFI_ERASE_SETTINGS);
+            WiFi.eraseAP();
+            queueLedEffect(LED_EFFECT_WIFI_ERASE_SETTINGS);
+        }
     }
 
     tryImprovSetup();
@@ -56,8 +60,13 @@ void tryImprovSetup()
         uint8_t x_buffer[16];
         uint8_t x_position = 0;
 
+        bool buttonPress = false;
+        {
+            std::lock_guard<std::mutex> lockMcp(mcpMutex);
+            buttonPress = (mcp.digitalRead(2) == LOW);
+        }
         // Hold second button to start QR code wifi config
-        if (mcp.digitalRead(2) == LOW)
+        if (buttonPress)
         {
             WiFiManager wm;
 
@@ -81,8 +90,7 @@ void tryImprovSetup()
                 const String qrText = "qrWIFI:S:" + wifiManager->getConfigPortalSSID() + ";T:WPA;P:" + softAP_password.c_str() + ";;";
                 const String explainText = "*SSID: *\r\n" + wifiManager->getConfigPortalSSID() + "\r\n\r\n*Password:*\r\n" + softAP_password;
                 std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "To setup\r\nscan QR or\r\nconnect\r\nmanually", "", explainText, "", qrText};
-                setEpdContent(epdContent);
-                 });
+                setEpdContent(epdContent); });
 
             wm.setSaveConfigCallback([]()
                                      {
@@ -133,7 +141,7 @@ void tryImprovSetup()
             vTaskDelay(pdMS_TO_TICKS(400));
         }
     }
-   // queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
+    // queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
 }
 
 void setupTime()
@@ -153,7 +161,6 @@ void setupPreferences()
 {
     preferences.begin("btclock", false);
 
-
     setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
     setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
     setBlockHeight(preferences.getUInt("blockHeight", 816000));
@@ -171,9 +178,12 @@ void setupWebsocketClients(void *pvParameters)
 {
     setupBlockNotify();
 
-    if (preferences.getBool("fetchEurPrice", false)) {
+    if (preferences.getBool("fetchEurPrice", false))
+    {
         setupPriceFetchTask();
-    } else {
+    }
+    else
+    {
         setupPriceNotify();
     }
 
@@ -211,7 +221,7 @@ void setupHardware()
     WiFi.setHostname(getMyHostname().c_str());
     ;
     if (!psramInit())
-      {
+    {
         Serial.println(F("PSRAM not available"));
     }
 
@@ -449,60 +459,63 @@ void WiFiEvent(WiFiEvent_t event)
 {
     Serial.printf("[WiFi-event] event: %d\n", event);
 
-    switch (event) {
-        case ARDUINO_EVENT_WIFI_READY: 
-            Serial.println("WiFi interface ready");
-            break;
-        case ARDUINO_EVENT_WIFI_SCAN_DONE:
-            Serial.println("Completed scan for access points");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_START:
-            Serial.println("WiFi client started");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_STOP:
-            Serial.println("WiFi clients stopped");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-            Serial.println("Connected to access point");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-            Serial.println("Disconnected from WiFi access point");
-            queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
-            break;
-        case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-            Serial.println("Authentication mode of access point has changed");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-            Serial.print("Obtained IP address: ");
-            Serial.println(WiFi.localIP());
-            break;
-        case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-            Serial.println("Lost IP address and IP address is reset to 0");
-            queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
-            break;
-        case ARDUINO_EVENT_WIFI_AP_START:
-            Serial.println("WiFi access point started");
-            break;
-        case ARDUINO_EVENT_WIFI_AP_STOP:
-            Serial.println("WiFi access point  stopped");
-            break;
-        case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
-            Serial.println("Client connected");
-            break;
-        case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
-            Serial.println("Client disconnected");
-            break;
-        case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
-            Serial.println("Assigned IP address to client");
-            break;
-        case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
-            Serial.println("Received probe request");
-            break;
-        case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
-            Serial.println("AP IPv6 is preferred");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-            Serial.println("STA IPv6 is preferred");
-            break;
-        default: break;
-    }}
+    switch (event)
+    {
+    case ARDUINO_EVENT_WIFI_READY:
+        Serial.println("WiFi interface ready");
+        break;
+    case ARDUINO_EVENT_WIFI_SCAN_DONE:
+        Serial.println("Completed scan for access points");
+        break;
+    case ARDUINO_EVENT_WIFI_STA_START:
+        Serial.println("WiFi client started");
+        break;
+    case ARDUINO_EVENT_WIFI_STA_STOP:
+        Serial.println("WiFi clients stopped");
+        break;
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+        Serial.println("Connected to access point");
+        break;
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+        Serial.println("Disconnected from WiFi access point");
+        queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+        break;
+    case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
+        Serial.println("Authentication mode of access point has changed");
+        break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+        Serial.print("Obtained IP address: ");
+        Serial.println(WiFi.localIP());
+        break;
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+        Serial.println("Lost IP address and IP address is reset to 0");
+        queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+        break;
+    case ARDUINO_EVENT_WIFI_AP_START:
+        Serial.println("WiFi access point started");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STOP:
+        Serial.println("WiFi access point  stopped");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+        Serial.println("Client connected");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+        Serial.println("Client disconnected");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+        Serial.println("Assigned IP address to client");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
+        Serial.println("Received probe request");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
+        Serial.println("AP IPv6 is preferred");
+        break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
+        Serial.println("STA IPv6 is preferred");
+        break;
+    default:
+        break;
+    }
+}

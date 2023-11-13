@@ -98,6 +98,8 @@ void refreshFromMemory()
 
 void setupDisplays()
 {
+    std::lock_guard<std::mutex> lockMcp(mcpMutex);
+
     for (uint i = 0; i < NUM_SCREENS; i++)
     {
         displays[i].init(0, true, 30);
@@ -209,7 +211,12 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         std::lock_guard<std::mutex> lock(epdMutex[epdIndex]);
-        displays[epdIndex].init(0, false, 40);
+
+        {
+            std::lock_guard<std::mutex> lockMcp(mcpMutex);
+
+            displays[epdIndex].init(0, false, 40);
+        }
         uint count = 0;
         while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
         {

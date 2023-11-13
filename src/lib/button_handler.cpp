@@ -9,6 +9,8 @@ void buttonTask(void *parameter)
     while (1)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        std::lock_guard<std::mutex> lock(mcpMutex);
+
         TickType_t currentTime = xTaskGetTickCount();
         if ((currentTime - lastDebounceTime) >= debounceDelay)
         {
@@ -35,11 +37,14 @@ void buttonTask(void *parameter)
                 }
             }
             mcp.clearInterrupts();
-            // Very ugly, but for some reason this is necessary
-            while (!digitalRead(MCP_INT_PIN))
-            {
-                mcp.clearInterrupts();
-            }
+        }
+        else
+        {
+        }
+        // Very ugly, but for some reason this is necessary
+        while (!digitalRead(MCP_INT_PIN))
+        {
+            mcp.clearInterrupts();
         }
     }
 }

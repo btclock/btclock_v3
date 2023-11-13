@@ -5,10 +5,13 @@
 #include <Adafruit_MCP23X17.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include <mutex>
+
 #include "utils.hpp"
 
 extern Adafruit_MCP23X17 mcp;
 extern Preferences preferences;
+extern std::mutex mcpMutex;
 
 const PROGMEM int SCREEN_BLOCK_HEIGHT = 0;
 const PROGMEM int SCREEN_MSCW_TIME = 1;
