@@ -209,7 +209,7 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         std::lock_guard<std::mutex> lock(epdMutex[epdIndex]);
-
+        displays[epdIndex].init(0, false, 40);
         uint count = 0;
         while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
         {
