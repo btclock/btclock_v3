@@ -78,11 +78,28 @@ void forceFullRefresh()
     }
 }
 
+void refreshFromMemory()
+{
+    for (uint i = 0; i < NUM_SCREENS; i++)
+    {
+        int *taskParam = new int;
+        *taskParam = i;
+
+        xTaskCreate([](void *pvParameters)
+                    {
+            const int epdIndex = *(int *)pvParameters;
+            delete (int *)pvParameters;
+           displays[epdIndex].refresh(false);
+           vTaskDelete(NULL); },
+                    "PrepareUpd", 4096, taskParam, tskIDLE_PRIORITY, NULL);
+    }
+}
+
 void setupDisplays()
 {
     for (uint i = 0; i < NUM_SCREENS; i++)
     {
-        displays[i].init();
+        displays[i].init(0, true, 30);
     }
 
     updateQueue = xQueueCreate(UPDATE_QUEUE_SIZE, sizeof(UpdateDisplayTaskItem));
@@ -144,7 +161,7 @@ void prepareDisplayUpdateTask(void *pvParameters)
         {
             uint epdIndex = receivedItem.dispNum;
 
-            displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
+           // displays[epdIndex].init(0, false); // Little longer reset duration because of MCP
 
             bool updatePartial = true;
 
@@ -389,7 +406,7 @@ void waitUntilNoneBusy()
             vTaskDelay(10);
             if (count == 200)
             {
-                //displays[i].init(0, false);
+                // displays[i].init(0, false);
                 vTaskDelay(100);
             }
             else if (count > 205)
