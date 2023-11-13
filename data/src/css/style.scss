@@ -5,6 +5,8 @@
 @import "../node_modules/bootstrap/scss/variables-dark";
 
 $form-range-track-bg: #fff;
+$color-mode-type: media-query;
+// $border-radius:               .675rem;
 
 @import "../node_modules/bootstrap/scss/mixins";
 @import "../node_modules/bootstrap/scss/maps";
@@ -40,6 +42,26 @@ $form-range-track-bg: #fff;
     /* Chrome 5+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
+@include media-breakpoint-down(xl) {
+    html {
+        font-size: 85%;
+    }
+
+    button.btn,
+    input[type="button"].btn,
+    input[type="submit"].btn,
+    input[type="reset"].btn {
+        @include button-size($btn-padding-y-sm, $btn-padding-x-sm, $font-size-sm, $btn-border-radius-sm);
+    }
+}
+
+@include media-breakpoint-down(lg) {
+    html {
+        font-size: 75%;
+    }
+}
+
+
 nav {
     margin-bottom: 15px;
 }
@@ -65,11 +87,18 @@ div#output .btclock {
     margin: 0 auto;
 
     .digit,
-    .splitText
-    {
+    .splitText {
         border: 2px solid gold;
         border-radius: 8px;
-        min-width: 70px;
+
+        @include media-breakpoint-up(sm) {
+            min-width: 10px;
+        }
+
+        @include media-breakpoint-up(xxl) {
+            min-width: 70px;
+        }
+
         text-align: center;
     }
 }
@@ -116,22 +145,36 @@ div#output .btclock {
 }
 
 .splitText {
-    font-size: 1.8rem;
-    padding-top: 19px !important;
-    padding-bottom: 20px !important;
+    @include media-breakpoint-up(sm) {
+        font-size: 1.0rem;
+        padding-top: 8px !important;
+        padding-bottom: 9px !important;
+    }
+    @include media-breakpoint-up(xxl) {
+        font-size: 1.8rem;
+        padding-top: 19px !important;
+        padding-bottom: 20px !important;
+    }
+
     text-align: center;
 }
 
 .mediumText {
     font-size: 3rem;
     padding-left: 5px;
-    padding-right: 5px; 
+    padding-right: 5px;
     padding-top: 20px !important;
     padding-bottom: 20px !important;
 }
 
 .digit {
     font-size: 5rem;
+    @include media-breakpoint-up(sm) {
+        font-size: 2.5rem;
+    }
+    @include media-breakpoint-up(xxl) {
+        font-size: 5rem;
+    }
     padding-left: 10px;
     padding-right: 10px;
 }
@@ -150,6 +193,7 @@ div#output .btclock {
 
 #system_info {
     padding: 0;
+
     li {
         list-style: none;
     }

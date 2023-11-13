@@ -13,16 +13,16 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-light bg-light">
+  <nav class="navbar">
     <div class="container-fluid">
       <span class="navbar-brand mb-0 h1">&#8383;TClock</span>
     </div>
   </nav>
   <script id="entry-template" type="text/x-handlebars-template">
         <div class="entry">
-          <h1>Status</h1>
+          <h2>Status</h2>
           <div class="body">
-            <div class="btn-group btn-group-sm"" role="group" aria-label="Screens toggle button group">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Screens toggle button group">
               {{#each screens }}
               <input type="radio" class="btn-check" name="btnradio" id="btnradio{{ @index }}" autocomplete="off" {{#ifEquals @index ../currentScreen }} checked {{/ifEquals}} onclick="changeScreen({{ @index }})">
               <label class="btn btn-outline-primary" for="btnradio{{ @index }}">{{ this }}</label>
@@ -97,8 +97,8 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-sm-3">
-        <div class="p-3 border bg-light">
-          <h1>Custom text</h1>
+        <div class="p-3 border rounded-2">
+          <h2>Custom text</h2>
           <form name="customText" id="customTextForm">
             <div class="row">
               <label for="customText" class="col-sm-4 col-form-label">Text</label>
@@ -137,11 +137,11 @@
 
       </div>
       <div class="col-sm-5">
-        <div id="output" class="p-3 border bg-light">Loading, please wait...</div>
+        <div id="output" class="p-3 border rounded-2">Loading, please wait...</div>
       </div>
       <div class="col-sm-4">
-        <div class="h-100 p-3 border bg-light">
-          <h1>Settings</h1>
+        <div class="h-100 p-3 border rounded-2">
+          <h2>Settings</h2>
           <form method="post" action="/api/settings" name="settings" id="settingsForm">
             <div class="row">
               <label for="fgColor" class="col-sm-6 col-form-label col-form-label-sm">Text color</label>
