@@ -75,10 +75,10 @@ void tryImprovSetup()
             WiFi.setHostname(softAP_SSID.c_str());
             String softAP_password = base64::encode(String(mac[2], 16) + String(mac[4], 16) + String(mac[5], 16) + String(mac[1], 16)).substring(2, 10);
 
-            wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", 600));
+          // wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", 600));
             wm.setWiFiAutoReconnect(false);
             wm.setDebugOutput(false);
-            wm.setConfigPortalBlocking(false);
+            wm.setConfigPortalBlocking(true);
 
             wm.setAPCallback([&](WiFiManager *wifiManager)
                              {
@@ -107,33 +107,32 @@ void tryImprovSetup()
             //waitUntilNoneBusy();
             //std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "Bienvenidos!", "Use\r\nweb-interface\r\nto configure", "Use\r\nla interfaz web\r\npara configurar", "Or restart\r\nwhile\r\nholding\r\n2nd button\r\r\nto start\r\n QR-config", "O reinicie\r\nmientras\r\n mantiene presionado\r\nel segundo botón\r\r\npara iniciar\r\nQR-config", ""};
             //setEpdContent(epdContent);
-            esp_task_wdt_init(30, false);
-            uint count = 0;
-            while (WiFi.status() != WL_CONNECTED)
-            {
-                if (Serial.available() > 0)
-                {
-                    uint8_t b = Serial.read();
+            // esp_task_wdt_init(30, false);
+            // uint count = 0;
+            // while (WiFi.status() != WL_CONNECTED)
+            // {
+            //     if (Serial.available() > 0)
+            //     {
+            //         uint8_t b = Serial.read();
 
-                    if (parse_improv_serial_byte(x_position, b, x_buffer, onImprovCommandCallback, onImprovErrorCallback))
-                    {
-                        x_buffer[x_position++] = b;
-                    }
-                    else
-                    {
-                        x_position = 0;
-                    }
-                }
-                count++;
+            //         if (parse_improv_serial_byte(x_position, b, x_buffer, onImprovCommandCallback, onImprovErrorCallback))
+            //         {
+            //             x_buffer[x_position++] = b;
+            //         }
+            //         else
+            //         {
+            //             x_position = 0;
+            //         }
+            //     }
+            //     count++;
 
-                if (count > 2000000) {
-                    queueLedEffect(LED_EFFECT_HEARTBEAT);
-                    count = 0;
-                }
-                esp_task_wdt_reset();
-            }
-            esp_task_wdt_deinit();
-            esp_task_wdt_reset();
+            //     if (count > 2000000) {
+            //         queueLedEffect(LED_EFFECT_HEARTBEAT);
+            //         count = 0;
+            //     }
+            // }
+            // esp_task_wdt_deinit();
+            // esp_task_wdt_reset();
             
         }
         setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
