@@ -65,7 +65,7 @@ int bgColor = GxEPD_BLACK;
 
 #define FONT_SMALL Antonio_SemiBold20pt7b
 #define FONT_BIG Antonio_SemiBold90pt7b
-
+#define FONT_MEDIUM Antonio_SemiBold40pt7b
 std::mutex epdUpdateMutex;
 std::mutex epdMutex[NUM_SCREENS];
 
@@ -187,7 +187,7 @@ void prepareDisplayUpdateTask(void *pvParameters)
 
                 if (epdContent[epdIndex].length() > 1)
                 {
-                    showChars(epdIndex, epdContent[epdIndex], updatePartial, &Antonio_SemiBold30pt7b);
+                    showChars(epdIndex, epdContent[epdIndex], updatePartial, &FONT_MEDIUM);
                 }
                 else
                 {
@@ -227,7 +227,7 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
         bool updatePartial = true;
 
         // Full Refresh every x minutes
-        if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", 30) * 60 * 1000))
+        if (!lastFullRefresh[epdIndex] || (millis() - lastFullRefresh[epdIndex]) > (preferences.getUInt("fullRefreshMin", DEFAULT_MINUTES_FULL_REFRESH) * 60 * 1000))
         {
             updatePartial = false;
         }

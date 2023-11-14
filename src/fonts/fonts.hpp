@@ -2,6 +2,7 @@
 
 #include "antonio-semibold20.h"
 #include "antonio-semibold30.h"
+#include "antonio-semibold40.h"
 #include "antonio-semibold90.h"
 // #include "oswald-20.h"
 // #include "oswald-30.h"

@@ -35,6 +35,8 @@ void setupWebserver()
 
     server.on("/api/show/screen", HTTP_GET, onApiShowScreen);
     server.on("/api/show/text", HTTP_GET, onApiShowText);
+    AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/api/show/custom", onApiShowTextAdvanced);
+    server.addHandler(handler);
 
     server.on("/api/lights/off", HTTP_GET, onApiLightsOff);
     server.on("/api/lights/color", HTTP_GET, onApiLightsSetColor);
@@ -206,6 +208,24 @@ void onApiShowText(AsyncWebServerRequest *request)
     request->send(200);
 }
 
+void onApiShowTextAdvanced(AsyncWebServerRequest *request, JsonVariant &json)
+{
+    JsonArray screens = json.as<JsonArray>();
+
+    std::array<String, NUM_SCREENS> epdContent;
+    int i = 0;
+    for (JsonVariant s : screens)
+    {
+        epdContent[i] = s.as<String>();
+        i++;
+    }
+
+    setEpdContent(epdContent);
+
+    setCurrentScreen(SCREEN_CUSTOM);
+    request->send(200);
+}
+
 void onApiRestart(AsyncWebServerRequest *request)
 {
     request->send(200);
@@ -232,7 +252,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["timerSeconds"] = getTimerSeconds();
     root["timerRunning"] = isTimerActive();
     root["minSecPriceUpd"] = preferences.getUInt("minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
-    root["fullRefreshMin"] = preferences.getUInt("fullRefreshMin", 30);
+    root["fullRefreshMin"] = preferences.getUInt("fullRefreshMin", DEFAULT_MINUTES_FULL_REFRESH);
     root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
     root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
     root["useBitcoinNode"] = preferences.getBool("useNode", false);

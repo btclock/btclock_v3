@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <ESPmDNS.h>
+#include "AsyncJson.h"
 
 #include "lib/block_notify.hpp"
 #include "lib/price_notify.hpp"
@@ -23,6 +24,7 @@ void onApiSystemStatus(AsyncWebServerRequest *request);
 
 void onApiShowScreen(AsyncWebServerRequest *request);
 void onApiShowText(AsyncWebServerRequest *request);
+void onApiShowTextAdvanced(AsyncWebServerRequest *request, JsonVariant &json);
 
 void onApiActionPause(AsyncWebServerRequest *request);
 void onApiActionTimerRestart(AsyncWebServerRequest *request);
