@@ -49,7 +49,7 @@ void setup()
 
 void tryImprovSetup()
 {
-    WiFi.onEvent(WiFiEvent);
+    //WiFi.onEvent(WiFiEvent);
 
     if (!preferences.getBool("wifiConfigured", false))
     {
@@ -65,8 +65,7 @@ void tryImprovSetup()
             std::lock_guard<std::mutex> lockMcp(mcpMutex);
             buttonPress = (mcp.digitalRead(2) == LOW);
         }
-        // Hold second button to start QR code wifi config
-        if (buttonPress)
+        
         {
             WiFiManager wm;
 
@@ -77,19 +76,22 @@ void tryImprovSetup()
             String softAP_password = base64::encode(String(mac[2], 16) + String(mac[4], 16) + String(mac[5], 16) + String(mac[1], 16)).substring(2, 10);
 
             wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", 600));
-            wm.setWiFiAutoReconnect(true);
+            wm.setWiFiAutoReconnect(false);
+            wm.setDebugOutput(false);
+            wm.setConfigPortalBlocking(false);
+
             wm.setAPCallback([&](WiFiManager *wifiManager)
                              {
 
-                Serial.printf("Entered config mode:ip=%s, ssid='%s', pass='%s'\n", 
-                WiFi.softAPIP().toString().c_str(), 
-                wifiManager->getConfigPortalSSID().c_str(), 
-                softAP_password.c_str()); 
-                delay(6000);
+               // Serial.printf("Entered config mode:ip=%s, ssid='%s', pass='%s'\n", 
+                // WiFi.softAPIP().toString().c_str(), 
+                // wifiManager->getConfigPortalSSID().c_str(), 
+                // softAP_password.c_str()); 
+                //delay(6000);
 
                 const String qrText = "qrWIFI:S:" + wifiManager->getConfigPortalSSID() + ";T:WPA;P:" + softAP_password.c_str() + ";;";
                 const String explainText = "*SSID: *\r\n" + wifiManager->getConfigPortalSSID() + "\r\n\r\n*Password:*\r\n" + softAP_password;
-                std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "To setup\r\nscan QR or\r\nconnect\r\nmanually", "", explainText, "", qrText};
+                std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "Bienvenidos!", "To setup\r\nscan QR or\r\nconnect\r\nmanually", "Para\r\nconfigurar\r\nescanear QR\r\no conectar\r\nmanualmente", explainText, " ", qrText};
                 setEpdContent(epdContent); });
 
             wm.setSaveConfigCallback([]()
@@ -101,13 +103,12 @@ void tryImprovSetup()
                 ESP.restart(); });
 
             bool ac = wm.autoConnect(softAP_SSID.c_str(), softAP_password.c_str());
-        }
-        else
-        {
-            waitUntilNoneBusy();
-            std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "", "Use\r\nweb-interface\r\nto configure", "", "Or restart\r\nwhile\r\nholding\r\n2nd button\r\r\nto start\r\n QR-config", "", ""};
-            setEpdContent(epdContent);
+        
+            //waitUntilNoneBusy();
+            //std::array<String, NUM_SCREENS> epdContent = {"Welcome!", "Bienvenidos!", "Use\r\nweb-interface\r\nto configure", "Use\r\nla interfaz web\r\npara configurar", "Or restart\r\nwhile\r\nholding\r\n2nd button\r\r\nto start\r\n QR-config", "O reinicie\r\nmientras\r\n mantiene presionado\r\nel segundo botón\r\r\npara iniciar\r\nQR-config", ""};
+            //setEpdContent(epdContent);
             esp_task_wdt_init(30, false);
+            uint count = 0;
             while (WiFi.status() != WL_CONNECTED)
             {
                 if (Serial.available() > 0)
@@ -123,9 +124,17 @@ void tryImprovSetup()
                         x_position = 0;
                     }
                 }
+                count++;
+
+                if (count > 2000000) {
+                    queueLedEffect(LED_EFFECT_HEARTBEAT);
+                    count = 0;
+                }
+                esp_task_wdt_reset();
             }
             esp_task_wdt_deinit();
             esp_task_wdt_reset();
+            
         }
         setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
         setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
@@ -356,6 +365,9 @@ bool onImprovCommandCallback(improv::ImprovCommand cmd)
             improv_set_state(improv::STATE_PROVISIONED);
             std::vector<uint8_t> data = improv::build_rpc_response(improv::WIFI_SETTINGS, getLocalUrl(), false);
             improv_send_response(data);
+
+            delay(2500);
+            ESP.restart();
             setupWebserver();
         }
         else

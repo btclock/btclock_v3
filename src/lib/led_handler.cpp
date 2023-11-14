@@ -33,6 +33,9 @@ void ledTask(void *parameter)
                 case LED_FLASH_ERROR:
                     blinkDelayColor(250, 3, 255, 0, 0);
                     break;
+                case LED_EFFECT_HEARTBEAT:
+                    blinkDelayColor(150, 2, 0, 0, 255);
+                    break;
                 case LED_EFFECT_WIFI_CONNECT_SUCCESS:
                 case LED_FLASH_SUCCESS:
                     blinkDelayColor(150, 3, 0, 255, 0);
