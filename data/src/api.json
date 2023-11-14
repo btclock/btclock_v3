@@ -1,0 +1,345 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "BTClock API",
+    "version": "3.0",
+    "description": "BTClock V3 API"
+  },
+  "servers": [
+    {
+      "url": "/api/"
+    }
+  ],
+  "paths": {
+    "/status": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get current status",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/system_status": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get system status",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get current settings",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Save current settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/action/pause": {
+      "get": {
+        "tags": [
+          "timer"
+        ],
+        "summary": "Pause screen rotation",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/action/timer_restart": {
+      "get": {
+        "tags": [
+          "timer"
+        ],
+        "summary": "Restart screen rotation",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/show/screen/{id}": {
+      "get": {
+        "tags": [
+          "screens"
+        ],
+        "summary": "Set screen to show",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "required": true,
+            "description": "ID of screen to show"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/show/text/{text}": {
+      "get": {
+        "tags": [
+          "screens"
+        ],
+        "summary": "Set text to show",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "text",
+            "schema": {
+              "type": "string",
+              "default": "text"
+            },
+            "required": true,
+            "description": "Text to show"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/show/custom": {
+      "post": {
+        "tags": [
+          "screens"
+        ],
+        "summary": "Set text to show (advanced)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomText"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/full_refresh": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Force full refresh of all displays",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/lights/{color}": {
+      "get": {
+        "tags": [
+          "lights"
+        ],
+        "summary": "Turn on LEDs with specific color",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "color",
+            "schema": {
+              "type": "string",
+              "default": "FFCC00"
+            },
+            "required": true,
+            "description": "Color in RGB hex"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/lights/off": {
+      "get": {
+        "tags": [
+          "lights"
+        ],
+        "summary": "Turn LEDs off",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/restart": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Restart BTClock",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Settings": {
+        "type": "object",
+        "properties": {
+          "fetchEurPrice": {
+            "type": "boolean",
+            "description": "Fetch EUR price instead of USD"
+          },
+          "fgColor": {
+            "type": "string",
+            "default": 16777215,
+            "description": "ePaper foreground (text) color"
+          },
+          "bgColor": {
+            "type": "string",
+            "default": 0,
+            "description": "ePaper background color"
+          },
+          "ledTestOnPower": {
+            "type": "boolean",
+            "default": true,
+            "description": "Do LED test on power-on"
+          },
+          "ledFlashOnUpd": {
+            "type": "boolean",
+            "default": false,
+            "description": "Flash LEDs on new block"
+          },
+          "mdnsEnabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable mDNS"
+          },
+          "otaEnabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable over-the-air updates"
+          },
+          "stealFocusOnBlock": {
+            "type": "boolean",
+            "default": false,
+            "description": "Steal focus on new block"
+          },
+          "mcapBigChar": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use big characters for market cap screen"
+          },
+          "mempoolInstance": {
+            "type": "string",
+            "default": "mempool.space",
+            "description": "Mempool.space instance to connect to"
+          },
+          "ledBrightness": {
+            "type": "integer",
+            "default": 128,
+            "description": "Brightness of LEDs"
+          },
+          "fullRefreshMin": {
+            "type": "integer",
+            "default": 60,
+            "description": "Full refresh time of ePaper displays in minutes"
+          },
+          "screen[0]": {
+            "type": "boolean"
+          },
+          "screen[1]": {
+            "type": "boolean"
+          },
+          "screen[2]": {
+            "type": "boolean"
+          },
+          "screen[3]": {
+            "type": "boolean"
+          },
+          "screen[4]": {
+            "type": "boolean"
+          },
+          "screen[5]": {
+            "type": "boolean"
+          },
+          "tzOffset": {
+            "type": "integer",
+            "default": 60,
+            "description": "Timezone offset in minutes"
+          },
+          "minSecPriceUpd": {
+            "type": "integer",
+            "default": 30,
+            "description": "Minimum time between price updates in seconds"
+          },
+          "timePerScreen": {
+            "type": "integer",
+            "default": 30,
+            "description": "Time between screens when rotating in minutes"
+          }
+        }
+      },
+      "CustomText": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 7,
+        "maxItems": 7
+      }
+    }
+  }
+}

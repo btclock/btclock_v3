@@ -13,10 +13,18 @@
 </head>
 
 <body>
-  <nav class="navbar">
+  <nav class="navbar navbar-expand">
     <div class="container-fluid">
       <span class="navbar-brand mb-0 h1">&#8383;TClock</span>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" target="_blank" href="api.html">API</a>
+          </li>
+        </ul>
+      </div>
     </div>
+    
   </nav>
   <script id="entry-template" type="text/x-handlebars-template">
         <div class="entry">
@@ -181,7 +189,8 @@
               </div>
             </div>
             <div class="row">
-              <label for="minSecPriceUpd" class="col-sm-6 col-form-label  col-form-label-sm">Time between price updates</label>
+              <label for="minSecPriceUpd" class="col-sm-6 col-form-label  col-form-label-sm">Time between price
+                updates</label>
               <div class="col-sm-6 mb-3">
                 <div class="input-group input-group-sm">
                   <input type="number" name="minSecPriceUpd" min="1" id="minSecPriceUpd" class="form-control">
@@ -201,7 +210,7 @@
                 <div class="form-text">A restart is required to apply TZ offset.</div>
               </div>
             </div>
-            
+
             <div class="row">
               <label class="col-sm-6 col-form-label col-form-label-sm" for="ledBrightness">LED brightness</label>
               <div class="col-sm-6">

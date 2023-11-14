@@ -12,7 +12,6 @@ void setupWebserver()
         return;
     }
 
-
     events.onConnect([](AsyncEventSourceClient *client)
                      { client->send("welcome", NULL, millis(), 1000); });
     server.addHandler(&events);
@@ -20,6 +19,8 @@ void setupWebserver()
     server.serveStatic("/css", LittleFS, "/css/");
     server.serveStatic("/js", LittleFS, "/js/");
     server.serveStatic("/font", LittleFS, "/font/");
+    server.serveStatic("/api.json", LittleFS, "/api.json");
+    server.serveStatic("/api.html", LittleFS, "/api.html");
 
     server.on("/", HTTP_GET, onIndex);
 
@@ -52,6 +53,8 @@ void setupWebserver()
     server.onNotFound(onNotFound);
 
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
 
     server.begin();
 
@@ -177,6 +180,10 @@ void onApiFullRefresh(AsyncWebServerRequest *request)
     request->send(200);
 }
 
+/**
+ * @Api
+ * @Path("/api/show/screen")
+ */
 void onApiShowScreen(AsyncWebServerRequest *request)
 {
     if (request->hasParam("s"))
@@ -523,9 +530,12 @@ void onApiLightsSetColor(AsyncWebServerRequest *request)
     {
         String rgbColor = request->getParam("c")->value();
 
-        if (rgbColor.compareTo("off") == 0) {
+        if (rgbColor.compareTo("off") == 0)
+        {
             setLights(0, 0, 0);
-        } else {
+        }
+        else
+        {
             uint r, g, b;
             sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
             setLights(r, g, b);
@@ -538,7 +548,9 @@ void onIndex(AsyncWebServerRequest *request) { request->send(LittleFS, "/index.h
 
 void onNotFound(AsyncWebServerRequest *request)
 {
-    if (request->method() == HTTP_OPTIONS)
+    // Access-Control-Request-Method == POST might be better
+
+    if (request->method() == HTTP_OPTIONS || request->hasHeader("Sec-Fetch-Mode"))
     {
         request->send(200);
     }
