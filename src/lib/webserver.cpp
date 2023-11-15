@@ -272,6 +272,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", true);
     root["otaEnabled"] = preferences.getBool("otaEnabled", true);
     root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", false);
+    root["hostnamePrefix"] = preferences.getString("hostnamePrefix", "btclock");
     root["hostname"] = getMyHostname();
     root["ip"] = WiFi.localIP();
 
@@ -428,6 +429,14 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
         AsyncWebParameter *mempoolInstance = request->getParam("mempoolInstance", true);
 
         preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
+        settingsChanged = true;
+    }
+
+    if (request->hasParam("hostnamePrefix", true))
+    {
+        AsyncWebParameter *hostnamePrefix = request->getParam("hostnamePrefix", true);
+
+        preferences.putString("hostnamePrefix", hostnamePrefix->value().c_str());
         settingsChanged = true;
     }
 

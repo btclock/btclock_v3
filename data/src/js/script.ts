@@ -149,6 +149,8 @@ fetch('/api/settings', {
         document.getElementById('fullRefreshMin').value = jsonData.fullRefreshMin;
         document.getElementById('tzOffset').value = jsonData.tzOffset;
         document.getElementById('mempoolInstance').value = jsonData.mempoolInstance;
+        document.getElementById('hostnamePrefix').value = jsonData.hostnamePrefix;
+
         document.getElementById('minSecPriceUpd').value = jsonData.minSecPriceUpd;
 
         if (jsonData.gitRev)

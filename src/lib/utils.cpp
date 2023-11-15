@@ -10,8 +10,9 @@ String getMyHostname() {
     //WiFi.macAddress(mac);
     esp_efuse_mac_get_default(mac);
     char hostname[15]; 
-    snprintf(hostname, sizeof(hostname), "btclock-%02x%02x%02x",
-             mac[3], mac[4], mac[5]);
+    String hostnamePrefix = preferences.getString("hostnamePrefix", "btclock");
+    snprintf(hostname, sizeof(hostname), "%s-%02x%02x%02x",
+             hostnamePrefix, mac[3], mac[4], mac[5]);
     return hostname;
 }
 

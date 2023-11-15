@@ -65,7 +65,6 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          name: release-${{ steps.dateAndTime.outputs.dateAndTime }}
           artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini_qr/*.bin"
           allowUpdates: true
           removeArtifacts: true
