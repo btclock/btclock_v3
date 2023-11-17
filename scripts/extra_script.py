@@ -10,6 +10,8 @@ def gzip_file(input_file, output_file):
             copyfileobj(f_in, f_out)
 
 def process_directory(input_dir, output_dir):
+    if os.path.exists(output_dir):
+        rmtree(output_dir)
     for root, dirs, files in os.walk(input_dir):
         relative_path = os.path.relpath(root, input_dir)
         output_root = os.path.join(output_dir, relative_path)
@@ -30,7 +32,6 @@ def before_buildfs(source, target, env):
     env.Execute("cd data && yarn && PUBLIC_BASE_URL=\"\" yarn build")
     input_directory = 'data/dist'
     output_directory = 'data/build_gz'
-    rmtree(output_directory)
     process_directory(input_directory, output_directory)
 
 env.AddPreAction("$BUILD_DIR/littlefs.bin", before_buildfs)
