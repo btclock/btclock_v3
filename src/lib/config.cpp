@@ -224,6 +224,14 @@ std::vector<std::string> getScreenNameMap()
 
 void setupHardware()
 {
+    if (!LittleFS.begin(true))
+    {
+        Serial.println(F("An Error has occurred while mounting LittleFS"));
+    } 
+    if(!LittleFS.open("/index.html", "r")) {
+        Serial.println("Error loading WebUI");
+    }
+
     setupLeds();
 
     WiFi.setHostname(getMyHostname().c_str());

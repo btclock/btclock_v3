@@ -33,6 +33,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request);
 void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json);
 void onApiFullRefresh(AsyncWebServerRequest *request);
 
+void onApiLightsStatus(AsyncWebServerRequest *request);
 void onApiLightsOff(AsyncWebServerRequest *request);
 void onApiLightsSetColor(AsyncWebServerRequest *request);
 
@@ -42,6 +43,7 @@ void onApiRestart(AsyncWebServerRequest *request);
 void onIndex(AsyncWebServerRequest *request);
 void onNotFound(AsyncWebServerRequest *request);
 
+StaticJsonDocument<512> getLedStatusObject();
 StaticJsonDocument<768> getStatusObject();
 void eventSourceUpdate();
 void eventSourceTask(void *pvParameters);

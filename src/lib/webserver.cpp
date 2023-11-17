@@ -6,11 +6,7 @@ TaskHandle_t eventSourceTaskHandle;
 
 void setupWebserver()
 {
-    if (!LittleFS.begin(true))
-    {
-        Serial.println(F("An Error has occurred while mounting LittleFS"));
-        return;
-    }
+    
 
     events.onConnect([](AsyncEventSourceClient *client)
                      { client->send("welcome", NULL, millis(), 1000); });
@@ -19,7 +15,7 @@ void setupWebserver()
     // server.serveStatic("/css", LittleFS, "/css/");
     // server.serveStatic("/js", LittleFS, "/js/");
     server.serveStatic("/build", LittleFS, "/build");
-    server.serveStatic("/api.json", LittleFS, "/api.json");
+    server.serveStatic("/swagger.json", LittleFS, "/swagger.json");
     server.serveStatic("/api.html", LittleFS, "/api.html");
 
     server.on("/", HTTP_GET, onIndex);
@@ -45,6 +41,7 @@ void setupWebserver()
 
     server.on("/api/lights/off", HTTP_GET, onApiLightsOff);
     server.on("/api/lights/color", HTTP_GET, onApiLightsSetColor);
+    server.on("/api/lights", HTTP_GET, onApiLightsStatus);
 
     // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET, onApiLightsSetColor);
 
@@ -108,12 +105,40 @@ StaticJsonDocument<768> getStatusObject()
     return root;
 }
 
+StaticJsonDocument<512> getLedStatusObject()
+{
+    StaticJsonDocument<512> root;
+    JsonArray colors = root.createNestedArray("data");
+//    Adafruit_NeoPixel pix = getPixels();
+
+    for (uint i = 0; i < pixels.numPixels(); i++) {
+        uint32_t pixColor = pixels.getPixelColor(i);
+        uint alpha = (pixColor >> 24) & 0xFF;
+        uint red = (pixColor >> 16) & 0xFF;
+        uint green = (pixColor >> 8) & 0xFF;
+        uint blue = pixColor & 0xFF;
+        char hexColor[8];  
+        sprintf(hexColor, "#%02X%02X%02X", red, green, blue);
+
+        JsonObject object = colors.createNestedObject();
+        object["red"] = red;
+        object["green"] = green;
+        object["blue"] = blue;
+        object["hex"] = hexColor;
+    }
+
+    return root;
+}
+
 void eventSourceUpdate()
 {
     if (!events.count())
         return;
     StaticJsonDocument<768> root = getStatusObject();
     JsonArray data = root.createNestedArray("data");
+
+    root["leds"] = getLedStatusObject()["data"];
+
     String epdContent[NUM_SCREENS];
     std::array<String, NUM_SCREENS> retEpdContent = getCurrentEpdContent();
     std::copy(std::begin(retEpdContent), std::end(retEpdContent), epdContent);
@@ -644,6 +669,15 @@ void onApiSystemStatus(AsyncWebServerRequest *request)
     root["espPsramSize"] = ESP.getPsramSize();
 
     serializeJson(root, *response);
+
+    request->send(response);
+}
+
+void onApiLightsStatus(AsyncWebServerRequest *request)
+{
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+
+    serializeJson(getLedStatusObject(), *response);
 
     request->send(response);
 }
