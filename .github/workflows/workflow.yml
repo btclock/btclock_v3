@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v3
         with:
           node-version: lts/*
@@ -23,6 +25,7 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
+            ~/data/node_modules
           key: ${{ runner.os }}-pio
       - uses: actions/setup-python@v4
         with:

@@ -30,6 +30,7 @@ void onApiActionPause(AsyncWebServerRequest *request);
 void onApiActionTimerRestart(AsyncWebServerRequest *request);
 void onApiSettingsGet(AsyncWebServerRequest *request);
 void onApiSettingsPost(AsyncWebServerRequest *request);
+void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json);
 void onApiFullRefresh(AsyncWebServerRequest *request);
 
 void onApiLightsOff(AsyncWebServerRequest *request);

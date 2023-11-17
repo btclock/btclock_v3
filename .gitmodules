@@ -1,0 +1,3 @@
+[submodule "data"]
+	path = data
+	url = https://github.com/btclock/webui.git

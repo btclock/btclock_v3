@@ -16,9 +16,9 @@ void setupWebserver()
                      { client->send("welcome", NULL, millis(), 1000); });
     server.addHandler(&events);
 
-    server.serveStatic("/css", LittleFS, "/css/");
-    server.serveStatic("/js", LittleFS, "/js/");
-    server.serveStatic("/font", LittleFS, "/font/");
+    // server.serveStatic("/css", LittleFS, "/css/");
+    // server.serveStatic("/js", LittleFS, "/js/");
+    server.serveStatic("/build", LittleFS, "/build");
     server.serveStatic("/api.json", LittleFS, "/api.json");
     server.serveStatic("/api.html", LittleFS, "/api.html");
 
@@ -36,6 +36,10 @@ void setupWebserver()
 
     server.on("/api/show/screen", HTTP_GET, onApiShowScreen);
     server.on("/api/show/text", HTTP_GET, onApiShowText);
+
+    AsyncCallbackJsonWebHandler *settingsPatchHandler = new AsyncCallbackJsonWebHandler("/api/json/settings", onApiSettingsPatch);
+    server.addHandler(settingsPatchHandler);
+
     AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/api/show/custom", onApiShowTextAdvanced);
     server.addHandler(handler);
 
@@ -53,7 +57,7 @@ void setupWebserver()
     server.onNotFound(onNotFound);
 
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, PATCH, POST, OPTIONS");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
 
     server.begin();
@@ -233,6 +237,90 @@ void onApiShowTextAdvanced(AsyncWebServerRequest *request, JsonVariant &json)
     request->send(200);
 }
 
+void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
+{
+    JsonObject settings = json.as<JsonObject>();
+
+    bool settingsChanged = true;
+
+    if (settings.containsKey("fgColor"))
+    {
+        String fgColor = settings["fgColor"].as<String>();
+        preferences.putUInt("fgColor", strtol(fgColor.c_str(), NULL, 16));
+        setFgColor(int(strtol(fgColor.c_str(), NULL, 16)));
+        Serial.print(F("Setting foreground color to "));
+        Serial.println(strtol(fgColor.c_str(), NULL, 16));
+        settingsChanged = true;
+    }
+    if (settings.containsKey("bgColor"))
+    {
+        String bgColor = settings["bgColor"].as<String>();
+
+        preferences.putUInt("bgColor", strtol(bgColor.c_str(), NULL, 16));
+        setBgColor(int(strtol(bgColor.c_str(), NULL, 16)));
+        Serial.print(F("Setting background color to "));
+        Serial.println(bgColor.c_str());
+        settingsChanged = true;
+    }
+
+    if (settings.containsKey("timePerScreen"))
+    {
+        preferences.putUInt("timerSeconds", settings["timePerScreen"].as<uint>() * 60);
+    }
+
+    String strSettings[] = {"hostnamePrefix", "mempoolInstance"};
+
+    for (String setting : strSettings)
+    {
+        if (settings.containsKey(setting))
+        {
+            preferences.putString(setting.c_str(), settings[setting].as<String>());
+            Serial.printf("Setting %s to %s\r\n", setting.c_str(), settings[setting].as<String>());
+        }
+    }
+
+    String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "gmtOffset", "ledBrightness", "mcapBigChar"};
+
+    for (String setting : uintSettings)
+    {
+        if (settings.containsKey(setting))
+        {
+            preferences.putUInt(setting.c_str(), settings[setting].as<uint>());
+            Serial.printf("Setting %s to %d\r\n", setting.c_str(), settings[setting].as<uint>());
+        }
+    }
+
+    String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd", "mdnsEnabled", "otaEnabled", "stealFocus", "mcapBigChar"};
+
+    for (String setting : boolSettings)
+    {
+        if (settings.containsKey(setting))
+        {
+            preferences.putBool(setting.c_str(), settings[setting].as<boolean>());
+            Serial.printf("Setting %s to %d\r\n", setting.c_str(), settings[setting].as<boolean>());
+        }
+    }
+
+    if (settings.containsKey("screens"))
+    {
+        for (JsonVariant screen : settings["screens"].as<JsonArray>())
+        {
+            JsonObject s = screen.as<JsonObject>();
+            uint id = s["id"].as<uint>();
+            String key = "screen[" + String(id) + "]";
+            String prefKey = "screen" + String(id) + "Visible";
+            bool visible = s["enabled"].as<boolean>();
+            preferences.putBool(prefKey.c_str(), visible);
+        }
+    }
+
+    request->send(200);
+    if (settingsChanged)
+    {
+        queueLedEffect(LED_FLASH_SUCCESS);
+    }
+}
+
 void onApiRestart(AsyncWebServerRequest *request)
 {
     request->send(200);
@@ -265,9 +353,9 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["useBitcoinNode"] = preferences.getBool("useNode", false);
     root["mempoolInstance"] = preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
     root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
-    root["ledFlashOnUpdate"] = preferences.getBool("ledFlashOnUpd", false);
+    root["ledFlashOnUpd"] = preferences.getBool("ledFlashOnUpd", false);
     root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
-    root["stealFocusOnBlock"] = preferences.getBool("stealFocus", true);
+    root["stealFocus"] = preferences.getBool("stealFocus", true);
     root["mcapBigChar"] = preferences.getBool("mcapBigChar", true);
     root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", true);
     root["otaEnabled"] = preferences.getBool("otaEnabled", true);
@@ -332,6 +420,32 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
     bool settingsChanged = false;
 
     settingsChanged = processEpdColorSettings(request);
+
+    int headers = request->headers();
+    int i;
+    for (i = 0; i < headers; i++)
+    {
+        AsyncWebHeader *h = request->getHeader(i);
+        Serial.printf("HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+    }
+
+    int params = request->params();
+    for (int i = 0; i < params; i++)
+    {
+        AsyncWebParameter *p = request->getParam(i);
+        if (p->isFile())
+        { // p->isPost() is also true
+            Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+        }
+        else if (p->isPost())
+        {
+            Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+        }
+        else
+        {
+            Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+        }
+    }
 
     if (request->hasParam("fetchEurPrice", true))
     {
@@ -466,6 +580,13 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
 
     std::vector<std::string> screenNameMap = getScreenNameMap();
 
+    if (request->hasParam("screens"))
+    {
+        AsyncWebParameter *screenParam = request->getParam("screens", true);
+
+        Serial.printf(screenParam->value().c_str());
+    }
+
     for (int i = 0; i < screenNameMap.size(); i++)
     {
         String key = "screen[" + String(i) + "]";
@@ -565,7 +686,7 @@ void onNotFound(AsyncWebServerRequest *request)
     }
     else
     {
-        request->send(404);
+        request->send(200);
     }
 };
 
