@@ -6,7 +6,6 @@ TaskHandle_t eventSourceTaskHandle;
 
 void setupWebserver()
 {
-    
 
     events.onConnect([](AsyncEventSourceClient *client)
                      { client->send("welcome", NULL, millis(), 1000); });
@@ -38,6 +37,9 @@ void setupWebserver()
 
     AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/api/show/custom", onApiShowTextAdvanced);
     server.addHandler(handler);
+
+    AsyncCallbackJsonWebHandler *lightsJsonHandler = new AsyncCallbackJsonWebHandler("/api/lights", onApiLightsSetJson);
+    server.addHandler(lightsJsonHandler);
 
     server.on("/api/lights/off", HTTP_GET, onApiLightsOff);
     server.on("/api/lights/color", HTTP_GET, onApiLightsSetColor);
@@ -109,15 +111,16 @@ StaticJsonDocument<512> getLedStatusObject()
 {
     StaticJsonDocument<512> root;
     JsonArray colors = root.createNestedArray("data");
-//    Adafruit_NeoPixel pix = getPixels();
+    //    Adafruit_NeoPixel pix = getPixels();
 
-    for (uint i = 0; i < pixels.numPixels(); i++) {
-        uint32_t pixColor = pixels.getPixelColor(i);
+    for (uint i = 0; i < pixels.numPixels(); i++)
+    {
+        uint32_t pixColor = pixels.getPixelColor(pixels.numPixels() - i - 1);
         uint alpha = (pixColor >> 24) & 0xFF;
         uint red = (pixColor >> 16) & 0xFF;
         uint green = (pixColor >> 8) & 0xFF;
         uint blue = pixColor & 0xFF;
-        char hexColor[8];  
+        char hexColor[8];
         sprintf(hexColor, "#%02X%02X%02X", red, green, blue);
 
         JsonObject object = colors.createNestedObject();
@@ -677,7 +680,7 @@ void onApiLightsStatus(AsyncWebServerRequest *request)
 {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
 
-    serializeJson(getLedStatusObject(), *response);
+    serializeJson(getLedStatusObject()["data"], *response);
 
     request->send(response);
 }
@@ -708,19 +711,107 @@ void onApiLightsSetColor(AsyncWebServerRequest *request)
     }
 }
 
+void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json)
+{
+    if (request->method() == HTTP_PATCH) {
+
+        JsonArray lights = json.as<JsonArray>();
+
+        if (lights.size() != pixels.numPixels())
+        {
+            Serial.printf("Invalid values for LED set %d\n", lights.size());
+            request->send(400);
+            return;
+        }
+
+        for (uint i = 0; i < pixels.numPixels(); i++)
+        {
+            unsigned int red, green, blue;
+
+            if (lights[i].containsKey("red") && lights[i].containsKey("green") && lights[i].containsKey("blue"))
+            {
+
+                red = lights[i]["red"].as<uint>();
+                green = lights[i]["green"].as<uint>();
+                blue = lights[i]["blue"].as<uint>();
+            }
+            else if (lights[i].containsKey("hex"))
+            {
+                if (!sscanf(lights[i]["hex"].as<String>().c_str(), "#%02X%02X%02X", &red, &green, &blue) == 3)
+                {
+                    Serial.printf("Invalid hex for LED %d\n", i);
+                    request->send(400);
+                    return;
+                }
+            }
+            else
+            {
+                Serial.printf("No valid color for LED %d\n", i);
+                request->send(400);
+                return;
+            }
+
+            pixels.setPixelColor((pixels.numPixels() - i - 1), pixels.Color(
+                                        red,
+                                        green,
+                                        blue));
+        }
+
+        pixels.show();
+        saveLedState();
+
+        request->send(200);
+    } else {
+        request->send(404);
+    }
+}
+
 void onIndex(AsyncWebServerRequest *request) { request->send(LittleFS, "/index.html", String(), false); }
 
 void onNotFound(AsyncWebServerRequest *request)
 {
+    // Serial.printf("NotFound, URL[%s]\n", request->url());
+
+    // Serial.printf("NotFound, METHOD[%s]\n", request->methodToString());
+
+    // int headers = request->headers();
+    // int i;
+    // for (i = 0; i < headers; i++)
+    // {
+    //     AsyncWebHeader *h = request->getHeader(i);
+    //     Serial.printf("NotFound HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+    // }
+
+    // int params = request->params();
+    // for (int i = 0; i < params; i++)
+    // {
+    //     AsyncWebParameter *p = request->getParam(i);
+    //     if (p->isFile())
+    //     { // p->isPost() is also true
+    //         Serial.printf("NotFound FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+    //     }
+    //     else if (p->isPost())
+    //     {
+    //         Serial.printf("NotFound POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    //     }
+    //     else
+    //     {
+    //         Serial.printf("NotFound GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    //     }
+    // }
+
     // Access-Control-Request-Method == POST might be better
 
     if (request->method() == HTTP_OPTIONS || request->hasHeader("Sec-Fetch-Mode"))
     {
+        // Serial.printf("NotFound, Return[%d]\n", 200);
+
         request->send(200);
     }
     else
     {
-        request->send(200);
+        // Serial.printf("NotFound, Return[%d]\n", 404);
+        request->send(404);
     }
 };
 

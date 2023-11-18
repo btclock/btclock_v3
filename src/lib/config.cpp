@@ -209,7 +209,7 @@ void finishSetup()
 
     if (preferences.getBool("ledStatus", false))
     {
-        setLights(preferences.getUInt("ledColor", 0xFFCC00));
+        restoreLedState();
     }
     else
     {

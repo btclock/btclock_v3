@@ -250,17 +250,43 @@ void setLights(uint32_t color)
 {
 
     bool ledStatus = true;
-    if (color == pixels.Color(0, 0, 0))
-    {
-        ledStatus = false;
-    } else {
-        preferences.putUInt("ledColor", color);
-    }
-    preferences.putBool("ledStatus", ledStatus);
+    
 
     for (int i = 0; i < NEOPIXEL_COUNT; i++)
     {
         pixels.setPixelColor(i, color);
+    }
+    pixels.show();
+
+    if (color == pixels.Color(0, 0, 0))
+    {
+        ledStatus = false;
+    } else {
+        saveLedState();
+    }
+    preferences.putBool("ledStatus", ledStatus);
+
+}
+
+void saveLedState() {
+    for (int i = 0; i < pixels.numPixels(); i++)
+    {
+        int pixelColor = pixels.getPixelColor(i);
+        char key[12];
+        snprintf(key, 12, "%s%d", "ledColor_", i);
+        preferences.putUInt(key, pixelColor);
+    }
+
+    xTaskNotifyGive(eventSourceTaskHandle);
+}
+
+void restoreLedState() {
+    for (int i = 0; i < pixels.numPixels(); i++)
+    {
+        char key[12];
+        snprintf(key, 12, "%s%d", "ledColor_", i);
+        uint pixelColor = preferences.getUInt(key, pixels.Color(0,0,0));
+        pixels.setPixelColor(i, pixelColor);
     }
 
     pixels.show();

@@ -36,6 +36,7 @@ void onApiFullRefresh(AsyncWebServerRequest *request);
 void onApiLightsStatus(AsyncWebServerRequest *request);
 void onApiLightsOff(AsyncWebServerRequest *request);
 void onApiLightsSetColor(AsyncWebServerRequest *request);
+void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json);
 
 
 void onApiRestart(AsyncWebServerRequest *request);

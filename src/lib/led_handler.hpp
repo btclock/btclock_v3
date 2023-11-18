@@ -2,6 +2,9 @@
 
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "webserver.hpp"
 #include "shared.hpp"
 
 #ifndef NEOPIXEL_PIN
@@ -38,6 +41,8 @@ void blinkDelay(int d, int times);
 void blinkDelayColor(int d, int times, uint r, uint g, uint b);
 void blinkDelayTwoColor(int d, int times, uint32_t c1, uint32_t c2);
 void clearLeds();
+void saveLedState();
+void restoreLedState();
 QueueHandle_t getLedTaskQueue();
 bool queueLedEffect(uint effect);
 void setLights(int r, int g, int b);
