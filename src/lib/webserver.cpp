@@ -713,57 +713,52 @@ void onApiLightsSetColor(AsyncWebServerRequest *request)
 
 void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json)
 {
-    if (request->method() == HTTP_PATCH) {
+    JsonArray lights = json.as<JsonArray>();
 
-        JsonArray lights = json.as<JsonArray>();
+    if (lights.size() != pixels.numPixels())
+    {
+        Serial.printf("Invalid values for LED set %d\n", lights.size());
+        request->send(400);
+        return;
+    }
 
-        if (lights.size() != pixels.numPixels())
+    for (uint i = 0; i < pixels.numPixels(); i++)
+    {
+        unsigned int red, green, blue;
+
+        if (lights[i].containsKey("red") && lights[i].containsKey("green") && lights[i].containsKey("blue"))
         {
-            Serial.printf("Invalid values for LED set %d\n", lights.size());
+
+            red = lights[i]["red"].as<uint>();
+            green = lights[i]["green"].as<uint>();
+            blue = lights[i]["blue"].as<uint>();
+        }
+        else if (lights[i].containsKey("hex"))
+        {
+            if (!sscanf(lights[i]["hex"].as<String>().c_str(), "#%02X%02X%02X", &red, &green, &blue) == 3)
+            {
+                Serial.printf("Invalid hex for LED %d\n", i);
+                request->send(400);
+                return;
+            }
+        }
+        else
+        {
+            Serial.printf("No valid color for LED %d\n", i);
             request->send(400);
             return;
         }
 
-        for (uint i = 0; i < pixels.numPixels(); i++)
-        {
-            unsigned int red, green, blue;
-
-            if (lights[i].containsKey("red") && lights[i].containsKey("green") && lights[i].containsKey("blue"))
-            {
-
-                red = lights[i]["red"].as<uint>();
-                green = lights[i]["green"].as<uint>();
-                blue = lights[i]["blue"].as<uint>();
-            }
-            else if (lights[i].containsKey("hex"))
-            {
-                if (!sscanf(lights[i]["hex"].as<String>().c_str(), "#%02X%02X%02X", &red, &green, &blue) == 3)
-                {
-                    Serial.printf("Invalid hex for LED %d\n", i);
-                    request->send(400);
-                    return;
-                }
-            }
-            else
-            {
-                Serial.printf("No valid color for LED %d\n", i);
-                request->send(400);
-                return;
-            }
-
-            pixels.setPixelColor((pixels.numPixels() - i - 1), pixels.Color(
-                                        red,
-                                        green,
-                                        blue));
-        }
-
-        pixels.show();
-        saveLedState();
-
-        request->send(200);
-    } else {
-        request->send(404);
+        pixels.setPixelColor((pixels.numPixels() - i - 1), pixels.Color(
+                                                               red,
+                                                               green,
+                                                               blue));
     }
+
+    pixels.show();
+    saveLedState();
+
+    request->send(200);
 }
 
 void onIndex(AsyncWebServerRequest *request) { request->send(LittleFS, "/index.html", String(), false); }
