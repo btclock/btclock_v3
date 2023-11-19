@@ -162,10 +162,12 @@ void onApiStatus(AsyncWebServerRequest *request)
 {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
 
-    StaticJsonDocument<768> root = getStatusObject();
+    StaticJsonDocument<1024> root = getStatusObject();
     JsonArray data = root.createNestedArray("data");
     JsonArray rendered = root.createNestedArray("rendered");
     String epdContent[NUM_SCREENS];
+
+    root["leds"] = getLedStatusObject()["data"];
 
     std::array<String, NUM_SCREENS> retEpdContent = getCurrentEpdContent();
 
@@ -695,6 +697,8 @@ void onApiLightsSetColor(AsyncWebServerRequest *request)
 {
     if (request->hasParam("c"))
     {
+        AsyncResponseStream *response = request->beginResponseStream("application/json");
+
         String rgbColor = request->getParam("c")->value();
 
         if (rgbColor.compareTo("off") == 0)
@@ -707,7 +711,16 @@ void onApiLightsSetColor(AsyncWebServerRequest *request)
             sscanf(rgbColor.c_str(), "%02x%02x%02x", &r, &g, &b);
             setLights(r, g, b);
         }
-        request->send(200, "text/plain", rgbColor);
+
+        StaticJsonDocument<48> doc;
+        doc["result"] = rgbColor;
+
+        
+        serializeJson(getLedStatusObject()["data"], *response);
+
+        request->send(response);
+    } else {
+        request->send(400);
     }
 }
 
