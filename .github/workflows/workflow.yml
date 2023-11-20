@@ -59,7 +59,7 @@ jobs:
         run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > output/date.txt
 
       - name: Copy all artifacts to output folder
-        run: cp .pio/build/lolin_s3_mini_qr/*.bin output
+        run: cp .pio/build/lolin_s3_mini_qr/*.bin ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin output
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
