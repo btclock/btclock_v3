@@ -28,7 +28,7 @@ void ledTask(void *parameter)
                     pixels.clear();
                     break;
                 case LED_EFFECT_WIFI_CONNECT_ERROR:
-                    blinkDelayTwoColor(100, 1, pixels.Color(8, 161, 236), pixels.Color(255, 0, 0));
+                    blinkDelayTwoColor(100, 3, pixels.Color(8, 161, 236), pixels.Color(255, 0, 0));
                     break;
                 case LED_FLASH_ERROR:
                     blinkDelayColor(250, 3, 255, 0, 0);

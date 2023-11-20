@@ -22,7 +22,6 @@
 #include "lib/button_handler.hpp"
 #include "lib/led_handler.hpp"
 
-
 #define NTP_SERVER "pool.ntp.org"
 #define DEFAULT_MEMPOOL_INSTANCE "mempool.space"
 #define TIME_OFFSET_SECONDS 3600
@@ -33,11 +32,6 @@
 
 #define DEFAULT_FG_COLOR GxEPD_WHITE
 #define DEFAULT_BG_COLOR GxEPD_BLACK
-
-#define BITCOIND_HOST ""
-#define BITCOIND_PORT 8332
-#define BITCOIND_RPC_USER ""
-#define BITCOIND_RPC_PASS ""
 
 void setup();
 void setupTime();
@@ -58,4 +52,4 @@ void improv_set_state(improv::State state);
 void improv_send_response(std::vector<uint8_t> &response);
 void improv_set_error(improv::Error error);
 
-void WiFiEvent(WiFiEvent_t event);
+void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);

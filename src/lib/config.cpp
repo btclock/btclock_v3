@@ -49,7 +49,7 @@ void setup()
 
 void tryImprovSetup()
 {
-    //WiFi.onEvent(WiFiEvent);
+    WiFi.onEvent(WiFiEvent);
 
     if (!preferences.getBool("wifiConfigured", false))
     {
@@ -228,7 +228,8 @@ void setupHardware()
     {
         Serial.println(F("An Error has occurred while mounting LittleFS"));
     } 
-    if(!LittleFS.open("/index.html", "r")) {
+
+    if(!LittleFS.open("/index.html.gz", "r")) {
         Serial.println("Error loading WebUI");
     }
 
@@ -474,8 +475,10 @@ void improv_set_error(improv::Error error)
     Serial.write(data.data(), data.size());
 }
 
-void WiFiEvent(WiFiEvent_t event)
+void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 {
+    static bool first_connect = true;
+
     Serial.printf("[WiFi-event] event: %d\n", event);
 
     switch (event)
@@ -496,19 +499,32 @@ void WiFiEvent(WiFiEvent_t event)
         Serial.println("Connected to access point");
         break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        Serial.println("Disconnected from WiFi access point");
-        queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
-        break;
+        {
+            if (!first_connect) {
+                Serial.println("Disconnected from WiFi access point");
+                queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+                uint8_t reason = info.wifi_sta_disconnected.reason;
+                if(reason)
+                    Serial.printf("Disconnect reason: %s, ", WiFi.disconnectReasonName((wifi_err_reason_t)reason));
+            }
+            break;
+        }
     case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
         Serial.println("Authentication mode of access point has changed");
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+    {
         Serial.print("Obtained IP address: ");
         Serial.println(WiFi.localIP());
+        if (!first_connect)
+            queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
+        first_connect = false;
         break;
+    }
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
         Serial.println("Lost IP address and IP address is reset to 0");
         queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+        WiFi.reconnect();
         break;
     case ARDUINO_EVENT_WIFI_AP_START:
         Serial.println("WiFi access point started");

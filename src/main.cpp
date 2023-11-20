@@ -26,6 +26,10 @@ extern "C" void app_main()
         if (eventSourceTaskHandle != NULL)
             xTaskNotifyGive(eventSourceTaskHandle);
 
+        if (!WiFi.isConnected()) {
+            WiFi.begin();
+        }
+
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
