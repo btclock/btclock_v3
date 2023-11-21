@@ -5,6 +5,7 @@
 #include <LittleFS.h>
 #include <ESPmDNS.h>
 #include "AsyncJson.h"
+#include <iostream>
 
 #include "lib/block_notify.hpp"
 #include "lib/price_notify.hpp"
@@ -21,6 +22,7 @@ bool processEpdColorSettings(AsyncWebServerRequest *request);
 
 void onApiStatus(AsyncWebServerRequest *request);
 void onApiSystemStatus(AsyncWebServerRequest *request);
+void onApiSetWifiTxPower(AsyncWebServerRequest *request);
 
 void onApiShowScreen(AsyncWebServerRequest *request);
 void onApiShowText(AsyncWebServerRequest *request);

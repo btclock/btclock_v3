@@ -21,6 +21,7 @@ void setup()
         if (mcp.digitalRead(3) == LOW)
         {
             preferences.putBool("wifiConfigured", false);
+            preferences.remove("txPower");
 
             WiFi.eraseAP();
             queueLedEffect(LED_EFFECT_WIFI_ERASE_SETTINGS);
@@ -51,6 +52,7 @@ void tryImprovSetup()
 {
     WiFi.onEvent(WiFiEvent);
 
+    
     if (!preferences.getBool("wifiConfigured", false))
     {
         setFgColor(GxEPD_BLACK);
@@ -143,6 +145,12 @@ void tryImprovSetup()
         WiFi.setAutoConnect(true);
         WiFi.setAutoReconnect(true);
         WiFi.begin();
+        if(preferences.getInt("txPower", 0)) {
+            if(WiFi.setTxPower(static_cast<wifi_power_t>(preferences.getInt("txPower", 0)))) {
+                Serial.printf("WiFi max tx power set to %d\n", preferences.getInt("txPower", 0));
+            }
+        }
+
 
         while (WiFi.status() != WL_CONNECTED)
         {

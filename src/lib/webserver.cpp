@@ -21,6 +21,8 @@ void setupWebserver()
 
     server.on("/api/status", HTTP_GET, onApiStatus);
     server.on("/api/system_status", HTTP_GET, onApiSystemStatus);
+    server.on("/api/wifi_set_tx_power", HTTP_GET, onApiSetWifiTxPower);
+
     server.on("/api/full_refresh", HTTP_GET, onApiFullRefresh);
 
     server.on("/api/action/pause", HTTP_GET, onApiActionPause);
@@ -103,6 +105,8 @@ StaticJsonDocument<768> getStatusObject()
     JsonObject conStatus = root.createNestedObject("connectionStatus");
     conStatus["price"] = isPriceNotifyConnected();
     conStatus["blocks"] = isBlockNotifyConnected();
+
+    root["rssi"] = WiFi.RSSI();
 
     return root;
 }
@@ -344,6 +348,27 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
         }
     }
 
+    if (settings.containsKey("txPower")) {
+        int txPower = settings["txPower"].as<int>();
+
+        if (txPower == 80) {
+            preferences.remove("txPower");
+            if (WiFi.getTxPower() != 80) {
+                ESP.restart();
+            }
+        } else if (static_cast<int>(wifi_power_t::WIFI_POWER_MINUS_1dBm) <= txPower &&
+           txPower <= static_cast<int>(wifi_power_t::WIFI_POWER_19_5dBm)) {
+           // is valid value
+
+
+            if(WiFi.setTxPower(static_cast<wifi_power_t>(txPower))) {
+                Serial.printf("Set WiFi Tx power to: %d\n", txPower);
+                preferences.putInt("txPower", txPower);
+                settingsChanged = true;
+            }
+        }
+    }
+
     request->send(200);
     if (settingsChanged)
     {
@@ -393,6 +418,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     root["hostnamePrefix"] = preferences.getString("hostnamePrefix", "btclock");
     root["hostname"] = getMyHostname();
     root["ip"] = WiFi.localIP();
+    root["txPower"] = WiFi.getTxPower();
 
 #ifdef GIT_REV
     root["gitRev"] = String(GIT_REV);
@@ -672,11 +698,41 @@ void onApiSystemStatus(AsyncWebServerRequest *request)
     root["espHeapSize"] = ESP.getHeapSize();
     root["espFreePsram"] = ESP.getFreePsram();
     root["espPsramSize"] = ESP.getPsramSize();
+    root["rssi"] = WiFi.RSSI();
+    root["txPower"] = WiFi.getTxPower();
 
     serializeJson(root, *response);
 
     request->send(response);
 }
+
+#define STRINGIFY(x) #x
+#define ENUM_TO_STRING(x) STRINGIFY(x)
+
+
+void onApiSetWifiTxPower(AsyncWebServerRequest *request)
+{
+    if (request->hasParam("txPower")) {
+        AsyncWebParameter *txPowerParam = request->getParam("txPower");
+        int txPower = txPowerParam->value().toInt();
+        if (static_cast<int>(wifi_power_t::WIFI_POWER_MINUS_1dBm) <= txPower &&
+           txPower <= static_cast<int>(wifi_power_t::WIFI_POWER_19_5dBm)) {
+           // is valid value
+           String txPowerName = std::to_string(static_cast<std::underlying_type_t<wifi_power_t>>(txPower)).c_str();
+
+            Serial.printf("Set WiFi Tx power to: %s\n", txPowerName);
+
+            if(WiFi.setTxPower(static_cast<wifi_power_t>(txPower))) {
+                preferences.putInt("txPower", txPower);
+                request->send(200, "application/json", "{\"setTxPower\": \"ok\"}");
+                return;
+            }
+        }
+    }
+
+    return request->send(400);
+}
+
 
 void onApiLightsStatus(AsyncWebServerRequest *request)
 {
