@@ -313,7 +313,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
         }
     }
 
-    String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "gmtOffset", "ledBrightness", "mcapBigChar"};
+    String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "mcapBigChar"};
 
     for (String setting : uintSettings)
     {
@@ -322,6 +322,14 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
             preferences.putUInt(setting.c_str(), settings[setting].as<uint>());
             Serial.printf("Setting %s to %d\r\n", setting.c_str(), settings[setting].as<uint>());
         }
+    }
+
+
+    if (settings.containsKey("tzOffset"))
+    {
+        int gmtOffset = settings["tzOffset"].as<int>() * 60;
+        size_t written = preferences.putInt("gmtOffset", gmtOffset);
+        Serial.printf("Setting %s to %d (%d minutes, written %d)\r\n", "gmtOffset", gmtOffset, settings["tzOffset"].as<int>(), written);
     }
 
     String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd", "mdnsEnabled", "otaEnabled", "stealFocus", "mcapBigChar"};
