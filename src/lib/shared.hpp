@@ -9,7 +9,10 @@
 
 #include "utils.hpp"
 
-extern Adafruit_MCP23X17 mcp;
+extern Adafruit_MCP23X17 mcp1;
+#ifdef IS_BTCLOCK_S3
+extern Adafruit_MCP23X17 mcp2;
+#endif
 extern Preferences preferences;
 extern std::mutex mcpMutex;
 

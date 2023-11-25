@@ -3,7 +3,10 @@
 #define MAX_ATTEMPTS_WIFI_CONNECTION 20
 
 Preferences preferences;
-Adafruit_MCP23X17 mcp;
+Adafruit_MCP23X17 mcp1;
+#ifdef IS_BTCLOCK_S3
+Adafruit_MCP23X17 mcp2;
+#endif
 std::vector<std::string> screenNameMap(SCREEN_COUNT);
 std::mutex mcpMutex;
 
@@ -18,7 +21,7 @@ void setup()
     }
     {
         std::lock_guard<std::mutex> lockMcp(mcpMutex);
-        if (mcp.digitalRead(3) == LOW)
+        if (mcp1.digitalRead(3) == LOW)
         {
             preferences.putBool("wifiConfigured", false);
             preferences.remove("txPower");
@@ -65,7 +68,7 @@ void tryImprovSetup()
         bool buttonPress = false;
         {
             std::lock_guard<std::mutex> lockMcp(mcpMutex);
-            buttonPress = (mcp.digitalRead(2) == LOW);
+            buttonPress = (mcp1.digitalRead(2) == LOW);
         }
         
         {
@@ -230,6 +233,33 @@ std::vector<std::string> getScreenNameMap()
     return screenNameMap;
 }
 
+
+void setupMcp()
+{
+    #ifdef IS_BTCLOCK_S3
+    const int mcp1AddrPins[] = {MCP1_A0_PIN, MCP1_A1_PIN, MCP1_A2_PIN};
+    const int mcp1AddrValues[] = {LOW, LOW, LOW};
+
+    const int mcp2AddrPins[] = {MCP2_A0_PIN, MCP2_A1_PIN, MCP2_A2_PIN};
+    const int mcp2AddrValues[] = {LOW, LOW, HIGH};
+
+    pinMode(MCP_RESET_PIN, OUTPUT);
+    digitalWrite(MCP_RESET_PIN, HIGH);
+
+    for (int i = 0; i < 3; ++i) {
+        pinMode(mcp1AddrPins[i], OUTPUT);
+        digitalWrite(mcp1AddrPins[i], mcp1AddrValues[i]);
+
+        pinMode(mcp2AddrPins[i], OUTPUT);
+        digitalWrite(mcp2AddrPins[i], mcp2AddrValues[i]);
+    }
+
+    digitalWrite(MCP_RESET_PIN, LOW);
+    delay(30);
+    digitalWrite(MCP_RESET_PIN, HIGH);
+    #endif
+}
+
 void setupHardware()
 {
     if (!LittleFS.begin(true))
@@ -250,9 +280,11 @@ void setupHardware()
         Serial.println(F("PSRAM not available"));
     }
 
-    Wire.begin(35, 36, 400000);
+    setupMcp();
 
-    if (!mcp.begin_I2C(0x20))
+    Wire.begin(I2C_SDA_PIN, I2C_SCK_PIN, 400000);
+
+    if (!mcp1.begin_I2C(0x20))
     {
         Serial.println(F("Error MCP23017"));
 
@@ -262,18 +294,30 @@ void setupHardware()
     else
     {
         pinMode(MCP_INT_PIN, INPUT_PULLUP);
-        mcp.setupInterrupts(false, false, LOW);
+        mcp1.setupInterrupts(false, false, LOW);
 
         for (int i = 0; i < 4; i++)
         {
-            mcp.pinMode(i, INPUT_PULLUP);
-            mcp.setupInterruptPin(i, LOW);
+            mcp1.pinMode(i, INPUT_PULLUP);
+            mcp1.setupInterruptPin(i, LOW);
         }
+        #ifndef IS_BTCLOCK_S3
         for (int i = 8; i <= 14; i++)
         {
-            mcp.pinMode(i, OUTPUT);
+            mcp1.pinMode(i, OUTPUT);
         }
+        #endif
     }
+
+    #ifdef IS_BTCLOCK_S3
+    if (!mcp2.begin_I2C(0x21))
+    {
+        Serial.println(F("Error MCP23017"));
+
+        // while (1)
+        //         ;
+    }
+    #endif
 }
 
 void improvGetAvailableWifiNetworks()

@@ -1,5 +1,6 @@
 #include "epd.hpp"
 
+#ifndef IS_BTCLOCK_S3
 Native_Pin EPD_CS[NUM_SCREENS] = {
     Native_Pin(2),
     Native_Pin(4),
@@ -24,16 +25,53 @@ Native_Pin EPD_BUSY[NUM_SCREENS] = {
     Native_Pin(16),
 };
 MCP23X17_Pin EPD_RESET_MPD[NUM_SCREENS] = {
-    MCP23X17_Pin(mcp, 8),
-    MCP23X17_Pin(mcp, 9),
-    MCP23X17_Pin(mcp, 10),
-    MCP23X17_Pin(mcp, 11),
-    MCP23X17_Pin(mcp, 12),
-    MCP23X17_Pin(mcp, 13),
-    MCP23X17_Pin(mcp, 14),
+    MCP23X17_Pin(mcp1, 8),
+    MCP23X17_Pin(mcp1, 9),
+    MCP23X17_Pin(mcp1, 10),
+    MCP23X17_Pin(mcp1, 11),
+    MCP23X17_Pin(mcp1, 12),
+    MCP23X17_Pin(mcp1, 13),
+    MCP23X17_Pin(mcp1, 14),
 };
 
 Native_Pin EPD_DC = Native_Pin(14);
+#else
+Native_Pin EPD_DC = Native_Pin(38);
+
+MCP23X17_Pin EPD_BUSY[NUM_SCREENS] = {
+    MCP23X17_Pin(mcp1, 8),
+    MCP23X17_Pin(mcp1, 9),
+    MCP23X17_Pin(mcp1, 10),
+    MCP23X17_Pin(mcp1, 11),
+    MCP23X17_Pin(mcp1, 12),
+    MCP23X17_Pin(mcp1, 13),
+    MCP23X17_Pin(mcp1, 14),
+    MCP23X17_Pin(mcp1, 4),
+};
+
+MCP23X17_Pin EPD_CS[NUM_SCREENS] = {
+    MCP23X17_Pin(mcp2, 8),
+    MCP23X17_Pin(mcp2, 10),
+    MCP23X17_Pin(mcp2, 12),
+    MCP23X17_Pin(mcp2, 14),
+    MCP23X17_Pin(mcp2, 0),
+    MCP23X17_Pin(mcp2, 2),
+    MCP23X17_Pin(mcp2, 4),
+    MCP23X17_Pin(mcp2, 6)
+};
+
+MCP23X17_Pin EPD_RESET_MPD[NUM_SCREENS] = {
+    MCP23X17_Pin(mcp2, 9),
+    MCP23X17_Pin(mcp2, 11),
+    MCP23X17_Pin(mcp2, 13),
+    MCP23X17_Pin(mcp2, 15),
+    MCP23X17_Pin(mcp2, 1),
+    MCP23X17_Pin(mcp2, 3),
+    MCP23X17_Pin(mcp2, 5),
+    MCP23X17_Pin(mcp2, 7),
+};
+
+#endif
 
 GxEPD2_BW<GxEPD2_213_B74, GxEPD2_213_B74::HEIGHT> displays[NUM_SCREENS] = {
     GxEPD2_213_B74(&EPD_CS[0], &EPD_DC, &EPD_RESET_MPD[0], &EPD_BUSY[0]),
@@ -43,9 +81,8 @@ GxEPD2_BW<GxEPD2_213_B74, GxEPD2_213_B74::HEIGHT> displays[NUM_SCREENS] = {
     GxEPD2_213_B74(&EPD_CS[4], &EPD_DC, &EPD_RESET_MPD[4], &EPD_BUSY[4]),
     GxEPD2_213_B74(&EPD_CS[5], &EPD_DC, &EPD_RESET_MPD[5], &EPD_BUSY[5]),
     GxEPD2_213_B74(&EPD_CS[6], &EPD_DC, &EPD_RESET_MPD[6], &EPD_BUSY[6]),
-#if NUM_SCREENS == 9
-    GxEPD2_213_B74(&EPD8_CS, &EPD_DC, &EPD_RESET_MPD[7], &EPD8_BUSY),
-    GxEPD2_213_B74(&EPD9_CS, &EPD_DC, &EPD_RESET_MPD[8], &EPD9_BUSY),
+#ifdef IS_BTCLOCK_S3
+    GxEPD2_213_B74(&EPD_CS[7], &EPD_DC, &EPD_RESET_MPD[6], &EPD_BUSY[7]),
 #endif
 };
 

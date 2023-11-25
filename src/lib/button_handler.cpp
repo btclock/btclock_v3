@@ -18,7 +18,7 @@ void buttonTask(void *parameter)
 
             if (!digitalRead(MCP_INT_PIN))
             {
-                uint pin = mcp.getLastInterruptPin();
+                uint pin = mcp1.getLastInterruptPin();
 
                 switch (pin)
                 {
@@ -36,7 +36,7 @@ void buttonTask(void *parameter)
                     break;
                 }
             }
-            mcp.clearInterrupts();
+            mcp1.clearInterrupts();
         }
         else
         {
@@ -44,7 +44,7 @@ void buttonTask(void *parameter)
         // Very ugly, but for some reason this is necessary
         while (!digitalRead(MCP_INT_PIN))
         {
-            mcp.clearInterrupts();
+            mcp1.clearInterrupts();
         }
     }
 }
