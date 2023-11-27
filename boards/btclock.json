@@ -9,6 +9,7 @@
     "extra_flags": [
       "-DBOARD_HAS_PSRAM",
       "-DARDUINO_BTCLOCK",
+      "-DARDUINO_ESP32S3_DEV",
       "-DIS_BTCLOCK_S3",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
@@ -18,6 +19,10 @@
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
+    "psram_type": "opi",
+    "espidf": {
+      "sdkconfig_path": "boards"
+    },
     "hwids": [
       [
         "0x303A",
@@ -25,7 +30,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "btclock"
+    "variant": "esp32s3"
   },
   "connectivity": [
     "bluetooth",
