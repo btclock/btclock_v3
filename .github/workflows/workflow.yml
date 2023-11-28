@@ -43,6 +43,7 @@ jobs:
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '**/junit-reports/*.xml'
+          detailed_summary: true
       - name: Build BTClock firmware
         run: pio run -e lolin_s3_mini_qr 
 
