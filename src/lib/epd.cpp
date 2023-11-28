@@ -173,6 +173,16 @@ void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent)
     setEpdContent(newEpdContent, false);
 }
 
+void setEpdContent(std::array<std::string, NUM_SCREENS> newEpdContent) {
+    std::array<String, NUM_SCREENS> conv;
+
+    for (size_t i = 0; i < newEpdContent.size(); ++i) {
+        conv[i] = String(newEpdContent[i].c_str());
+    }
+
+    return setEpdContent(conv);
+}
+
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent, bool forceUpdate)
 {
     std::lock_guard<std::mutex> lock(epdUpdateMutex);

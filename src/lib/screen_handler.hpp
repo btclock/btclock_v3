@@ -4,6 +4,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <data_handler.hpp>
 
 #include "price_fetch.hpp"
 #include "shared.hpp"

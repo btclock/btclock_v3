@@ -44,5 +44,8 @@ void renderQr(const uint dispNum, const String& text, bool partial);
 
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent, bool forceUpdate);
 void setEpdContent(std::array<String, NUM_SCREENS> newEpdContent);
+
+void setEpdContent(std::array<std::string, NUM_SCREENS> newEpdContent);
+
 std::array<String, NUM_SCREENS> getCurrentEpdContent();
 void waitUntilNoneBusy();

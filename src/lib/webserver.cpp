@@ -313,7 +313,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
         }
     }
 
-    String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "mcapBigChar"};
+    String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness"};
 
     for (String setting : uintSettings)
     {

@@ -42,6 +42,7 @@ void tryImprovSetup();
 void setupTimers();
 void finishSetup();
 void setupMcp();
+String getMyHostname();
 std::vector<std::string> getScreenNameMap();
 
 std::vector<std::string> getLocalUrl();

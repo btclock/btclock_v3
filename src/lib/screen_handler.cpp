@@ -8,7 +8,7 @@ TaskHandle_t workerTaskHandle;
 esp_timer_handle_t screenRotateTimer;
 esp_timer_handle_t minuteTimer;
 
-std::array<String, NUM_SCREENS> taskEpdContent = {"", "", "", "", "", "", ""};
+std::array<std::string, NUM_SCREENS> taskEpdContent = {"", "", "", "", "", "", ""};
 std::string priceString;
 
 // typedef enum
@@ -45,7 +45,6 @@ void workerTask(void *pvParameters)
             {
             case TASK_PRICE_UPDATE:
             {
-                firstIndex = 0;
                 uint price = getPrice();
                 char priceSymbol = '$';
                 if (preferences.getBool("fetchEurPrice", false))
@@ -54,92 +53,15 @@ void workerTask(void *pvParameters)
                 }
                 if (getCurrentScreen() == SCREEN_BTC_TICKER)
                 {
-                    priceString = (priceSymbol + String(price)).c_str();
-
-                    if (priceString.length() < (NUM_SCREENS))
-                    {
-                        priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                        if (preferences.getBool("fetchEurPrice", false))
-                        {
-                            taskEpdContent[0] = "BTC/EUR";
-                        }
-                        else
-                        {
-                            taskEpdContent[0] = "BTC/USD";
-                        }
-                        firstIndex = 1;
-                    }
+                     taskEpdContent = parsePriceData(price, priceSymbol);                   
                 }
                 else if (getCurrentScreen() == SCREEN_MSCW_TIME)
                 {
-                    priceString = String(int(round(1 / float(price) * 10e7))).c_str();
-
-                    if (priceString.length() < (NUM_SCREENS))
-                    {
-                        priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                        if (preferences.getBool("fetchEurPrice", false))
-                        {
-                            taskEpdContent[0] = "SATS/EUR";
-                        } else {
-                            taskEpdContent[0] = "MSCW/TIME";
-                        }
-                        firstIndex = 1;
-                    }
+                    taskEpdContent = parseSatsPerCurrency(price, priceSymbol);
                 }
                 else
                 {
-                    double supply = getSupplyAtBlock(getBlockHeight());
-                    int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
-
-                    if (preferences.getBool("fetchEurPrice", false))
-                    {
-                        taskEpdContent[0] = "EUR/MCAP";
-                    }
-                    else
-                    {
-                        taskEpdContent[0] = "USD/MCAP";
-                    }
-
-                    if (preferences.getBool("mcapBigChar", true))
-                    {
-                        firstIndex = 1;
-
-                        priceString = priceSymbol + formatNumberWithSuffix(marketCap);
-                        priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
-                    }
-                    else
-                    {
-                        std::string stringValue = std::to_string(marketCap);
-                        size_t mcLength = stringValue.length();
-                        size_t leadingSpaces = (3 - mcLength % 3) % 3;
-                        stringValue = std::string(leadingSpaces, ' ') + stringValue;
-
-                        uint groups = (mcLength + leadingSpaces) / 3;
-
-                        if (groups < NUM_SCREENS)
-                        {
-                            firstIndex = 1;
-                        }
-
-                        for (int i = firstIndex; i < NUM_SCREENS - groups - 1; i++)
-                        {
-                            taskEpdContent[i] = "";
-                        }
-
-                        taskEpdContent[NUM_SCREENS - groups - 1] = " $ ";
-                        for (uint i = 0; i < groups; i++)
-                        {
-                            taskEpdContent[(NUM_SCREENS - groups + i)] = stringValue.substr(i * 3, 3).c_str();
-                        }
-                    }
-                }
-
-                if (!(getCurrentScreen() == SCREEN_MARKET_CAP && !preferences.getBool("mcapBigChar", true)))
-                {
-                    for (uint i = firstIndex; i < NUM_SCREENS; i++)
-                    {
-                        taskEpdContent[i] = priceString[i];
-                    }
+                    taskEpdContent = parseMarketCap(getBlockHeight(), price, priceSymbol, preferences.getBool("mcapBigChar", true));
                 }
 
                 setEpdContent(taskEpdContent);
@@ -147,39 +69,13 @@ void workerTask(void *pvParameters)
             }
             case TASK_BLOCK_UPDATE:
             {
-                std::string blockNrString = String(getBlockHeight()).c_str();
-                firstIndex = 0;
-
                 if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN)
                 {
-                    if (blockNrString.length() < NUM_SCREENS)
-                    {
-                        blockNrString.insert(blockNrString.begin(), NUM_SCREENS - blockNrString.length(), ' ');
-                        taskEpdContent[0] = "BLOCK/HEIGHT";
-                        firstIndex = 1;
-                    }
-
-                    for (uint i = firstIndex; i < NUM_SCREENS; i++)
-                    {
-                        taskEpdContent[i] = blockNrString[i];
-                    }
+                    taskEpdContent = parseBlockHeight(getBlockHeight());
                 }
                 else
                 {
-                    const uint nextHalvingBlock = 210000 - (getBlockHeight() % 210000);
-                    const uint minutesToHalving = nextHalvingBlock * 10;
-
-                    const int years = floor(minutesToHalving / 525600);
-                    const int days = floor((minutesToHalving - (years * 525600)) / (24 * 60));
-                    const int hours = floor((minutesToHalving - (years * 525600) - (days * (24 * 60))) / 60);
-                    const int mins = floor(minutesToHalving - (years * 525600) - (days * (24 * 60)) - (hours * 60));
-                    taskEpdContent[0] = "BIT/COIN";
-                    taskEpdContent[1] = "HALV/ING";
-                    taskEpdContent[(NUM_SCREENS - 5)] = String(years) + "/YRS";
-                    taskEpdContent[(NUM_SCREENS - 4)] = String(days) + "/DAYS";
-                    taskEpdContent[(NUM_SCREENS - 3)] = String(hours) + "/HRS";
-                    taskEpdContent[(NUM_SCREENS - 2)] = String(mins) + "/MINS";
-                    taskEpdContent[(NUM_SCREENS - 1)] = "TO/GO";
+                    taskEpdContent = parseHalvingCountdown(getBlockHeight());
                 }
 
                 if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN || getCurrentScreen() == SCREEN_BLOCK_HEIGHT)
@@ -206,7 +102,7 @@ void workerTask(void *pvParameters)
 
                     timeString = std::to_string(timeinfo.tm_hour) + ":" + minute.c_str();
                     timeString.insert(timeString.begin(), NUM_SCREENS - timeString.length(), ' ');
-                    taskEpdContent[0] = String(timeinfo.tm_mday) + "/" + String(timeinfo.tm_mon + 1);
+                    taskEpdContent[0] = std::to_string(timeinfo.tm_mday) + "/" + std::to_string(timeinfo.tm_mon + 1);
 
                     for (uint i = 1; i < NUM_SCREENS; i++)
                     {
