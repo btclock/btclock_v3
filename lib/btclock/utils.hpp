@@ -2,9 +2,10 @@
 
 #include <string>
 #include <cmath>
+#include <cstdint>
 
 int modulo(int x,int N);
 
-double getSupplyAtBlock(uint blockNr);
+double getSupplyAtBlock(std::uint32_t blockNr);
 
-std::string formatNumberWithSuffix(int64_t num);
+std::string formatNumberWithSuffix(std::uint64_t  num);

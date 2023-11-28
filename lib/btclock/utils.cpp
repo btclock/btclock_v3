@@ -5,7 +5,7 @@ int modulo(int x, int N)
     return (x % N + N) % N;
 }
 
-double getSupplyAtBlock(uint blockNr) {
+double getSupplyAtBlock(std::uint32_t blockNr) {
     if (blockNr >= 33 * 210000) {
         return 20999999.9769;
     } 
@@ -25,7 +25,7 @@ double getSupplyAtBlock(uint blockNr) {
     return totalBitcoinInCirculation;
 }
 
-std::string formatNumberWithSuffix(int64_t num) {
+std::string formatNumberWithSuffix(std::uint64_t num) {
     const long long quadrillion = 1000000000000000LL;
     const long long trillion = 1000000000000LL;
     const long long billion = 1000000000;

@@ -1,10 +1,15 @@
 #include "data_handler.hpp"
 
-std::array<std::string, NUM_SCREENS> parsePriceData(uint price, char currencySymbol)
+std::array<std::string, NUM_SCREENS> parsePriceData(std::uint32_t price, char currencySymbol)
 {
     std::array<std::string, NUM_SCREENS> ret;
-    std::string priceString = currencySymbol + std::to_string(price);
-    uint firstIndex = 0;
+    std::string priceString;
+    if (std::to_string(price).length() >= NUM_SCREENS) {
+        priceString = formatNumberWithSuffix(price);
+    } else {
+        priceString = currencySymbol + std::to_string(price);
+    }
+    std::uint32_t firstIndex = 0;
     if (priceString.length() < (NUM_SCREENS))
     {
         priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
@@ -19,7 +24,7 @@ std::array<std::string, NUM_SCREENS> parsePriceData(uint price, char currencySym
         firstIndex = 1;
     }
 
-    for (uint i = firstIndex; i < NUM_SCREENS; i++)
+    for (std::uint32_t i = firstIndex; i < NUM_SCREENS; i++)
     {
         ret[i] = priceString[i];
     }
@@ -27,11 +32,11 @@ std::array<std::string, NUM_SCREENS> parsePriceData(uint price, char currencySym
     return ret;
 }
 
-std::array<std::string, NUM_SCREENS> parseSatsPerCurrency(uint price, char currencySymbol)
+std::array<std::string, NUM_SCREENS> parseSatsPerCurrency(std::uint32_t price, char currencySymbol)
 {
     std::array<std::string, NUM_SCREENS> ret;
     std::string priceString = std::to_string(int(round(1 / float(price) * 10e7)));
-    uint firstIndex = 0;
+    std::uint32_t firstIndex = 0;
 
     if (priceString.length() < (NUM_SCREENS))
     {
@@ -46,7 +51,7 @@ std::array<std::string, NUM_SCREENS> parseSatsPerCurrency(uint price, char curre
         }
         firstIndex = 1;
 
-        for (uint i = firstIndex; i < NUM_SCREENS; i++)
+        for (std::uint32_t i = firstIndex; i < NUM_SCREENS; i++)
         {
             ret[i] = priceString[i];
         }
@@ -54,11 +59,11 @@ std::array<std::string, NUM_SCREENS> parseSatsPerCurrency(uint price, char curre
     return ret;
 }
 
-std::array<std::string, NUM_SCREENS> parseBlockHeight(uint blockHeight)
+std::array<std::string, NUM_SCREENS> parseBlockHeight(std::uint32_t blockHeight)
 {
     std::array<std::string, NUM_SCREENS> ret;
     std::string blockNrString = std::to_string(blockHeight);
-    uint firstIndex = 0;
+    std::uint32_t firstIndex = 0;
 
     if (blockNrString.length() < NUM_SCREENS)
     {
@@ -67,7 +72,7 @@ std::array<std::string, NUM_SCREENS> parseBlockHeight(uint blockHeight)
         firstIndex = 1;
     }
 
-    for (uint i = firstIndex; i < NUM_SCREENS; i++)
+    for (std::uint32_t i = firstIndex; i < NUM_SCREENS; i++)
     {
         ret[i] = blockNrString[i];
     }
@@ -75,12 +80,12 @@ std::array<std::string, NUM_SCREENS> parseBlockHeight(uint blockHeight)
     return ret;
 }
 
-std::array<std::string, NUM_SCREENS> parseHalvingCountdown(uint blockHeight)
+std::array<std::string, NUM_SCREENS> parseHalvingCountdown(std::uint32_t blockHeight)
 {
     std::array<std::string, NUM_SCREENS> ret;
 
-    const uint nextHalvingBlock = 210000 - (blockHeight % 210000);
-    const uint minutesToHalving = nextHalvingBlock * 10;
+    const std::uint32_t nextHalvingBlock = 210000 - (blockHeight % 210000);
+    const std::uint32_t minutesToHalving = nextHalvingBlock * 10;
 
     const int years = floor(minutesToHalving / 525600);
     const int days = floor((minutesToHalving - (years * 525600)) / (24 * 60));
@@ -97,10 +102,10 @@ std::array<std::string, NUM_SCREENS> parseHalvingCountdown(uint blockHeight)
     return ret;
 }
 
-std::array<std::string, NUM_SCREENS> parseMarketCap(uint blockHeight, uint price, char currencySymbol, bool bigChars)
+std::array<std::string, NUM_SCREENS> parseMarketCap(std::uint32_t blockHeight, std::uint32_t price, char currencySymbol, bool bigChars)
 {
     std::array<std::string, NUM_SCREENS> ret;
-    uint firstIndex = 0;
+    std::uint32_t firstIndex = 0;
     double supply = getSupplyAtBlock(blockHeight);
     int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
     if (currencySymbol == '[')
@@ -119,7 +124,7 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(uint blockHeight, uint price
         std::string priceString = currencySymbol + formatNumberWithSuffix(marketCap);
         priceString.insert(priceString.begin(), NUM_SCREENS - priceString.length(), ' ');
 
-        for (uint i = firstIndex; i < NUM_SCREENS; i++)
+        for (std::uint32_t i = firstIndex; i < NUM_SCREENS; i++)
         {
             ret[i] = priceString[i];
         }
@@ -131,7 +136,7 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(uint blockHeight, uint price
         size_t leadingSpaces = (3 - mcLength % 3) % 3;
         stringValue = std::string(leadingSpaces, ' ') + stringValue;
 
-        uint groups = (mcLength + leadingSpaces) / 3;
+        std::uint32_t groups = (mcLength + leadingSpaces) / 3;
 
         if (groups < NUM_SCREENS)
         {
@@ -144,7 +149,7 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(uint blockHeight, uint price
         }
 
         ret[NUM_SCREENS - groups - 1] = " $ ";
-        for (uint i = 0; i < groups; i++)
+        for (std::uint32_t i = 0; i < groups; i++)
         {
             ret[(NUM_SCREENS - groups + i)] = stringValue.substr(i * 3, 3).c_str();
         }
