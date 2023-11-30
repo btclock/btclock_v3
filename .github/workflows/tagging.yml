@@ -12,8 +12,11 @@ jobs:
       contents: write
       checks: write
     steps:
-      - name: "Checkout, install and build"
-        uses: ./.github/actions/checkout-install-build
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: "Install and build"
+        uses: ./.github/actions/install-build
 
       - name: Install esptools.py
         run: pip install --upgrade esptool

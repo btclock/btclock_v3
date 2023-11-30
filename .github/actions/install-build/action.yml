@@ -1,12 +1,9 @@
-name: "Checkout, install and build"
-description: "Checkout, install and build"
+name: "Install and build"
+description: "Install and build"
 
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
