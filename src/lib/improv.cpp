@@ -2,13 +2,15 @@
 
 namespace improv {
 
-ImprovCommand parse_improv_data(const std::vector<uint8_t> &data, bool check_checksum) {
+ImprovCommand parse_improv_data(const std::vector<uint8_t> &data,
+                                bool check_checksum) {
   return parse_improv_data(data.data(), data.size(), check_checksum);
 }
 
-ImprovCommand parse_improv_data(const uint8_t *data, size_t length, bool check_checksum) {
+ImprovCommand parse_improv_data(const uint8_t *data, size_t length,
+                                bool check_checksum) {
   ImprovCommand improv_command;
-  Command command = (Command) data[0];
+  Command command = (Command)data[0];
   uint8_t data_length = data[1];
 
   if (data_length != length - 2 - check_checksum) {
@@ -24,7 +26,7 @@ ImprovCommand parse_improv_data(const uint8_t *data, size_t length, bool check_c
       calculated_checksum += data[i];
     }
 
-    if ((uint8_t) calculated_checksum != checksum) {
+    if ((uint8_t)calculated_checksum != checksum) {
       improv_command.command = BAD_CHECKSUM;
       return improv_command;
     }
@@ -48,8 +50,10 @@ ImprovCommand parse_improv_data(const uint8_t *data, size_t length, bool check_c
   return improv_command;
 }
 
-bool parse_improv_serial_byte(size_t position, uint8_t byte, const uint8_t *buffer,
-                              std::function<bool(ImprovCommand)> &&callback, std::function<void(Error)> &&on_error) {
+bool parse_improv_serial_byte(size_t position, uint8_t byte,
+                              const uint8_t *buffer,
+                              std::function<bool(ImprovCommand)> &&callback,
+                              std::function<void(Error)> &&on_error) {
   if (position == 0)
     return byte == 'I';
   if (position == 1)
@@ -94,7 +98,9 @@ bool parse_improv_serial_byte(size_t position, uint8_t byte, const uint8_t *buff
   return false;
 }
 
-std::vector<uint8_t> build_rpc_response(Command command, const std::vector<std::string> &datum, bool add_checksum) {
+std::vector<uint8_t> build_rpc_response(Command command,
+                                        const std::vector<std::string> &datum,
+                                        bool add_checksum) {
   std::vector<uint8_t> out;
   uint32_t length = 0;
   out.push_back(command);
@@ -118,7 +124,9 @@ std::vector<uint8_t> build_rpc_response(Command command, const std::vector<std::
 }
 
 #ifdef ARDUINO
-std::vector<uint8_t> build_rpc_response(Command command, const std::vector<String> &datum, bool add_checksum) {
+std::vector<uint8_t> build_rpc_response(Command command,
+                                        const std::vector<String> &datum,
+                                        bool add_checksum) {
   std::vector<uint8_t> out;
   uint32_t length = 0;
   out.push_back(command);
@@ -140,6 +148,6 @@ std::vector<uint8_t> build_rpc_response(Command command, const std::vector<Strin
   }
   return out;
 }
-#endif  // ARDUINO
+#endif // ARDUINO
 
-}  // namespace improv
+} // namespace improv

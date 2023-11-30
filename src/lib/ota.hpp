@@ -1,7 +1,7 @@
+#include "lib/config.hpp"
+#include "lib/shared.hpp"
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-#include "config.hpp"
-#include "shared.hpp"
 
 void setupOTA();
 void onOTAStart();

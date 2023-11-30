@@ -2,10 +2,8 @@
 
 TaskHandle_t taskOtaHandle = NULL;
 
-void setupOTA()
-{
-  if (preferences.getBool("otaEnabled", true))
-  {
+void setupOTA() {
+  if (preferences.getBool("otaEnabled", true)) {
     ArduinoOTA.onStart(onOTAStart);
 
     ArduinoOTA.onProgress(onOTAProgress);
@@ -16,39 +14,35 @@ void setupOTA()
     ArduinoOTA.setMdnsEnabled(false);
     ArduinoOTA.setRebootOnSuccess(false);
     ArduinoOTA.begin();
-    //downloadUpdate();
+    // downloadUpdate();
 
-    xTaskCreate(handleOTATask, "handleOTA", 4096, NULL, tskIDLE_PRIORITY, &taskOtaHandle);
+    xTaskCreate(handleOTATask, "handleOTA", 4096, NULL, tskIDLE_PRIORITY,
+                &taskOtaHandle);
   }
 }
 
-void onOTAProgress(unsigned int progress, unsigned int total)
-{
+void onOTAProgress(unsigned int progress, unsigned int total) {
   uint percentage = progress / (total / 100);
   pixels.fill(pixels.Color(0, 255, 0));
-  if (percentage < 100)
-  {
+  if (percentage < 100) {
     pixels.setPixelColor(0, pixels.Color(0, 0, 0));
   }
-  if (percentage < 75)
-  {
+  if (percentage < 75) {
     pixels.setPixelColor(1, pixels.Color(0, 0, 0));
   }
-  if (percentage < 50)
-  {
+  if (percentage < 50) {
     pixels.setPixelColor(2, pixels.Color(0, 0, 0));
   }
-  if (percentage < 25)
-  {
+  if (percentage < 25) {
     pixels.setPixelColor(3, pixels.Color(0, 0, 0));
   }
   pixels.show();
 }
 
-void onOTAStart()
-{
+void onOTAStart() {
   forceFullRefresh();
-  std::array<String, NUM_SCREENS> epdContent = {"U", "P", "D", "A", "T", "E", "!"};
+  std::array<String, NUM_SCREENS> epdContent = {"U", "P", "D", "A",
+                                                "T", "E", "!"};
   setEpdContent(epdContent);
   // Stop all timers
   esp_timer_stop(screenRotateTimer);
@@ -68,17 +62,14 @@ void onOTAStart()
   stopPriceNotify();
 }
 
-void handleOTATask(void *parameter)
-{
-  for (;;)
-  {
+void handleOTATask(void *parameter) {
+  for (;;) {
     ArduinoOTA.handle(); // Allow OTA updates to occur
     vTaskDelay(pdMS_TO_TICKS(2500));
   }
 }
 
-void downloadUpdate()
-{
+void downloadUpdate() {
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
@@ -87,12 +78,12 @@ void downloadUpdate()
   // Send HTTP request to CoinGecko API
   http.useHTTP10(true);
 
-  http.begin(client, "https://api.github.com/repos/btclock/btclock_v3/releases/latest");
+  http.begin(client,
+             "https://api.github.com/repos/btclock/btclock_v3/releases/latest");
   int httpCode = http.GET();
 
-  if (httpCode == 200)
-  {
-//    WiFiClient * stream = http->getStreamPtr();
+  if (httpCode == 200) {
+    //    WiFiClient * stream = http->getStreamPtr();
 
     StaticJsonDocument<64> filter;
 
@@ -102,18 +93,17 @@ void downloadUpdate()
 
     SpiRamJsonDocument doc(1536);
 
-    DeserializationError error = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
+    DeserializationError error = deserializeJson(
+        doc, http.getStream(), DeserializationOption::Filter(filter));
 
-    if (error)
-    {
+    if (error) {
       Serial.print("deserializeJson() failed: ");
       Serial.println(error.c_str());
       return;
     }
 
     String downloadUrl;
-    for (JsonObject asset : doc["assets"].as<JsonArray>())
-    {
+    for (JsonObject asset : doc["assets"].as<JsonArray>()) {
       if (asset["name"].as<String>().compareTo("firmware.bin") == 0) {
         downloadUrl = asset["browser_download_url"].as<String>();
         break;
@@ -121,8 +111,6 @@ void downloadUpdate()
     }
 
     Serial.printf("Download update from %s", downloadUrl);
-
-
 
     // esp_http_client_config_t config = {
     //     .url = CONFIG_FIRMWARE_UPGRADE_URL,
@@ -138,8 +126,7 @@ void downloadUpdate()
   }
 }
 
-void onOTAError(ota_error_t error)
-{
+void onOTAError(ota_error_t error) {
   Serial.println("\nOTA update error, restarting");
   Wire.end();
   SPI.end();
@@ -147,8 +134,7 @@ void onOTAError(ota_error_t error)
   ESP.restart();
 }
 
-void onOTAComplete()
-{
+void onOTAComplete() {
   Serial.println("\nOTA update finished");
   Wire.end();
   SPI.end();

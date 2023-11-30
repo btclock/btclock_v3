@@ -1,26 +1,23 @@
 #pragma once;
-#include <WiFiManager.h>
-#include "base64.h"
-
-#include <WiFiClientSecure.h>
-#include <Preferences.h>
 #include <Adafruit_MCP23X17.h>
-
 #include <Arduino.h>
-#include "shared.hpp"
-#include "epd.hpp"
-#include "improv.hpp"
-#include "esp_task_wdt.h"
-
+#include <Preferences.h>
+#include <WiFiClientSecure.h>
+#include <WiFiManager.h>
+#include <base64.h>
+#include <esp_task_wdt.h>
 #include <map>
 
-#include "ota.hpp"
-#include "lib/screen_handler.hpp"
-#include "lib/webserver.hpp"
 #include "lib/block_notify.hpp"
-#include "lib/price_notify.hpp"
 #include "lib/button_handler.hpp"
+#include "lib/epd.hpp"
+#include "lib/improv.hpp"
 #include "lib/led_handler.hpp"
+#include "lib/ota.hpp"
+#include "lib/price_notify.hpp"
+#include "lib/screen_handler.hpp"
+#include "lib/shared.hpp"
+#include "lib/webserver.hpp"
 
 #define NTP_SERVER "pool.ntp.org"
 #define DEFAULT_MEMPOOL_INSTANCE "mempool.space"

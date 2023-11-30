@@ -48,152 +48,141 @@ uint currentBlockHeight = 816000;
 // ew==
 // -----END CERTIFICATE-----)";
 
-void setupBlockNotify()
-{
-    //currentBlockHeight = preferences.getUInt("blockHeight", 816000);
+void setupBlockNotify() {
+  // currentBlockHeight = preferences.getUInt("blockHeight", 816000);
 
-    IPAddress result;
+  IPAddress result;
 
-    int dnsErr = -1;
-    String mempoolInstance = preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
+  int dnsErr = -1;
+  String mempoolInstance =
+      preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
 
-    while (dnsErr != 1)
-    {
-        dnsErr = WiFi.hostByName(mempoolInstance.c_str(), result);
+  while (dnsErr != 1) {
+    dnsErr = WiFi.hostByName(mempoolInstance.c_str(), result);
 
-        if (dnsErr != 1)
-        {
-            Serial.print(mempoolInstance);
-            Serial.println(F("mempool DNS could not be resolved"));
-            WiFi.reconnect();
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }
+    if (dnsErr != 1) {
+      Serial.print(mempoolInstance);
+      Serial.println(F("mempool DNS could not be resolved"));
+      WiFi.reconnect();
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+  }
+
+  // Get current block height through regular API
+  HTTPClient *http = new HTTPClient();
+  http->begin("https://" + mempoolInstance + "/api/blocks/tip/height");
+  int httpCode = http->GET();
+
+  if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
+    String blockHeightStr = http->getString();
+    currentBlockHeight = blockHeightStr.toInt();
+    //        xTaskNotifyGive(blockUpdateTaskHandle);
+    if (workQueue != nullptr) {
+      WorkItem blockUpdate = {TASK_BLOCK_UPDATE, 0};
+      xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
+    }
+  }
+
+  // std::strcpy(wsServer, String("wss://" + mempoolInstance +
+  // "/api/v1/ws").c_str());
+
+  esp_websocket_client_config_t config = {
+      .uri = "wss://mempool.space/api/v1/ws",
+      //  .task_stack = (6*1024),
+      // .cert_pem = mempoolWsCert,
+      .user_agent = USER_AGENT,
+  };
+
+  blockNotifyClient = esp_websocket_client_init(&config);
+  esp_websocket_register_events(blockNotifyClient, WEBSOCKET_EVENT_ANY,
+                                onWebsocketEvent, blockNotifyClient);
+  esp_websocket_client_start(blockNotifyClient);
+}
+
+void onWebsocketEvent(void *handler_args, esp_event_base_t base,
+                      int32_t event_id, void *event_data) {
+  esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
+  const String sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
+  switch (event_id) {
+  case WEBSOCKET_EVENT_CONNECTED:
+    Serial.println(F("Connected to Mempool.space WebSocket"));
+
+    Serial.println(sub);
+    if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(),
+                                       sub.length(), portMAX_DELAY) == -1) {
+      Serial.println(F("Mempool.space WS Block Subscribe Error"));
     }
 
-    // Get current block height through regular API
-    HTTPClient *http = new HTTPClient();
-    http->begin("https://" + mempoolInstance + "/api/blocks/tip/height");
-    int httpCode = http->GET();
+    break;
+  case WEBSOCKET_EVENT_DATA:
+    onWebsocketMessage(data);
+    break;
+  case WEBSOCKET_EVENT_ERROR:
+    Serial.println(F("Mempool.space WS Connnection error"));
+    break;
+  case WEBSOCKET_EVENT_DISCONNECTED:
+    Serial.println(F("Mempool.space WS Connnection Closed"));
+    break;
+  }
+}
 
-    if (httpCode > 0 && httpCode == HTTP_CODE_OK)
-    {
-        String blockHeightStr = http->getString();
-        currentBlockHeight = blockHeightStr.toInt();
-        //        xTaskNotifyGive(blockUpdateTaskHandle);
-        if (workQueue != nullptr)
-        {
-            WorkItem blockUpdate = {TASK_BLOCK_UPDATE, 0};
-            xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
+void onWebsocketMessage(esp_websocket_event_data_t *event_data) {
+  SpiRamJsonDocument doc(event_data->data_len);
+
+  deserializeJson(doc, (char *)event_data->data_ptr);
+
+  if (doc.containsKey("block")) {
+    JsonObject block = doc["block"];
+
+    currentBlockHeight = block["height"].as<uint>();
+
+    Serial.printf("New block found: %d\r\n", block["height"].as<uint>());
+    preferences.putUInt("blockHeight", currentBlockHeight);
+
+    if (workQueue != nullptr) {
+      WorkItem blockUpdate = {TASK_BLOCK_UPDATE, 0};
+      xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
+      // xTaskNotifyGive(blockUpdateTaskHandle);
+
+      if (getCurrentScreen() != SCREEN_BLOCK_HEIGHT &&
+          preferences.getBool("stealFocus", true)) {
+        uint64_t timerPeriod = 0;
+        if (isTimerActive()) {
+          // store timer periode before making inactive to prevent artifacts
+          timerPeriod = getTimerSeconds();
+          esp_timer_stop(screenRotateTimer);
         }
-    }
-
-    // std::strcpy(wsServer, String("wss://" + mempoolInstance + "/api/v1/ws").c_str());
-
-    esp_websocket_client_config_t config = {
-        .uri = "wss://mempool.space/api/v1/ws",
-        //  .task_stack = (6*1024),
-        // .cert_pem = mempoolWsCert,
-        .user_agent = USER_AGENT,
-    };
-
-    blockNotifyClient = esp_websocket_client_init(&config);
-    esp_websocket_register_events(blockNotifyClient, WEBSOCKET_EVENT_ANY, onWebsocketEvent, blockNotifyClient);
-    esp_websocket_client_start(blockNotifyClient);
-}
-
-void onWebsocketEvent(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
-{
-    esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-    const String sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
-    switch (event_id)
-    {
-    case WEBSOCKET_EVENT_CONNECTED:
-        Serial.println(F("Connected to Mempool.space WebSocket"));
-
-        Serial.println(sub);
-        if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(), sub.length(), portMAX_DELAY) == -1)
-        {
-            Serial.println(F("Mempool.space WS Block Subscribe Error"));
+        setCurrentScreen(SCREEN_BLOCK_HEIGHT);
+        if (timerPeriod > 0) {
+          esp_timer_start_periodic(screenRotateTimer,
+                                   timerPeriod * usPerSecond);
         }
+      }
 
-        break;
-    case WEBSOCKET_EVENT_DATA:
-        onWebsocketMessage(data);
-        break;
-    case WEBSOCKET_EVENT_ERROR:
-        Serial.println(F("Mempool.space WS Connnection error"));
-        break;
-    case WEBSOCKET_EVENT_DISCONNECTED:
-        Serial.println(F("Mempool.space WS Connnection Closed"));
-        break;
+      if (getCurrentScreen() == SCREEN_BLOCK_HEIGHT &&
+          preferences.getBool("ledFlashOnUpd", false)) {
+        vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
+        queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
+      }
     }
+  }
+
+  doc.clear();
 }
 
-void onWebsocketMessage(esp_websocket_event_data_t *event_data)
-{
-    SpiRamJsonDocument doc(event_data->data_len);
+uint getBlockHeight() { return currentBlockHeight; }
 
-    deserializeJson(doc, (char *)event_data->data_ptr);
-
-    if (doc.containsKey("block"))
-    {
-        JsonObject block = doc["block"];
-
-        currentBlockHeight = block["height"].as<uint>();
-
-        Serial.printf("New block found: %d\r\n", block["height"].as<uint>());
-        preferences.putUInt("blockHeight", currentBlockHeight);
-
-        if (workQueue != nullptr)
-        {
-            WorkItem blockUpdate = {TASK_BLOCK_UPDATE, 0};
-            xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
-            // xTaskNotifyGive(blockUpdateTaskHandle);
-
-            if (getCurrentScreen() != SCREEN_BLOCK_HEIGHT && preferences.getBool("stealFocus", true))
-            {
-                uint64_t timerPeriod = 0;
-                if (isTimerActive()) {
-                    // store timer periode before making inactive to prevent artifacts
-                    timerPeriod = getTimerSeconds();
-                    esp_timer_stop(screenRotateTimer);
-                }
-                setCurrentScreen(SCREEN_BLOCK_HEIGHT);
-                if (timerPeriod > 0) {
-                    esp_timer_start_periodic(screenRotateTimer, timerPeriod * usPerSecond);
-                }
-            }
-
-            if (getCurrentScreen() == SCREEN_BLOCK_HEIGHT && preferences.getBool("ledFlashOnUpd", false))
-            {
-                vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
-                queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
-            }
-        }
-    }
-
-    doc.clear();
+void setBlockHeight(uint newBlockHeight) {
+  currentBlockHeight = newBlockHeight;
 }
 
-uint getBlockHeight()
-{
-    return currentBlockHeight;
+bool isBlockNotifyConnected() {
+  if (blockNotifyClient == NULL)
+    return false;
+  return esp_websocket_client_is_connected(blockNotifyClient);
 }
 
-void setBlockHeight(uint newBlockHeight)
-{
-    currentBlockHeight = newBlockHeight;
-}
-
-bool isBlockNotifyConnected()
-{
-    if (blockNotifyClient == NULL)
-        return false;
-    return esp_websocket_client_is_connected(blockNotifyClient);
-}
-
-void stopBlockNotify()
-{
-    esp_websocket_client_stop(blockNotifyClient);
-    esp_websocket_client_destroy(blockNotifyClient);
+void stopBlockNotify() {
+  esp_websocket_client_stop(blockNotifyClient);
+  esp_websocket_client_destroy(blockNotifyClient);
 }

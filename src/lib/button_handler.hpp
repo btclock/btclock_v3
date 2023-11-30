@@ -1,8 +1,8 @@
 #pragma once
 
+#include "lib/screen_handler.hpp"
+#include "lib/shared.hpp"
 #include <Arduino.h>
-#include "shared.hpp"
-#include "screen_handler.hpp"
 
 extern TaskHandle_t buttonTaskHandle;
 

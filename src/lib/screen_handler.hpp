@@ -2,13 +2,13 @@
 
 #include <esp_timer.h>
 
+#include <data_handler.hpp>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <data_handler.hpp>
 
-#include "price_fetch.hpp"
-#include "shared.hpp"
 #include "lib/epd.hpp"
+#include "lib/price_fetch.hpp"
+#include "lib/shared.hpp"
 
 // extern TaskHandle_t priceUpdateTaskHandle;
 // extern TaskHandle_t blockUpdateTaskHandle;
@@ -21,17 +21,15 @@ extern esp_timer_handle_t minuteTimer;
 
 extern QueueHandle_t workQueue;
 
-typedef enum
-{
-    TASK_PRICE_UPDATE,
-    TASK_BLOCK_UPDATE,
-    TASK_TIME_UPDATE
+typedef enum {
+  TASK_PRICE_UPDATE,
+  TASK_BLOCK_UPDATE,
+  TASK_TIME_UPDATE
 } TaskType;
 
-typedef struct
-{
-    TaskType type;
-    char data;
+typedef struct {
+  TaskType type;
+  char data;
 } WorkItem;
 
 void workerTask(void *pvParameters);
@@ -45,8 +43,8 @@ void showSystemStatusScreen();
 void setupTimeUpdateTimer(void *pvParameters);
 void setupScreenRotateTimer(void *pvParameters);
 
-void IRAM_ATTR minuteTimerISR(void* arg);
-void IRAM_ATTR screenRotateTimerISR(void* arg);
+void IRAM_ATTR minuteTimerISR(void *arg);
+void IRAM_ATTR screenRotateTimerISR(void *arg);
 
 // void taskPriceUpdate(void *pvParameters);
 // void taskBlockUpdate(void *pvParameters);
