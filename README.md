@@ -1,6 +1,6 @@
 # BTClock v3
 
-[![BTClock CI](https://github.com/btclock/btclock_v3/actions/workflows/workflow.yml/badge.svg)](https://github.com/btclock/btclock_v3/actions/workflows/workflow.yml)
+[![BTClock CI](https://github.com/btclock/btclock_v3/actions/workflows/tagging.yml/badge.svg)](https://github.com/btclock/btclock_v3/actions/workflows/tagging.yml)
 
 Software for the BTClock project.
 
