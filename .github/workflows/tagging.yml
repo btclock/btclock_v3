@@ -12,43 +12,8 @@ jobs:
       contents: write
       checks: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: yarn
-          cache-dependency-path: '**/yarn.lock'
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-            ~/data/node_modules
-          key: ${{ runner.os }}-pio
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Get current date
-        id: dateAndTime
-        # run: echo "::set-output name=dateAndTime::$(date +'%Y-%m-%d-%H:%M')"
-        run: echo "dateAndTime=$(date +'%Y-%m-%d-%H:%M')" >> $GITHUB_OUTPUT
-      - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
-      - name: Run unit tests
-        run: mkdir -p junit-reports && pio test -e native_test_only --junit-output-path junit-reports/
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          report_paths: '**/junit-reports/*.xml'
-          detailed_summary: true
-      - name: Build BTClock firmware
-        run: pio run -e lolin_s3_mini_qr 
-
-      - name: Build BTClock filesystem
-        run: pio run -e lolin_s3_mini_qr --target buildfs
+      - name: "Checkout, install and build"
+        uses: ./.github/actions/checkout-install-build
 
       - name: Install esptools.py
         run: pip install --upgrade esptool

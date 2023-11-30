@@ -1,0 +1,16 @@
+name: Pull Request Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+    steps:
+      - name: "Checkout, install and build"
+        uses: ./.github/actions/checkout-install-build
