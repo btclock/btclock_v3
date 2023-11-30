@@ -16,4 +16,4 @@ jobs:
         with:
           submodules: recursive
       - name: "Install and build"
-          uses: ./.github/actions/install-build
+        uses: ./.github/actions/install-build
