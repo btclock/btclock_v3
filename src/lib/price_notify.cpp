@@ -57,18 +57,18 @@ void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
   esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
 
   switch (event_id) {
-  case WEBSOCKET_EVENT_CONNECTED:
-    Serial.println(F("Connected to CoinCap.io WebSocket"));
-    break;
-  case WEBSOCKET_EVENT_DATA:
-    onWebsocketPriceMessage(data);
-    break;
-  case WEBSOCKET_EVENT_ERROR:
-    Serial.println(F("Price WS Connnection error"));
-    break;
-  case WEBSOCKET_EVENT_DISCONNECTED:
-    Serial.println(F("Price WS Connnection Closed"));
-    break;
+    case WEBSOCKET_EVENT_CONNECTED:
+      Serial.println(F("Connected to CoinCap.io WebSocket"));
+      break;
+    case WEBSOCKET_EVENT_DATA:
+      onWebsocketPriceMessage(data);
+      break;
+    case WEBSOCKET_EVENT_ERROR:
+      Serial.println(F("Price WS Connnection error"));
+      break;
+    case WEBSOCKET_EVENT_DISCONNECTED:
+      Serial.println(F("Price WS Connnection Closed"));
+      break;
   }
 }
 
@@ -79,7 +79,6 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data) {
 
   if (doc.containsKey("bitcoin")) {
     if (currentPrice != doc["bitcoin"].as<long>()) {
-
       uint minSecPriceUpd = preferences.getUInt(
           "minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
       uint currentTime = esp_timer_get_time() / 1000000;
@@ -108,8 +107,7 @@ uint getPrice() { return currentPrice; }
 void setPrice(uint newPrice) { currentPrice = newPrice; }
 
 bool isPriceNotifyConnected() {
-  if (clientPrice == NULL)
-    return false;
+  if (clientPrice == NULL) return false;
   return esp_websocket_client_is_connected(clientPrice);
 }
 

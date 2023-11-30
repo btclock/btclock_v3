@@ -1,5 +1,6 @@
 #pragma once
 
+// Keep order of includes because of conflicts
 #include "WebServer.h"
 #include "ESPAsyncWebServer.h"
 #include <ArduinoJson.h>
@@ -8,20 +9,10 @@
 #include "AsyncJson.h"
 #include <iostream>
 
-
-// #include "AsyncJson.h"
-// #include "ESPAsyncWebServer.h"
-// #include "WebServer.h"
-// #include <ArduinoJson.h>
-// #include <ESPmDNS.h>
-// #include <LittleFS.h>
-// #include <iostream>
-
 #include "lib/block_notify.hpp"
 #include "lib/led_handler.hpp"
 #include "lib/price_notify.hpp"
 #include "lib/screen_handler.hpp"
-
 #include "webserver/OneParamRewrite.hpp"
 
 extern TaskHandle_t eventSourceTaskHandle;

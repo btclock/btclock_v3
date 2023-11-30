@@ -1,15 +1,17 @@
 #pragma once
 
-#include "fonts/fonts.hpp"
-#include "lib/config.hpp"
-#include "lib/shared.hpp"
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <GxEPD2_BW.h>
+
 #include <mcp23x17_pin.hpp>
 #include <mutex>
 #include <native_pin.hpp>
 #include <regex>
+
+#include "fonts/fonts.hpp"
+#include "lib/config.hpp"
+#include "lib/shared.hpp"
 
 #ifdef USE_QR
 #include "qrcodegen.h"

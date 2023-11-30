@@ -5,7 +5,6 @@ AsyncEventSource events("/events");
 TaskHandle_t eventSourceTaskHandle;
 
 void setupWebserver() {
-
   events.onConnect([](AsyncEventSourceClient *client) {
     client->send("welcome", NULL, millis(), 1000);
   });
@@ -139,8 +138,7 @@ StaticJsonDocument<512> getLedStatusObject() {
 }
 
 void eventSourceUpdate() {
-  if (!events.count())
-    return;
+  if (!events.count()) return;
   StaticJsonDocument<768> root = getStatusObject();
   JsonArray data = root.createNestedArray("data");
 
@@ -232,7 +230,7 @@ void onApiShowText(AsyncWebServerRequest *request) {
   if (request->hasParam("t")) {
     AsyncWebParameter *p = request->getParam("t");
     String t = p->value();
-    t.toUpperCase(); // This is needed as long as lowercase letters are glitchy
+    t.toUpperCase();  // This is needed as long as lowercase letters are glitchy
 
     std::array<String, NUM_SCREENS> textEpdContent;
     for (uint i = 0; i < NUM_SCREENS; i++) {
@@ -369,8 +367,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json) {
 void onApiRestart(AsyncWebServerRequest *request) {
   request->send(200);
 
-  if (events.count())
-    events.send("closing");
+  if (events.count()) events.send("closing");
 
   delay(500);
 
@@ -474,7 +471,7 @@ void onApiSettingsPost(AsyncWebServerRequest *request) {
   int params = request->params();
   for (int i = 0; i < params; i++) {
     AsyncWebParameter *p = request->getParam(i);
-    if (p->isFile()) { // p->isPost() is also true
+    if (p->isFile()) {  // p->isPost() is also true
       Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(),
                     p->value().c_str(), p->size());
     } else if (p->isPost()) {
@@ -742,7 +739,6 @@ void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json) {
 
     if (lights[i].containsKey("red") && lights[i].containsKey("green") &&
         lights[i].containsKey("blue")) {
-
       red = lights[i]["red"].as<uint>();
       green = lights[i]["green"].as<uint>();
       blue = lights[i]["blue"].as<uint>();

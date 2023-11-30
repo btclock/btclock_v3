@@ -17,18 +17,18 @@ void buttonTask(void *parameter) {
         uint pin = mcp1.getLastInterruptPin();
 
         switch (pin) {
-        case 3:
-          toggleTimerActive();
-          break;
-        case 2:
-          nextScreen();
-          break;
-        case 1:
-          previousScreen();
-          break;
-        case 0:
-          showSystemStatusScreen();
-          break;
+          case 3:
+            toggleTimerActive();
+            break;
+          case 2:
+            nextScreen();
+            break;
+          case 1:
+            previousScreen();
+            break;
+          case 0:
+            showSystemStatusScreen();
+            break;
         }
       }
       mcp1.clearInterrupts();
@@ -51,7 +51,7 @@ void IRAM_ATTR handleButtonInterrupt() {
 
 void setupButtonTask() {
   xTaskCreate(buttonTask, "ButtonTask", 4096, NULL, tskIDLE_PRIORITY,
-              &buttonTaskHandle); // Create the FreeRTOS task
+              &buttonTaskHandle);  // Create the FreeRTOS task
   // Use interrupt instead of task
   attachInterrupt(MCP_INT_PIN, handleButtonInterrupt, CHANGE);
 }

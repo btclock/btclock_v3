@@ -124,7 +124,7 @@ void setupDisplays() {
     *taskParam = i;
 
     xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 2048, taskParam,
-                11, &tasks[i]); // create task
+                11, &tasks[i]);  // create task
   }
 
   epdContent = {"B", "T", "C", "L", "O", "C", "K"};
@@ -185,7 +185,6 @@ void prepareDisplayUpdateTask(void *pvParameters) {
       } else if (epdContent[epdIndex].length() > 5) {
         renderText(epdIndex, epdContent[epdIndex], updatePartial);
       } else {
-
         if (epdContent[epdIndex].length() > 1) {
           showChars(epdIndex, epdContent[epdIndex], updatePartial,
                     &FONT_MEDIUM);
@@ -237,8 +236,7 @@ extern "C" void updateDisplay(void *pvParameters) noexcept {
       if (displays[epdIndex].displayWithReturn(updatePartial)) {
         displays[epdIndex].powerOff();
         currentEpdContent[epdIndex] = epdContent[epdIndex];
-        if (!updatePartial)
-          lastFullRefresh[epdIndex] = millis();
+        if (!updatePartial) lastFullRefresh[epdIndex] = millis();
 
         if (eventSourceTaskHandle != NULL)
           xTaskNotifyGive(eventSourceTaskHandle);

@@ -2,7 +2,6 @@
 
 OneParamRewrite::OneParamRewrite(const char *from, const char *to)
     : AsyncWebRewrite(from, to) {
-
   _paramIndex = _from.indexOf('{');
 
   if (_paramIndex >= 0 && _from.endsWith("}")) {

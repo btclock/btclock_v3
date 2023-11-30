@@ -2,12 +2,11 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <esp_websocket_client.h>
+
 #include <string>
 
-#include <esp_websocket_client.h>
 #include "lib/screen_handler.hpp"
-
-// using namespace websockets;
 
 void setupPriceNotify();
 

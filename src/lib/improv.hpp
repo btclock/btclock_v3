@@ -2,7 +2,7 @@
 
 #ifdef ARDUINO
 #include <Arduino.h>
-#endif // ARDUINO
+#endif  // ARDUINO
 
 #include <cstdint>
 #include <functional>
@@ -81,6 +81,6 @@ std::vector<uint8_t> build_rpc_response(Command command,
 std::vector<uint8_t> build_rpc_response(Command command,
                                         const std::vector<String> &datum,
                                         bool add_checksum = true);
-#endif // ARDUINO
+#endif  // ARDUINO
 
-} // namespace improv
+}  // namespace improv

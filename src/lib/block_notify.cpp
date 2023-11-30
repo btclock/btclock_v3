@@ -104,25 +104,25 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base,
   esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
   const String sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
   switch (event_id) {
-  case WEBSOCKET_EVENT_CONNECTED:
-    Serial.println(F("Connected to Mempool.space WebSocket"));
+    case WEBSOCKET_EVENT_CONNECTED:
+      Serial.println(F("Connected to Mempool.space WebSocket"));
 
-    Serial.println(sub);
-    if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(),
-                                       sub.length(), portMAX_DELAY) == -1) {
-      Serial.println(F("Mempool.space WS Block Subscribe Error"));
-    }
+      Serial.println(sub);
+      if (esp_websocket_client_send_text(blockNotifyClient, sub.c_str(),
+                                         sub.length(), portMAX_DELAY) == -1) {
+        Serial.println(F("Mempool.space WS Block Subscribe Error"));
+      }
 
-    break;
-  case WEBSOCKET_EVENT_DATA:
-    onWebsocketMessage(data);
-    break;
-  case WEBSOCKET_EVENT_ERROR:
-    Serial.println(F("Mempool.space WS Connnection error"));
-    break;
-  case WEBSOCKET_EVENT_DISCONNECTED:
-    Serial.println(F("Mempool.space WS Connnection Closed"));
-    break;
+      break;
+    case WEBSOCKET_EVENT_DATA:
+      onWebsocketMessage(data);
+      break;
+    case WEBSOCKET_EVENT_ERROR:
+      Serial.println(F("Mempool.space WS Connnection error"));
+      break;
+    case WEBSOCKET_EVENT_DISCONNECTED:
+      Serial.println(F("Mempool.space WS Connnection Closed"));
+      break;
   }
 }
 
@@ -161,7 +161,7 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data) {
 
       if (getCurrentScreen() == SCREEN_BLOCK_HEIGHT &&
           preferences.getBool("ledFlashOnUpd", false)) {
-        vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
+        vTaskDelay(pdMS_TO_TICKS(250));  // Wait until screens are updated
         queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
       }
     }
@@ -177,8 +177,7 @@ void setBlockHeight(uint newBlockHeight) {
 }
 
 bool isBlockNotifyConnected() {
-  if (blockNotifyClient == NULL)
-    return false;
+  if (blockNotifyClient == NULL) return false;
   return esp_websocket_client_is_connected(blockNotifyClient);
 }
 

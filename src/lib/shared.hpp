@@ -5,8 +5,8 @@
 #include <Preferences.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <mutex>
 
+#include <mutex>
 #include <utils.hpp>
 
 extern Adafruit_MCP23X17 mcp1;

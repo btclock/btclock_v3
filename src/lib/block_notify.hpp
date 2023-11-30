@@ -1,15 +1,17 @@
 #pragma once
 
-#include "lib/led_handler.hpp"
-#include "lib/screen_handler.hpp"
-#include "lib/shared.hpp"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-#include <cstring>
 #include <esp_timer.h>
 #include <esp_websocket_client.h>
+
+#include <cstring>
 #include <string>
+
+#include "lib/led_handler.hpp"
+#include "lib/screen_handler.hpp"
+#include "lib/shared.hpp"
 
 // using namespace websockets;
 

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "lib/shared.hpp"
-#include "lib/webserver.hpp"
 #include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+
+#include "lib/shared.hpp"
+#include "lib/webserver.hpp"
 
 #ifndef NEOPIXEL_PIN
 #define NEOPIXEL_PIN 34

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <esp_timer.h>
-
-#include <data_handler.hpp>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+
+#include <data_handler.hpp>
 
 #include "lib/epd.hpp"
 #include "lib/price_fetch.hpp"

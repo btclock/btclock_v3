@@ -222,7 +222,6 @@ void setupTimers() {
 }
 
 void finishSetup() {
-
   if (preferences.getBool("ledStatus", false)) {
     restoreLedState();
   } else {
@@ -364,80 +363,80 @@ std::vector<std::string> getLocalUrl() {
 
 bool onImprovCommandCallback(improv::ImprovCommand cmd) {
   switch (cmd.command) {
-  case improv::Command::GET_CURRENT_STATE: {
-    if ((WiFi.status() == WL_CONNECTED)) {
-      improv_set_state(improv::State::STATE_PROVISIONED);
-      std::vector<uint8_t> data = improv::build_rpc_response(
-          improv::GET_CURRENT_STATE, getLocalUrl(), false);
-      improv_send_response(data);
-    } else {
-      improv_set_state(improv::State::STATE_AUTHORIZED);
-    }
+    case improv::Command::GET_CURRENT_STATE: {
+      if ((WiFi.status() == WL_CONNECTED)) {
+        improv_set_state(improv::State::STATE_PROVISIONED);
+        std::vector<uint8_t> data = improv::build_rpc_response(
+            improv::GET_CURRENT_STATE, getLocalUrl(), false);
+        improv_send_response(data);
+      } else {
+        improv_set_state(improv::State::STATE_AUTHORIZED);
+      }
 
-    break;
-  }
-
-  case improv::Command::WIFI_SETTINGS: {
-    if (cmd.ssid.length() == 0) {
-      improv_set_error(improv::Error::ERROR_INVALID_RPC);
       break;
     }
 
-    improv_set_state(improv::STATE_PROVISIONING);
-    queueLedEffect(LED_EFFECT_WIFI_CONNECTING);
+    case improv::Command::WIFI_SETTINGS: {
+      if (cmd.ssid.length() == 0) {
+        improv_set_error(improv::Error::ERROR_INVALID_RPC);
+        break;
+      }
 
-    if (improv_connectWifi(cmd.ssid, cmd.password)) {
-      queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
+      improv_set_state(improv::STATE_PROVISIONING);
+      queueLedEffect(LED_EFFECT_WIFI_CONNECTING);
 
-      // std::array<String, NUM_SCREENS> epdContent = {"S", "U", "C", "C", "E",
-      // "S", "S"}; setEpdContent(epdContent);
+      if (improv_connectWifi(cmd.ssid, cmd.password)) {
+        queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
 
-      preferences.putBool("wifiConfigured", true);
+        // std::array<String, NUM_SCREENS> epdContent = {"S", "U", "C", "C",
+        // "E", "S", "S"}; setEpdContent(epdContent);
 
-      improv_set_state(improv::STATE_PROVISIONED);
-      std::vector<uint8_t> data = improv::build_rpc_response(
-          improv::WIFI_SETTINGS, getLocalUrl(), false);
-      improv_send_response(data);
+        preferences.putBool("wifiConfigured", true);
 
-      delay(2500);
-      ESP.restart();
-      setupWebserver();
-    } else {
-      queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+        improv_set_state(improv::STATE_PROVISIONED);
+        std::vector<uint8_t> data = improv::build_rpc_response(
+            improv::WIFI_SETTINGS, getLocalUrl(), false);
+        improv_send_response(data);
 
-      improv_set_state(improv::STATE_STOPPED);
-      improv_set_error(improv::Error::ERROR_UNABLE_TO_CONNECT);
+        delay(2500);
+        ESP.restart();
+        setupWebserver();
+      } else {
+        queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+
+        improv_set_state(improv::STATE_STOPPED);
+        improv_set_error(improv::Error::ERROR_UNABLE_TO_CONNECT);
+      }
+
+      break;
     }
 
-    break;
-  }
+    case improv::Command::GET_DEVICE_INFO: {
+      std::vector<std::string> infos = {// Firmware name
+                                        "BTClock",
+                                        // Firmware version
+                                        "1.0.0",
+                                        // Hardware chip/variant
+                                        "ESP32S3",
+                                        // Device name
+                                        "BTClock"};
+      std::vector<uint8_t> data =
+          improv::build_rpc_response(improv::GET_DEVICE_INFO, infos, false);
+      improv_send_response(data);
+      break;
+    }
 
-  case improv::Command::GET_DEVICE_INFO: {
-    std::vector<std::string> infos = {// Firmware name
-                                      "BTClock",
-                                      // Firmware version
-                                      "1.0.0",
-                                      // Hardware chip/variant
-                                      "ESP32S3",
-                                      // Device name
-                                      "BTClock"};
-    std::vector<uint8_t> data =
-        improv::build_rpc_response(improv::GET_DEVICE_INFO, infos, false);
-    improv_send_response(data);
-    break;
-  }
+    case improv::Command::GET_WIFI_NETWORKS: {
+      improvGetAvailableWifiNetworks();
+      // std::array<String, NUM_SCREENS> epdContent = {"W", "E", "B", "W", "I",
+      // "F", "I"}; setEpdContent(epdContent);
+      break;
+    }
 
-  case improv::Command::GET_WIFI_NETWORKS: {
-    improvGetAvailableWifiNetworks();
-    // std::array<String, NUM_SCREENS> epdContent = {"W", "E", "B", "W", "I",
-    // "F", "I"}; setEpdContent(epdContent);
-    break;
-  }
-
-  default: {
-    improv_set_error(improv::ERROR_UNKNOWN_RPC);
-    return false;
-  }
+    default: {
+      improv_set_error(improv::ERROR_UNKNOWN_RPC);
+      return false;
+    }
   }
 
   return true;
@@ -452,8 +451,7 @@ void improv_set_state(improv::State state) {
   data[9] = state;
 
   uint8_t checksum = 0x00;
-  for (uint8_t d : data)
-    checksum += d;
+  for (uint8_t d : data) checksum += d;
   data[10] = checksum;
 
   Serial.write(data.data(), data.size());
@@ -468,8 +466,7 @@ void improv_send_response(std::vector<uint8_t> &response) {
   data.insert(data.end(), response.begin(), response.end());
 
   uint8_t checksum = 0x00;
-  for (uint8_t d : data)
-    checksum += d;
+  for (uint8_t d : data) checksum += d;
   data.push_back(checksum);
 
   Serial.write(data.data(), data.size());
@@ -484,8 +481,7 @@ void improv_set_error(improv::Error error) {
   data[9] = error;
 
   uint8_t checksum = 0x00;
-  for (uint8_t d : data)
-    checksum += d;
+  for (uint8_t d : data) checksum += d;
   data[10] = checksum;
 
   Serial.write(data.data(), data.size());
@@ -497,74 +493,73 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
   Serial.printf("[WiFi-event] event: %d\n", event);
 
   switch (event) {
-  case ARDUINO_EVENT_WIFI_READY:
-    Serial.println("WiFi interface ready");
-    break;
-  case ARDUINO_EVENT_WIFI_SCAN_DONE:
-    Serial.println("Completed scan for access points");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_START:
-    Serial.println("WiFi client started");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_STOP:
-    Serial.println("WiFi clients stopped");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-    Serial.println("Connected to access point");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_DISCONNECTED: {
-    if (!first_connect) {
-      Serial.println("Disconnected from WiFi access point");
-      queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
-      uint8_t reason = info.wifi_sta_disconnected.reason;
-      if (reason)
-        Serial.printf("Disconnect reason: %s, ",
-                      WiFi.disconnectReasonName((wifi_err_reason_t)reason));
+    case ARDUINO_EVENT_WIFI_READY:
+      Serial.println("WiFi interface ready");
+      break;
+    case ARDUINO_EVENT_WIFI_SCAN_DONE:
+      Serial.println("Completed scan for access points");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_START:
+      Serial.println("WiFi client started");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_STOP:
+      Serial.println("WiFi clients stopped");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+      Serial.println("Connected to access point");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED: {
+      if (!first_connect) {
+        Serial.println("Disconnected from WiFi access point");
+        queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+        uint8_t reason = info.wifi_sta_disconnected.reason;
+        if (reason)
+          Serial.printf("Disconnect reason: %s, ",
+                        WiFi.disconnectReasonName((wifi_err_reason_t)reason));
+      }
+      break;
     }
-    break;
-  }
-  case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-    Serial.println("Authentication mode of access point has changed");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_GOT_IP: {
-    Serial.print("Obtained IP address: ");
-    Serial.println(WiFi.localIP());
-    if (!first_connect)
-      queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
-    first_connect = false;
-    break;
-  }
-  case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-    Serial.println("Lost IP address and IP address is reset to 0");
-    queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
-    WiFi.reconnect();
-    break;
-  case ARDUINO_EVENT_WIFI_AP_START:
-    Serial.println("WiFi access point started");
-    break;
-  case ARDUINO_EVENT_WIFI_AP_STOP:
-    Serial.println("WiFi access point  stopped");
-    break;
-  case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
-    Serial.println("Client connected");
-    break;
-  case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
-    Serial.println("Client disconnected");
-    break;
-  case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
-    Serial.println("Assigned IP address to client");
-    break;
-  case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
-    Serial.println("Received probe request");
-    break;
-  case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
-    Serial.println("AP IPv6 is preferred");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-    Serial.println("STA IPv6 is preferred");
-    break;
-  default:
-    break;
+    case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
+      Serial.println("Authentication mode of access point has changed");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP: {
+      Serial.print("Obtained IP address: ");
+      Serial.println(WiFi.localIP());
+      if (!first_connect) queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
+      first_connect = false;
+      break;
+    }
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+      Serial.println("Lost IP address and IP address is reset to 0");
+      queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
+      WiFi.reconnect();
+      break;
+    case ARDUINO_EVENT_WIFI_AP_START:
+      Serial.println("WiFi access point started");
+      break;
+    case ARDUINO_EVENT_WIFI_AP_STOP:
+      Serial.println("WiFi access point  stopped");
+      break;
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+      Serial.println("Client connected");
+      break;
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+      Serial.println("Client disconnected");
+      break;
+    case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+      Serial.println("Assigned IP address to client");
+      break;
+    case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
+      Serial.println("Received probe request");
+      break;
+    case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
+      Serial.println("AP IPv6 is preferred");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
+      Serial.println("STA IPv6 is preferred");
+      break;
+    default:
+      break;
   }
 }
 
