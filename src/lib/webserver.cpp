@@ -407,6 +407,10 @@ void onApiSettingsGet(AsyncWebServerRequest *request) {
   root["hostname"] = getMyHostname();
   root["ip"] = WiFi.localIP();
   root["txPower"] = WiFi.getTxPower();
+  root["nostrRelays"] = preferences.getString("nostrRelays", DEFAULT_NOSTR_RELAYS);
+  root["nostrBlocksAuth"] = preferences.getString("nostrBlocksAuth", DEFAULT_NOSTR_BLOCKS_AUTHOR);
+  root["nostrPriceAuth"] = preferences.getString("nostrPriceAuth", DEFAULT_NOSTR_PRICE_AUTHOR);
+
 
 #ifdef GIT_REV
   root["gitRev"] = String(GIT_REV);

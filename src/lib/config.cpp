@@ -203,14 +203,15 @@ void setupPreferences() {
 }
 
 void setupWebsocketClients(void *pvParameters) {
-  setupBlockNotify();
+  // setupBlockNotify();
 
-  if (preferences.getBool("fetchEurPrice", false)) {
-    setupPriceFetchTask();
-  } else {
-    setupPriceNotify();
-  }
+  // if (preferences.getBool("fetchEurPrice", false)) {
+  //   setupPriceFetchTask();
+  // } else {
+  //   setupPriceNotify();
+  // }
 
+  setupNostrSubscribeTask();
   vTaskDelete(NULL);
 }
 

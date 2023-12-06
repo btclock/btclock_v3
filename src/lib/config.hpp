@@ -17,6 +17,8 @@
 #include "lib/ota.hpp"
 #include "lib/price_notify.hpp"
 #include "lib/screen_handler.hpp"
+#include "lib/nostr_subscribe.hpp"
+
 #include "lib/shared.hpp"
 #include "lib/webserver.hpp"
 
@@ -27,6 +29,9 @@
 #define MCP_DEV_ADDR 0x20
 #define DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE 30
 #define DEFAULT_MINUTES_FULL_REFRESH 60
+#define DEFAULT_NOSTR_RELAYS "nostr.dbtc.link,relay.damus.io,nostr.onsats.org"
+#define DEFAULT_NOSTR_BLOCKS_AUTHOR "55cf67598c37737af6d0278cbdcb400bf1a90b7654e964bda08f451bd3dffe5a"
+#define DEFAULT_NOSTR_PRICE_AUTHOR "df66a305cca14265c558a6fe61ed6aa5e1e1b80a7ef5d89d2bbe82f62698c1ca"
 
 #define DEFAULT_FG_COLOR GxEPD_WHITE
 #define DEFAULT_BG_COLOR GxEPD_BLACK
