@@ -11,6 +11,7 @@ std::vector<std::string> screenNameMap(SCREEN_COUNT);
 std::mutex mcpMutex;
 
 void setup() {
+  Serial.println("Echo test");
   setupPreferences();
   setupHardware();
   setupDisplays();
@@ -28,12 +29,15 @@ void setup() {
     }
   }
 
-  tryImprovSetup();
+ // tryImprovSetup();
 
-  setupWebserver();
-
+ // setupWebserver();
+ uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG); //save WatchDog register
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+  WiFi.begin();
+  WiFi.setTxPower(WIFI_POWER_11dBm);
   // setupWifi();
-  setupTime();
+  //setupTime();
   finishSetup();
 
   setupTasks();
@@ -50,6 +54,9 @@ void setup() {
 }
 
 void tryImprovSetup() {
+  uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG); //save WatchDog register
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+
   WiFi.onEvent(WiFiEvent);
 
   if (!preferences.getBool("wifiConfigured", false)) {
@@ -237,7 +244,7 @@ void setupMcp() {
   const int mcp1AddrValues[] = {LOW, LOW, LOW};
 
   const int mcp2AddrPins[] = {MCP2_A0_PIN, MCP2_A1_PIN, MCP2_A2_PIN};
-  const int mcp2AddrValues[] = {LOW, LOW, HIGH};
+  const int mcp2AddrValues[] = {HIGH, LOW, LOW};
 
   pinMode(MCP_RESET_PIN, OUTPUT);
   digitalWrite(MCP_RESET_PIN, HIGH);
@@ -277,7 +284,7 @@ void setupHardware() {
   Wire.begin(I2C_SDA_PIN, I2C_SCK_PIN, 400000);
 
   if (!mcp1.begin_I2C(0x20)) {
-    Serial.println(F("Error MCP23017"));
+    Serial.println(F("Error MCP23017 1"));
 
     // while (1)
     //         ;
@@ -298,7 +305,7 @@ void setupHardware() {
 
 #ifdef IS_BTCLOCK_S3
   if (!mcp2.begin_I2C(0x21)) {
-    Serial.println(F("Error MCP23017"));
+    Serial.println(F("Error MCP23017 2"));
 
     // while (1)
     //         ;

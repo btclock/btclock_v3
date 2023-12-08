@@ -6,6 +6,8 @@
 #include <WiFiManager.h>
 #include <base64.h>
 #include <esp_task_wdt.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 #include <map>
 

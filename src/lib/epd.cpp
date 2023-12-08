@@ -123,11 +123,11 @@ void setupDisplays() {
     int *taskParam = new int;
     *taskParam = i;
 
-    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 2048, taskParam,
+    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 8192, taskParam,
                 11, &tasks[i]);  // create task
   }
 
-  epdContent = {"B", "T", "C", "L", "O", "C", "K"};
+  epdContent = {"B", "T", "C", "L", "O", "C", "K", "V2"};
 
   setEpdContent(epdContent);
 }
