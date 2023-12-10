@@ -9,6 +9,7 @@ Adafruit_MCP23X17 mcp2;
 #endif
 std::vector<std::string> screenNameMap(SCREEN_COUNT);
 std::mutex mcpMutex;
+std::mutex mcp2Mutex;
 
 void setup() {
   Serial.println("Echo test");
@@ -29,15 +30,11 @@ void setup() {
     }
   }
 
- // tryImprovSetup();
+  tryImprovSetup();
 
- // setupWebserver();
- uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG); //save WatchDog register
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
-  WiFi.begin();
-  WiFi.setTxPower(WIFI_POWER_11dBm);
-  // setupWifi();
-  //setupTime();
+  setupWebserver();
+
+  setupTime();
   finishSetup();
 
   setupTasks();
@@ -49,14 +46,16 @@ void setup() {
   setupButtonTask();
   setupOTA();
 
-  waitUntilNoneBusy();
-  forceFullRefresh();
+//  waitUntilNoneBusy();
+ // forceFullRefresh();
 }
 
 void tryImprovSetup() {
-  uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG); //save WatchDog register
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+  // delay(5000);
+  // uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG); //save WatchDog register
+  // WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
 
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // CHANGE THIS
   WiFi.onEvent(WiFiEvent);
 
   if (!preferences.getBool("wifiConfigured", false)) {

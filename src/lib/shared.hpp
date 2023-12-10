@@ -15,6 +15,7 @@ extern Adafruit_MCP23X17 mcp2;
 #endif
 extern Preferences preferences;
 extern std::mutex mcpMutex;
+extern std::mutex mcp2Mutex;
 
 const PROGMEM int SCREEN_BLOCK_HEIGHT = 0;
 const PROGMEM int SCREEN_MSCW_TIME = 1;
