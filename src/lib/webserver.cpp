@@ -755,7 +755,13 @@ void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json) {
       return;
     }
 
-    pixels.setPixelColor((pixels.numPixels() - i - 1),
+    #ifdef IS_BTCLOCK_S3
+    uint pixNum = i;
+    #else
+    uint pixNum = (pixels.numPixels() - i - 1)
+    #endif
+
+    pixels.setPixelColor(pixNum,
                          pixels.Color(red, green, blue));
   }
 

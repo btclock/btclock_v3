@@ -76,7 +76,7 @@ GxEPD2_BW<GxEPD2_213_B74, GxEPD2_213_B74::HEIGHT> displays[NUM_SCREENS] = {
     GxEPD2_213_B74(&EPD_CS[5], &EPD_DC, &EPD_RESET_MPD[5], &EPD_BUSY[5]),
     GxEPD2_213_B74(&EPD_CS[6], &EPD_DC, &EPD_RESET_MPD[6], &EPD_BUSY[6]),
 #ifdef IS_BTCLOCK_S3
-    GxEPD2_213_B74(&EPD_CS[7], &EPD_DC, &EPD_RESET_MPD[6], &EPD_BUSY[7]),
+    GxEPD2_213_B74(&EPD_CS[7], &EPD_DC, &EPD_RESET_MPD[7], &EPD_BUSY[7]),
 #endif
 };
 
@@ -131,11 +131,13 @@ void refreshFromMemory()
 
 void setupDisplays()
 {
-  std::lock_guard<std::mutex> lockMcp(mcpMutex);
-
-  for (uint i = 0; i < NUM_SCREENS; i++)
   {
-    displays[i].init(0, true, 30);
+    // std::lock_guard<std::mutex> lockMcp(mcpMutex);
+
+    for (uint i = 0; i < NUM_SCREENS; i++)
+    {
+      displays[i].init(0, true, 30);
+    }
   }
 
   updateQueue = xQueueCreate(UPDATE_QUEUE_SIZE, sizeof(UpdateDisplayTaskItem));
@@ -150,7 +152,7 @@ void setupDisplays()
     int *taskParam = new int;
     *taskParam = i;
 
-    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 4096, taskParam,
+    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 3072, taskParam,
                 11, &tasks[i]); // create task
   }
 
@@ -258,16 +260,12 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
     std::lock_guard<std::mutex> lock(epdMutex[epdIndex]);
     bool updatePartial = true;
 
+    displays[epdIndex].init(0, false, 40);
+    uint count = 0;
+    while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
     {
-      std::lock_guard<std::mutex> lockMcp(mcpMutex);
-      displays[epdIndex].init(0, false, 40);
-
-      uint count = 0;
-      while (EPD_BUSY[epdIndex].digitalRead() == HIGH || count < 10)
-      {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        count++;
-      }
+      vTaskDelay(pdMS_TO_TICKS(100));
+      count++;
     }
 
     // Full Refresh every x minutes
@@ -280,28 +278,23 @@ extern "C" void updateDisplay(void *pvParameters) noexcept
       updatePartial = false;
     }
     char tries = 0;
+    while (tries < 3)
     {
-      std::lock_guard<std::mutex> lockMcp2(mcp2Mutex);
-
-      while (tries < 3)
+      if (displays[epdIndex].displayWithReturn(updatePartial))
       {
+        displays[epdIndex].powerOff();
+        currentEpdContent[epdIndex] = epdContent[epdIndex];
+        if (!updatePartial)
+          lastFullRefresh[epdIndex] = millis();
 
-        if (displays[epdIndex].displayWithReturn(updatePartial))
-        {
-          displays[epdIndex].powerOff();
-          currentEpdContent[epdIndex] = epdContent[epdIndex];
-          if (!updatePartial)
-            lastFullRefresh[epdIndex] = millis();
+        if (eventSourceTaskHandle != NULL)
+          xTaskNotifyGive(eventSourceTaskHandle);
 
-          if (eventSourceTaskHandle != NULL)
-            xTaskNotifyGive(eventSourceTaskHandle);
-
-          break;
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(100));
-        tries++;
+        break;
       }
+
+      vTaskDelay(pdMS_TO_TICKS(100));
+      tries++;
     }
   }
 }

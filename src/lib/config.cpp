@@ -12,7 +12,6 @@ std::mutex mcpMutex;
 std::mutex mcp2Mutex;
 
 void setup() {
-  Serial.println("Echo test");
   setupPreferences();
   setupHardware();
   setupDisplays();
@@ -44,7 +43,7 @@ void setup() {
               tskIDLE_PRIORITY, NULL);
 
   setupButtonTask();
-  setupOTA();
+//  setupOTA();
 
 //  waitUntilNoneBusy();
  // forceFullRefresh();
@@ -55,7 +54,6 @@ void tryImprovSetup() {
   // uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG); //save WatchDog register
   // WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // CHANGE THIS
   WiFi.onEvent(WiFiEvent);
 
   if (!preferences.getBool("wifiConfigured", false)) {
