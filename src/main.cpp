@@ -20,6 +20,8 @@
 #include "lib/config.hpp"
 
 uint wifiLostConnection;
+uint priceNotifyLostConnection = 0;
+uint blockNotifyLostConnection = 0;
 
 extern "C" void app_main() {
   initArduino();
@@ -53,6 +55,27 @@ extern "C" void app_main() {
     } else if (wifiLostConnection) {
       wifiLostConnection = 0;
       Serial.println("Connection restored, reset timer.");
+    } else if (preferences.getBool("fetchEurPrice", false) && !isPriceNotifyConnected()) {
+      priceNotifyLostConnection++;
+
+      // if price WS connection does not come back after 60 seconds, destroy and recreate
+      if (priceNotifyLostConnection > 12) {
+        stopPriceNotify();
+        setupPriceNotify();
+        priceNotifyLostConnection = 0;
+      }
+    } else if (!isBlockNotifyConnected()) {
+      blockNotifyLostConnection++;
+
+      // if mempool WS connection does not come back after 60 seconds, destroy and recreate
+      if (blockNotifyLostConnection > 12) {
+        stopBlockNotify();
+        setupBlockNotify();
+        blockNotifyLostConnection = 0;
+      }
+    } else if (blockNotifyLostConnection > 0 || priceNotifyLostConnection > 0) {
+      blockNotifyLostConnection = 0;
+      priceNotifyLostConnection = 0;
     }
 
     vTaskDelay(pdMS_TO_TICKS(5000));

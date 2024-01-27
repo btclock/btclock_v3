@@ -37,6 +37,7 @@ const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 esp_websocket_client_handle_t clientPrice = NULL;
 uint currentPrice = 30000;
 unsigned long int lastPriceUpdate;
+bool priceNotifyInit = false;
 
 void setupPriceNotify() {
   //    currentPrice = preferences.get("lastPrice", 30000);
@@ -50,6 +51,7 @@ void setupPriceNotify() {
   esp_websocket_register_events(clientPrice, WEBSOCKET_EVENT_ANY,
                                 onWebsocketPriceEvent, clientPrice);
   esp_websocket_client_start(clientPrice);
+  priceNotifyInit = true;
 }
 
 void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
