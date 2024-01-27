@@ -1,15 +1,16 @@
 dependencies:
   esp_littlefs:
-    component_hash: null
+    component_hash: 0e4812e62ac02a17f2b6a2bb3b6daf9b39e9599a6e319c745ef2a2817c15a073
     source:
-      path: /Users/padjuri/src/btclock_espidf/btclock_espidf/managed_components/esp_littlefs
-      type: local
-    version: 1.10.2
+      git: https://github.com/joltwallet/esp_littlefs.git
+      path: .
+      type: git
+    version: 5a0a9a0a39549ac55fd51d55bd3f895ffe700a0a
   idf:
     component_hash: null
     source:
       type: idf
-    version: 4.4.5
-manifest_hash: 4796491ac0ef21bc9e7da581f1db6c59f92d6096be0ffd2d5fa4f2645943c54a
+    version: 4.4.6
+manifest_hash: 4b13ff241ec4d36ca2303b885c7088c32d74d090ef8e0ca6ea4c7d53047011d6
 target: esp32s3
 version: 1.0.0
