@@ -27,10 +27,15 @@ const int LED_EFFECT_WIFI_CONNECTING = 101;
 const int LED_EFFECT_WIFI_CONNECT_ERROR = 102;
 const int LED_EFFECT_WIFI_CONNECT_SUCCESS = 103;
 const int LED_EFFECT_WIFI_ERASE_SETTINGS = 104;
+
 const int LED_PROGRESS_25 = 200;
 const int LED_PROGRESS_50 = 201;
 const int LED_PROGRESS_75 = 202;
 const int LED_PROGRESS_100 = 203;
+
+const int LED_DATA_PRICE_ERROR = 300;
+const int LED_DATA_BLOCK_ERROR = 301;
+
 const int LED_POWER_TEST = 999;
 extern TaskHandle_t ledTaskHandle;
 extern Adafruit_NeoPixel pixels;

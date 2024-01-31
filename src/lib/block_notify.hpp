@@ -25,3 +25,4 @@ void setBlockHeight(uint newBlockHeight);
 uint getBlockHeight();
 bool isBlockNotifyConnected();
 void stopBlockNotify();
+bool getBlockNotifyInit();

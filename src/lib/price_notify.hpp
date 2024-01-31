@@ -19,3 +19,4 @@ void setPrice(uint newPrice);
 
 bool isPriceNotifyConnected();
 void stopPriceNotify();
+bool getPriceNotifyInit();

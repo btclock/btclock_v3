@@ -3,6 +3,7 @@
 char *wsServer;
 esp_websocket_client_handle_t blockNotifyClient = NULL;
 uint currentBlockHeight = 816000;
+bool blockNotifyInit = false;
 
 // const char *mempoolWsCert = R"(-----BEGIN CERTIFICATE-----
 // MIIHfTCCBmWgAwIBAgIRANFX3mhqRYDt1NFuENoSyaAwDQYJKoZIhvcNAQELBQAw
@@ -105,6 +106,8 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base,
   const String sub = "{\"action\": \"want\", \"data\":[\"blocks\"]}";
   switch (event_id) {
     case WEBSOCKET_EVENT_CONNECTED:
+      blockNotifyInit = true;
+
       Serial.println(F("Connected to Mempool.space WebSocket"));
 
       Serial.println(sub);
@@ -181,7 +184,16 @@ bool isBlockNotifyConnected() {
   return esp_websocket_client_is_connected(blockNotifyClient);
 }
 
+bool getBlockNotifyInit() {
+  return blockNotifyInit;
+}
+
 void stopBlockNotify() {
+  if (blockNotifyClient == NULL) return;
+
+  esp_websocket_client_close(blockNotifyClient, portMAX_DELAY);
   esp_websocket_client_stop(blockNotifyClient);
   esp_websocket_client_destroy(blockNotifyClient);
+
+  blockNotifyClient = NULL;
 }

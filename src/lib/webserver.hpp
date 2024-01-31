@@ -50,3 +50,6 @@ StaticJsonDocument<512> getLedStatusObject();
 StaticJsonDocument<768> getStatusObject();
 void eventSourceUpdate();
 void eventSourceTask(void *pvParameters);
+
+void onApiStopDataSources(AsyncWebServerRequest *request);
+void onApiRestartDataSources(AsyncWebServerRequest *request);

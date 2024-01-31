@@ -55,20 +55,27 @@ extern "C" void app_main() {
     } else if (wifiLostConnection) {
       wifiLostConnection = 0;
       Serial.println("Connection restored, reset timer.");
-    } else if (preferences.getBool("fetchEurPrice", false) && !isPriceNotifyConnected()) {
+    } else if (getPriceNotifyInit() && !preferences.getBool("fetchEurPrice", false) && !isPriceNotifyConnected()) {
       priceNotifyLostConnection++;
+      Serial.println("Lost price data connection...");
+      queueLedEffect(LED_DATA_PRICE_ERROR);
 
-      // if price WS connection does not come back after 60 seconds, destroy and recreate
-      if (priceNotifyLostConnection > 12) {
+      // if price WS connection does not come back after 6*5 seconds, destroy and recreate
+      if (priceNotifyLostConnection > 6) {
+        Serial.println("Restarting price handler...");
+
         stopPriceNotify();
         setupPriceNotify();
         priceNotifyLostConnection = 0;
       }
-    } else if (!isBlockNotifyConnected()) {
+    } else if (getBlockNotifyInit() && !isBlockNotifyConnected()) {
       blockNotifyLostConnection++;
+      Serial.println("Lost block data connection...");
+      queueLedEffect(LED_DATA_BLOCK_ERROR);
+      // if mempool WS connection does not come back after 6*5 seconds, destroy and recreate
+      if (blockNotifyLostConnection > 6) {
+        Serial.println("Restarting block handler...");
 
-      // if mempool WS connection does not come back after 60 seconds, destroy and recreate
-      if (blockNotifyLostConnection > 12) {
         stopBlockNotify();
         setupBlockNotify();
         blockNotifyLostConnection = 0;

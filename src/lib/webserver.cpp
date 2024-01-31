@@ -24,6 +24,10 @@ void setupWebserver() {
 
   server.on("/api/full_refresh", HTTP_GET, onApiFullRefresh);
 
+  server.on("/api/stop_datasources", HTTP_GET, onApiStopDataSources);
+  server.on("/api/restart_datasources", HTTP_GET, onApiRestartDataSources);
+
+
   server.on("/api/action/pause", HTTP_GET, onApiActionPause);
   server.on("/api/action/timer_restart", HTTP_GET, onApiActionTimerRestart);
 
@@ -690,6 +694,28 @@ void onApiLightsStatus(AsyncWebServerRequest *request) {
       request->beginResponseStream("application/json");
 
   serializeJson(getLedStatusObject()["data"], *response);
+
+  request->send(response);
+}
+
+void onApiStopDataSources(AsyncWebServerRequest *request) {
+  AsyncResponseStream *response =
+      request->beginResponseStream("application/json");
+
+  stopPriceNotify();
+  stopBlockNotify();
+
+  request->send(response);
+}
+
+void onApiRestartDataSources(AsyncWebServerRequest *request) {
+  AsyncResponseStream *response =
+      request->beginResponseStream("application/json");
+
+  stopPriceNotify();
+  stopBlockNotify();
+  setupPriceNotify();
+  setupBlockNotify();
 
   request->send(response);
 }

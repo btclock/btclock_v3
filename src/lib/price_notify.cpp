@@ -51,7 +51,6 @@ void setupPriceNotify() {
   esp_websocket_register_events(clientPrice, WEBSOCKET_EVENT_ANY,
                                 onWebsocketPriceEvent, clientPrice);
   esp_websocket_client_start(clientPrice);
-  priceNotifyInit = true;
 }
 
 void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
@@ -61,6 +60,8 @@ void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
   switch (event_id) {
     case WEBSOCKET_EVENT_CONNECTED:
       Serial.println(F("Connected to CoinCap.io WebSocket"));
+      priceNotifyInit = true;
+
       break;
     case WEBSOCKET_EVENT_DATA:
       onWebsocketPriceMessage(data);
@@ -113,7 +114,15 @@ bool isPriceNotifyConnected() {
   return esp_websocket_client_is_connected(clientPrice);
 }
 
+bool getPriceNotifyInit() {
+  return priceNotifyInit;
+}
+
 void stopPriceNotify() {
+  if (clientPrice == NULL) return;
+  esp_websocket_client_close(clientPrice, portMAX_DELAY);
   esp_websocket_client_stop(clientPrice);
   esp_websocket_client_destroy(clientPrice);
+
+  clientPrice = NULL;
 }
