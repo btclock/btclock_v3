@@ -240,6 +240,11 @@ void setCurrentScreen(uint newScreen) {
       // xTaskNotifyGive(priceUpdateTaskHandle);
       break;
     }
+    case SCREEN_BLOCK_FEE_RATE: {
+      WorkItem blockUpdate = {TASK_FEE_UPDATE, 0};
+      xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
+      break;
+    }
   }
 
   if (eventSourceTaskHandle != NULL) xTaskNotifyGive(eventSourceTaskHandle);
