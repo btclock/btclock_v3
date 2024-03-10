@@ -208,6 +208,7 @@ void setupPreferences()
   setPrice(preferences.getUInt("lastPrice", 30000));
 
   screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
+  screenNameMap[SCREEN_BLOCK_FEE_RATE] = "Block Fee Rate";
   screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
   screenNameMap[SCREEN_BTC_TICKER] = "Ticker";
   screenNameMap[SCREEN_TIME] = "Time";

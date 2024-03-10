@@ -46,6 +46,13 @@ void workerTask(void *pvParameters) {
           setEpdContent(taskEpdContent);
           break;
         }
+        case TASK_FEE_UPDATE: {
+          if (getCurrentScreen() == SCREEN_BLOCK_FEE_RATE) {
+            taskEpdContent = parseBlockFees(static_cast<std::uint16_t>(getBlockMedianFee()));
+            setEpdContent(taskEpdContent);
+          } 
+          break;
+        }
         case TASK_BLOCK_UPDATE: {
           if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN) {
             taskEpdContent = parseBlockHeight(getBlockHeight());

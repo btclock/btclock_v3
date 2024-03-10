@@ -1,4 +1,5 @@
-#pragma once;
+#pragma once
+
 #include <Adafruit_MCP23X17.h>
 #include <Arduino.h>
 #include <Preferences.h>

@@ -46,8 +46,8 @@ void onApiRestart(AsyncWebServerRequest *request);
 void onIndex(AsyncWebServerRequest *request);
 void onNotFound(AsyncWebServerRequest *request);
 
-StaticJsonDocument<512> getLedStatusObject();
-StaticJsonDocument<768> getStatusObject();
+JsonDocument getLedStatusObject();
+JsonDocument getStatusObject();
 void eventSourceUpdate();
 void eventSourceTask(void *pvParameters);
 

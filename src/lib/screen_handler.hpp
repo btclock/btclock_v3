@@ -24,6 +24,7 @@ extern QueueHandle_t workQueue;
 typedef enum {
   TASK_PRICE_UPDATE,
   TASK_BLOCK_UPDATE,
+  TASK_FEE_UPDATE,
   TASK_TIME_UPDATE
 } TaskType;
 

@@ -85,13 +85,13 @@ void downloadUpdate() {
   if (httpCode == 200) {
     //    WiFiClient * stream = http->getStreamPtr();
 
-    StaticJsonDocument<64> filter;
+    JsonDocument filter;
 
-    JsonObject filter_assets_0 = filter["assets"].createNestedObject();
+    JsonObject filter_assets_0 = filter["assets"].add<JsonObject>();
     filter_assets_0["name"] = true;
     filter_assets_0["browser_download_url"] = true;
 
-    SpiRamJsonDocument doc(1536);
+    JsonDocument doc;
 
     DeserializationError error = deserializeJson(
         doc, http.getStream(), DeserializationOption::Filter(filter));

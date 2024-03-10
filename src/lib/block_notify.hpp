@@ -23,6 +23,10 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data);
 
 void setBlockHeight(uint newBlockHeight);
 uint getBlockHeight();
+
+void setBlockMedianFee(uint blockMedianFee);
+uint getBlockMedianFee();
+
 bool isBlockNotifyConnected();
 void stopBlockNotify();
 bool getBlockNotifyInit();

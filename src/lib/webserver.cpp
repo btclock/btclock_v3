@@ -94,8 +94,8 @@ void setupWebserver() {
 
 void stopWebServer() { server.end(); }
 
-StaticJsonDocument<768> getStatusObject() {
-  StaticJsonDocument<768> root;
+JsonDocument getStatusObject() {
+  JsonDocument root;
 
   root["currentScreen"] = getCurrentScreen();
   root["numScreens"] = NUM_SCREENS;
@@ -108,7 +108,7 @@ StaticJsonDocument<768> getStatusObject() {
   // root["espFreePsram"] = ESP.getFreePsram();
   // root["espPsramSize"] = ESP.getPsramSize();
 
-  JsonObject conStatus = root.createNestedObject("connectionStatus");
+  JsonObject conStatus = root["connectionStatus"].to<JsonObject>();
   conStatus["price"] = isPriceNotifyConnected();
   conStatus["blocks"] = isBlockNotifyConnected();
 
@@ -117,9 +117,9 @@ StaticJsonDocument<768> getStatusObject() {
   return root;
 }
 
-StaticJsonDocument<512> getLedStatusObject() {
-  StaticJsonDocument<512> root;
-  JsonArray colors = root.createNestedArray("data");
+JsonDocument getLedStatusObject() {
+  JsonDocument root;
+  JsonArray colors = root["data"].to<JsonArray>();
   //    Adafruit_NeoPixel pix = getPixels();
 
   for (uint i = 0; i < pixels.numPixels(); i++) {
@@ -131,7 +131,7 @@ StaticJsonDocument<512> getLedStatusObject() {
     char hexColor[8];
     sprintf(hexColor, "#%02X%02X%02X", red, green, blue);
 
-    JsonObject object = colors.createNestedObject();
+    JsonObject object = colors.add<JsonObject>();
     object["red"] = red;
     object["green"] = green;
     object["blue"] = blue;
@@ -143,8 +143,8 @@ StaticJsonDocument<512> getLedStatusObject() {
 
 void eventSourceUpdate() {
   if (!events.count()) return;
-  StaticJsonDocument<768> root = getStatusObject();
-  JsonArray data = root.createNestedArray("data");
+  JsonDocument root = getStatusObject();
+  JsonArray data = root["data"].to<JsonArray>();
 
   root["leds"] = getLedStatusObject()["data"];
 
@@ -168,9 +168,9 @@ void onApiStatus(AsyncWebServerRequest *request) {
   AsyncResponseStream *response =
       request->beginResponseStream("application/json");
 
-  StaticJsonDocument<1024> root = getStatusObject();
-  JsonArray data = root.createNestedArray("data");
-  JsonArray rendered = root.createNestedArray("rendered");
+  JsonDocument root = getStatusObject();
+  JsonArray data = root["data"].to<JsonArray>();
+  JsonArray rendered = root["rendered"].to<JsonArray>();
   String epdContent[NUM_SCREENS];
 
   root["leds"] = getLedStatusObject()["data"];
@@ -384,7 +384,7 @@ void onApiRestart(AsyncWebServerRequest *request) {
  * @Path("/api/settings")
  */
 void onApiSettingsGet(AsyncWebServerRequest *request) {
-  StaticJsonDocument<1536> root;
+  JsonDocument root;
   root["numScreens"] = NUM_SCREENS;
   root["fgColor"] = getFgColor();
   root["bgColor"] = getBgColor();
@@ -421,12 +421,12 @@ void onApiSettingsGet(AsyncWebServerRequest *request) {
 #ifdef LAST_BUILD_TIME
   root["lastBuildTime"] = String(LAST_BUILD_TIME);
 #endif
-  JsonArray screens = root.createNestedArray("screens");
+  JsonArray screens = root["screens"].to<JsonArray>();
 
   std::vector<std::string> screenNameMap = getScreenNameMap();
 
   for (int i = 0; i < screenNameMap.size(); i++) {
-    JsonObject o = screens.createNestedObject();
+    JsonObject o = screens.add<JsonObject>();
     String key = "screen" + String(i) + "Visible";
     o["id"] = i;
     o["name"] = screenNameMap[i];
@@ -650,7 +650,7 @@ void onApiSystemStatus(AsyncWebServerRequest *request) {
   AsyncResponseStream *response =
       request->beginResponseStream("application/json");
 
-  StaticJsonDocument<128> root;
+  JsonDocument root;
 
   root["espFreeHeap"] = ESP.getFreeHeap();
   root["espHeapSize"] = ESP.getHeapSize();
@@ -743,7 +743,7 @@ void onApiLightsSetColor(AsyncWebServerRequest *request) {
       setLights(r, g, b);
     }
 
-    StaticJsonDocument<48> doc;
+    JsonDocument doc;
     doc["result"] = rgbColor;
 
     serializeJson(getLedStatusObject()["data"], *response);

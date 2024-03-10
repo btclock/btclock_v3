@@ -87,6 +87,28 @@ std::array<std::string, NUM_SCREENS> parseBlockHeight(std::uint32_t blockHeight)
     return ret;
 }
 
+std::array<std::string, NUM_SCREENS> parseBlockFees(std::uint16_t blockFees) {
+    std::array<std::string, NUM_SCREENS> ret;
+    std::string blockFeesString = std::to_string(blockFees);
+    std::uint32_t firstIndex = 0;
+
+    if (blockFeesString.length() < NUM_SCREENS)
+    {
+        blockFeesString.insert(blockFeesString.begin(), NUM_SCREENS - blockFeesString.length() - 1, ' ');
+        ret[0] = "FEE/RATE";
+        firstIndex = 1;
+    }
+
+    for (uint i = firstIndex; i < NUM_SCREENS-1; i++)
+    {
+        ret[i] = blockFeesString[i];
+    }
+
+    ret[NUM_SCREENS-1] = "sat/vB";
+
+    return ret;
+}
+
 std::array<std::string, NUM_SCREENS> parseHalvingCountdown(std::uint32_t blockHeight, bool asBlocks)
 {
     std::array<std::string, NUM_SCREENS> ret;

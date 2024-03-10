@@ -76,7 +76,7 @@ void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
 }
 
 void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data) {
-  SpiRamJsonDocument doc(event_data->data_len);
+  JsonDocument doc;
 
   deserializeJson(doc, (char *)event_data->data_ptr);
 

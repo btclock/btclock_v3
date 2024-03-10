@@ -24,7 +24,7 @@ void taskPriceFetch(void *pvParameters) {
     uint usdPrice, eurPrice;
     if (httpCode == 200) {
       String payload = http->getString();
-      StaticJsonDocument<96> doc;
+      JsonDocument doc;
       deserializeJson(doc, payload);
       //            usdPrice = doc["bitcoin"]["usd"];
       eurPrice = doc["bitcoin"]["eur"].as<uint>();

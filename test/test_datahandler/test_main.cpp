@@ -31,6 +31,16 @@ void test_SevenCharacterBlockHeight(void) {
     TEST_ASSERT_EQUAL_STRING("0", output[1].c_str());
 }
 
+void test_FeeRateDisplay(void) {
+    uint testValue = 21;
+    std::array<std::string, NUM_SCREENS> output = parseBlockFees(static_cast<std::uint16_t>(testValue));
+    TEST_ASSERT_EQUAL_STRING("FEE/RATE", output[0].c_str());
+    TEST_ASSERT_EQUAL_STRING("2", output[NUM_SCREENS-3].c_str());
+    TEST_ASSERT_EQUAL_STRING("1", output[NUM_SCREENS-2].c_str());
+    TEST_ASSERT_EQUAL_STRING("sat/vB", output[NUM_SCREENS-1].c_str());
+}
+
+
 void test_PriceOf100kusd(void) {
     std::array<std::string, NUM_SCREENS> output = parsePriceData(100000, '$');
     TEST_ASSERT_EQUAL_STRING("$", output[0].c_str());
@@ -89,6 +99,7 @@ int runUnityTests(void) {
     RUN_TEST(test_CorrectSatsPerDollarConversion);
     RUN_TEST(test_SixCharacterBlockHeight);
     RUN_TEST(test_SevenCharacterBlockHeight);
+    RUN_TEST(test_FeeRateDisplay);
     RUN_TEST(test_PriceOf100kusd);
     RUN_TEST(test_McapLowerUsd);
     RUN_TEST(test_Mcap1TrillionUsd);
