@@ -11,7 +11,7 @@ void setupWebserver() {
   server.addHandler(&events);
 
   // server.serveStatic("/css", LittleFS, "/css/");
-  // server.serveStatic("/js", LittleFS, "/js/");
+  server.serveStatic("/fonts", LittleFS, "/fonts/");
   server.serveStatic("/build", LittleFS, "/build");
   server.serveStatic("/swagger.json", LittleFS, "/swagger.json");
   server.serveStatic("/api.html", LittleFS, "/api.html");
@@ -320,7 +320,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json) {
 
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled",   "otaEnabled",     "stealFocus",
-                           "mcapBigChar"};
+                           "mcapBigChar", "useSatsSymbol", "useBlkCountdown"};
 
   for (String setting : boolSettings) {
     if (settings.containsKey(setting)) {
@@ -402,11 +402,14 @@ void onApiSettingsGet(AsyncWebServerRequest *request) {
   root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
   root["ledFlashOnUpd"] = preferences.getBool("ledFlashOnUpd", false);
   root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
-  root["stealFocus"] = preferences.getBool("stealFocus", true);
+  root["stealFocus"] = preferences.getBool("stealFocus", false);
   root["mcapBigChar"] = preferences.getBool("mcapBigChar", true);
   root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", true);
   root["otaEnabled"] = preferences.getBool("otaEnabled", true);
   root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", false);
+  root["useSatsSymbol"] = preferences.getBool("useSatsSymbol", false);
+  root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", false);
+
   root["hostnamePrefix"] = preferences.getString("hostnamePrefix", "btclock");
   root["hostname"] = getMyHostname();
   root["ip"] = WiFi.localIP();

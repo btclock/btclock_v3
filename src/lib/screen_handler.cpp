@@ -36,7 +36,7 @@ void workerTask(void *pvParameters) {
           if (getCurrentScreen() == SCREEN_BTC_TICKER) {
             taskEpdContent = parsePriceData(price, priceSymbol);
           } else if (getCurrentScreen() == SCREEN_MSCW_TIME) {
-            taskEpdContent = parseSatsPerCurrency(price, priceSymbol);
+            taskEpdContent = parseSatsPerCurrency(price, priceSymbol, preferences.getBool("useSatsSymbol", false));
           } else {
             taskEpdContent =
                 parseMarketCap(getBlockHeight(), price, priceSymbol,
@@ -50,7 +50,7 @@ void workerTask(void *pvParameters) {
           if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN) {
             taskEpdContent = parseBlockHeight(getBlockHeight());
           } else {
-            taskEpdContent = parseHalvingCountdown(getBlockHeight());
+            taskEpdContent = parseHalvingCountdown(getBlockHeight(), preferences.getBool("useBlkCountdown", false));
           }
 
           if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN ||

@@ -1,11 +1,11 @@
 dependencies:
   esp_littlefs:
-    component_hash: 0e4812e62ac02a17f2b6a2bb3b6daf9b39e9599a6e319c745ef2a2817c15a073
+    component_hash: 66d5afe7ad323d0159d04e296c14ffa0e39156502bc15e0520eff2af392d3aa4
     source:
       git: https://github.com/joltwallet/esp_littlefs.git
       path: .
       type: git
-    version: 5a0a9a0a39549ac55fd51d55bd3f895ffe700a0a
+    version: 41873c20fb5cdbcf28d7d6cc04e4bcb4a1305317
   idf:
     component_hash: null
     source:

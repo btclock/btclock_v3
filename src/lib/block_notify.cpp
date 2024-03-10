@@ -162,8 +162,7 @@ void onWebsocketMessage(esp_websocket_event_data_t *event_data) {
         }
       }
 
-      if (getCurrentScreen() == SCREEN_BLOCK_HEIGHT &&
-          preferences.getBool("ledFlashOnUpd", false)) {
+      if (preferences.getBool("ledFlashOnUpd", false)) {
         vTaskDelay(pdMS_TO_TICKS(250));  // Wait until screens are updated
         queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
       }
