@@ -320,7 +320,8 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json) {
 
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled",   "otaEnabled",     "stealFocus",
-                           "mcapBigChar", "useSatsSymbol", "useBlkCountdown"};
+                           "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
+                           "suffixPrice", "disableLeds"};
 
   for (String setting : boolSettings) {
     if (settings.containsKey(setting)) {
@@ -409,6 +410,8 @@ void onApiSettingsGet(AsyncWebServerRequest *request) {
   root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", false);
   root["useSatsSymbol"] = preferences.getBool("useSatsSymbol", false);
   root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", false);
+  root["suffixPrice"] = preferences.getBool("suffixPrice", false);
+  root["disableLeds"] = preferences.getBool("disableLeds", false);
 
   root["hostnamePrefix"] = preferences.getString("hostnamePrefix", "btclock");
   root["hostname"] = getMyHostname();

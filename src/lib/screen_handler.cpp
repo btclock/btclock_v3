@@ -34,7 +34,7 @@ void workerTask(void *pvParameters) {
             priceSymbol = '[';
           }
           if (getCurrentScreen() == SCREEN_BTC_TICKER) {
-            taskEpdContent = parsePriceData(price, priceSymbol);
+            taskEpdContent = parsePriceData(price, priceSymbol, preferences.getBool("suffixPrice", false));
           } else if (getCurrentScreen() == SCREEN_MSCW_TIME) {
             taskEpdContent = parseSatsPerCurrency(price, priceSymbol, preferences.getBool("useSatsSymbol", false));
           } else {

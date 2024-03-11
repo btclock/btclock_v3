@@ -1,11 +1,11 @@
 #include "data_handler.hpp"
 
-std::array<std::string, NUM_SCREENS> parsePriceData(std::uint32_t price, char currencySymbol)
+std::array<std::string, NUM_SCREENS> parsePriceData(std::uint32_t price, char currencySymbol, bool useSuffixFormat)
 {
     std::array<std::string, NUM_SCREENS> ret;
     std::string priceString;
-    if (std::to_string(price).length() >= NUM_SCREENS) {
-        priceString = formatNumberWithSuffix(price, NUM_SCREENS-2);
+    if (std::to_string(price).length() >= NUM_SCREENS || useSuffixFormat) {
+        priceString = currencySymbol + formatNumberWithSuffix(price, NUM_SCREENS-2);
     } else {
         priceString = currencySymbol + std::to_string(price);
     }

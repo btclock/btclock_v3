@@ -10,6 +10,11 @@ void ledTask(void *parameter) {
     if (ledTaskQueue != NULL) {
       if (xQueueReceive(ledTaskQueue, &ledTaskParams, portMAX_DELAY) ==
           pdPASS) {
+
+        if (preferences.getBool("disableLeds", false)) {
+          continue;
+        }
+
         uint32_t oldLights[NEOPIXEL_COUNT];
 
         // get current state
