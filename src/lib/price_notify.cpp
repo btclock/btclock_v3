@@ -105,6 +105,10 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data) {
   }
 }
 
+uint getLastPriceUpdate() {
+  return lastPriceUpdate;
+}
+
 uint getPrice() { return currentPrice; }
 
 void setPrice(uint newPrice) { currentPrice = newPrice; }

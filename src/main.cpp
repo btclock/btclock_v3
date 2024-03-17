@@ -39,13 +39,15 @@ extern "C" void app_main() {
     if (eventSourceTaskHandle != NULL)
       xTaskNotifyGive(eventSourceTaskHandle);
 
+    int64_t currentUptime = esp_timer_get_time() / 1000000;;
+
     if (!WiFi.isConnected()) {
       if (!wifiLostConnection) {
-        wifiLostConnection = esp_timer_get_time() / 1000000;
+        wifiLostConnection = currentUptime;
         Serial.println("Lost WiFi connection, trying to reconnect...");
       }
 
-      if (((esp_timer_get_time() / 1000000) - wifiLostConnection) > 600) {
+      if ((currentUptime - wifiLostConnection) > 600) {
         Serial.println("Still no connection after 10 minutes, restarting...");
         delay(2000);
         ESP.restart();
@@ -83,6 +85,14 @@ extern "C" void app_main() {
     } else if (blockNotifyLostConnection > 0 || priceNotifyLostConnection > 0) {
       blockNotifyLostConnection = 0;
       priceNotifyLostConnection = 0;
+    }
+
+    // if more than 5 price updates are missed, there is probably something wrong, reconnect
+    if ((getLastPriceUpdate() - currentUptime) > (preferences.getUInt("minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE)*5)) {
+        stopPriceNotify();
+        setupPriceNotify();
+
+        priceNotifyLostConnection = 0;
     }
 
     vTaskDelay(pdMS_TO_TICKS(5000));
