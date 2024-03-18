@@ -17,46 +17,90 @@ jobs:
           submodules: recursive
       - name: "Install and build"
         uses: ./.github/actions/install-build
-
+      - name: Copy bootloader to output folder
+        run: cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: prepared-outputs
+          path: .pio/**/*.bin
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+    needs: build
+    continue-on-error: true
+    strategy:
+      matrix:
+        chip:
+          - name: lolin_s3_mini
+            version: esp32s3
+        epd_variant: [213epd, 29epd]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: prepared-outputs
+          path: .pio
       - name: Install esptools.py
         run: pip install --upgrade esptool
 
       - name: Create merged firmware binary
-        run: mkdir -p output && esptool.py --chip esp32s3 merge_bin -o output/full-firmware.bin --flash_mode dio 0x0000 .pio/build/lolin_s3_mini_qr/bootloader.bin 0x8000 .pio/build/lolin_s3_mini_qr/partitions.bin 0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 .pio/build/lolin_s3_mini_qr/firmware.bin 0x369000 .pio/build/lolin_s3_mini_qr/littlefs.bin
+        run: mkdir -p ${{ matrix.chip.name }}_${{ matrix.epd_variant }} && esptool.py --chip ${{ matrix.chip.version }} merge_bin -o ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin --flash_mode dio 0x0000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/bootloader.bin 0x8000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/partitions.bin 0xe000 .pio/boot_app0.bin 0x10000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin 0x369000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin
 
       - name: Create checksum for merged binary
-        run: shasum -a 256 output/full-firmware.bin | awk '{print $1}' > output/full-firmware.sha256
+        run: shasum -a 256 ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.sha256
 
-      - name: Write commit hash to file
-        run: echo $GITHUB_SHA > output/commit.txt
-
-      - name: Write build date to file
-        run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > output/date.txt
-
-      - name: Copy all artifacts to output folder
-        run: cp .pio/build/lolin_s3_mini_qr/*.bin ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin output
+      # - name: Copy all artifacts to output folder
+      #   run: cp .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.bin ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin ${{ matrix.chip.name }}_${{ matrix.epd_variant }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: build-${{ matrix.chip.name }}-${{ matrix.epd_variant }}
           path: |
-            .pio/build/lolin_s3_mini_qr/*.bin
-            output/full-firmware.bin
-            output/full-firmware.sha256
+            ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.bin
+            ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.sha256
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+    needs: build
+    steps:
+      - name: Download matrix outputs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          merge-multiple: true
+      - name: Write commit hash to file
+        run: mkdir -p lolin_s3_mini_213epd && echo $GITHUB_SHA > lolin_s3_mini_213epd/commit.txt
+  
+      - name: Write build date to file
+        run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > lolin_s3_mini_213epd/date.txt
+  
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini_qr/*.bin"
+          artifacts: "**/*.bin,**/*.sha256"
           allowUpdates: true
           removeArtifacts: true
           makeLatest: true
+        #   - name: Create release
+        #   uses: ncipollo/release-action@v1
+        #   with:
+        #     artifacts: "output/full-firmware.bin,output/full-firmware.sha256,.pio/build/lolin_s3_mini_qr/*.bin"
+        #     allowUpdates: true
+        #     removeArtifacts: true
+        #     makeLatest: true
       - name: Pushes full-firmware.bin to web flasher
         id: push_directory
         uses: cpina/github-action-push-to-another-repository@main
         env:
           SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         with:
-          source-directory: output/
+          source-directory: lolin_s3_mini_213epd/
           target-directory: firmware_v3/
           destination-github-username: 'btclock'
           destination-repository-name: 'web-flasher'

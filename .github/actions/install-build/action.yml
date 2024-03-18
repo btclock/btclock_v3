@@ -37,7 +37,7 @@ runs:
         detailed_summary: true
     - name: Build BTClock firmware
       shell: bash
-      run: pio run -e lolin_s3_mini_qr 
+      run: pio run 
     - name: Build BTClock filesystem
       shell: bash
-      run: pio run -e lolin_s3_mini_qr --target buildfs
+      run: pio run --target buildfs

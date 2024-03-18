@@ -5,6 +5,8 @@
 #include <Preferences.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <GxEPD2.h>
+#include <GxEPD2_BW.h>
 
 #include <mutex>
 #include <utils.hpp>
@@ -15,6 +17,14 @@ extern Adafruit_MCP23X17 mcp2;
 #endif
 extern Preferences preferences;
 extern std::mutex mcpMutex;
+
+#ifdef VERSION_EPD_2_13
+  #define EPD_CLASS GxEPD2_213_B74
+#endif
+
+#ifdef VERSION_EPD_2_9
+  #define EPD_CLASS GxEPD2_290_T94
+#endif
 
 const PROGMEM int SCREEN_BLOCK_HEIGHT = 0;
 const PROGMEM int SCREEN_MSCW_TIME = 1;
