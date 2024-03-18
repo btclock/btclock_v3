@@ -75,10 +75,10 @@ jobs:
           pattern: build-*
           merge-multiple: false
       - name: Write commit hash to file
-        run: mkdir -p lolin_s3_mini_213epd && echo $GITHUB_SHA > lolin_s3_mini_213epd/commit.txt
+        run: echo $GITHUB_SHA > commit.txt
   
       - name: Write build date to file
-        run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > lolin_s3_mini_213epd/date.txt
+        run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > date.txt
   
       - name: Create release
         uses: ncipollo/release-action@v1
@@ -100,7 +100,7 @@ jobs:
         env:
           SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         with:
-          source-directory: lolin_s3_mini_213epd/
+          source-directory: .
           target-directory: firmware_v3/
           destination-github-username: 'btclock'
           destination-repository-name: 'web-flasher'
