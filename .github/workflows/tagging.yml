@@ -53,7 +53,7 @@ jobs:
         run: shasum -a 256 ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.sha256
 
       - name: Copy all artifacts to output folder
-        run: cp .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.bin ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin ${{ matrix.chip.name }}_${{ matrix.epd_variant }}
+        run: cp .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.bin .pio/boot_app0.bin ${{ matrix.chip.name }}_${{ matrix.epd_variant }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
