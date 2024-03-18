@@ -31,6 +31,16 @@ void setup()
     }
   }
 
+  {
+    if (mcp1.digitalRead(0) == LOW)
+    {
+      // Then loop forever to prevent anything else from writing to the screen
+      while (true) {
+        delay(1000);
+      }
+    }
+  }
+
   tryImprovSetup();
 
   setupWebserver();

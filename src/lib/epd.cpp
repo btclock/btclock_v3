@@ -155,7 +155,19 @@ void setupDisplays()
                 11, &tasks[i]); // create task
   }
 
-  epdContent = {"B", "T", "C", "L", "O", "C", "K"};
+  // Hold lower button to enable "storage mode" (prevents burn-in of ePaper displays)
+  if (mcp1.digitalRead(0) == LOW)
+  {
+    setFgColor(GxEPD_BLACK);
+    setBgColor(GxEPD_WHITE);
+
+    epdContent = {" ", " ", " ", " ", " ", " ", " "};
+  }
+  else
+  {
+
+    epdContent = {"B", "T", "C", "L", "O", "C", "K"};
+  }
 
   setEpdContent(epdContent);
 }
@@ -244,10 +256,9 @@ void prepareDisplayUpdateTask(void *pvParameters)
         }
         else
         {
-   
+
           showDigit(epdIndex, epdContent[epdIndex].c_str()[0], updatePartial,
                     &FONT_BIG);
-          
         }
       }
 
@@ -402,9 +413,9 @@ void showDigit(const uint dispNum, char chr, bool partial,
   displays[dispNum].setCursor(x, y);
   displays[dispNum].print(str);
 
- if (chr == '.')
+  if (chr == '.')
   {
-   displays[dispNum].fillRect(x,y,displays[dispNum].width(),round(displays[dispNum].height() * 0.9), getBgColor());
+    displays[dispNum].fillRect(x, y, displays[dispNum].width(), round(displays[dispNum].height() * 0.9), getBgColor());
   }
 
   // displays[dispNum].setCursor(10, 3);
