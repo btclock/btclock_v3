@@ -30,3 +30,6 @@ uint getBlockMedianFee();
 bool isBlockNotifyConnected();
 void stopBlockNotify();
 bool getBlockNotifyInit();
+uint getLastBlockUpdate();
+int getBlockFetch();
+void setLastBlockUpdate(uint lastUpdate);
