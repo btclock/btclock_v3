@@ -49,12 +49,12 @@ extern "C" void app_main()
       if (!wifiLostConnection)
       {
         wifiLostConnection = currentUptime;
-        Serial.println("Lost WiFi connection, trying to reconnect...");
+        Serial.println(F("Lost WiFi connection, trying to reconnect..."));
       }
 
       if ((currentUptime - wifiLostConnection) > 600)
       {
-        Serial.println("Still no connection after 10 minutes, restarting...");
+        Serial.println(F("Still no connection after 10 minutes, restarting..."));
         delay(2000);
         ESP.restart();
       }
@@ -64,33 +64,35 @@ extern "C" void app_main()
     else if (wifiLostConnection)
     {
       wifiLostConnection = 0;
-      Serial.println("Connection restored, reset timer.");
+      Serial.println(F("Connection restored, reset timer."));
     }
-    else if (getPriceNotifyInit() && !preferences.getBool("fetchEurPrice", false) && !isPriceNotifyConnected())
+    
+    if (getPriceNotifyInit() && !preferences.getBool("fetchEurPrice", false) && !isPriceNotifyConnected())
     {
       priceNotifyLostConnection++;
-      Serial.println("Lost price data connection...");
+      Serial.println(F("Lost price data connection..."));
       queueLedEffect(LED_DATA_PRICE_ERROR);
 
       // if price WS connection does not come back after 6*5 seconds, destroy and recreate
       if (priceNotifyLostConnection > 6)
       {
-        Serial.println("Restarting price handler...");
+        Serial.println(F("Restarting price handler..."));
 
         stopPriceNotify();
         setupPriceNotify();
         priceNotifyLostConnection = 0;
       }
     }
-    else if (getBlockNotifyInit() && !isBlockNotifyConnected())
+
+    if (getBlockNotifyInit() && !isBlockNotifyConnected())
     {
       blockNotifyLostConnection++;
-      Serial.println("Lost block data connection...");
+      Serial.println(F("Lost block data connection..."));
       queueLedEffect(LED_DATA_BLOCK_ERROR);
       // if mempool WS connection does not come back after 6*5 seconds, destroy and recreate
       if (blockNotifyLostConnection > 6)
       {
-        Serial.println("Restarting block handler...");
+        Serial.println(F("Restarting block handler..."));
 
         stopBlockNotify();
         setupBlockNotify();
@@ -106,7 +108,7 @@ extern "C" void app_main()
     // if more than 5 price updates are missed, there is probably something wrong, reconnect
     if ((getLastPriceUpdate() - currentUptime) > (preferences.getUInt("minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE) * 5))
     {
-      Serial.println("Detected 5 missed price updates... restarting price handler.");
+      Serial.println(F("Detected 5 missed price updates... restarting price handler."));
 
       stopPriceNotify();
       setupPriceNotify();
@@ -117,13 +119,13 @@ extern "C" void app_main()
     // If after 45 minutes no mempool blocks, check the rest API
     if ((getLastBlockUpdate() - currentUptime) > 45 * 60)
     {
-      Serial.println("Long time (45 min) since last block, checking if I missed anything...");
+      Serial.println(F("Long time (45 min) since last block, checking if I missed anything..."));
       int currentBlock = getBlockFetch();
       if (currentBlock != -1)
       {
         if (currentBlock != getBlockHeight())
         {
-          Serial.println("Detected stuck block height... restarting block handler.");
+          Serial.println(F("Detected stuck block height... restarting block handler."));
           // Mempool source stuck, restart
           stopBlockNotify();
           setupBlockNotify();
@@ -132,6 +134,11 @@ extern "C" void app_main()
         setLastBlockUpdate(currentUptime);
       }
     }
+
+    if (currentUptime - getLastTimeSync() > 24 * 60 * 60) {
+      Serial.println(F("Last time update is longer than 24 hours ago, sync again"));
+      syncTime();
+    };
 
     vTaskDelay(pdMS_TO_TICKS(5000));
   }

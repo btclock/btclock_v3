@@ -33,7 +33,8 @@
 #define DEFAULT_BG_COLOR GxEPD_BLACK
 
 void setup();
-void setupTime();
+void syncTime();
+uint getLastTimeSync();
 void setupPreferences();
 void setupWebsocketClients(void *pvParameters);
 void setupHardware();

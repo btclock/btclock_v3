@@ -9,6 +9,7 @@ Adafruit_MCP23X17 mcp2;
 #endif
 std::vector<std::string> screenNameMap(SCREEN_COUNT);
 std::mutex mcpMutex;
+uint lastTimeSync;
 
 void setup()
 {
@@ -46,7 +47,7 @@ void setup()
   setupWebserver();
 
   // setupWifi();
-  setupTime();
+  syncTime();
   finishSetup();
 
   setupTasks();
@@ -193,7 +194,7 @@ void tryImprovSetup()
   // queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
 }
 
-void setupTime()
+void syncTime()
 {
   configTime(preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS), 0,
              NTP_SERVER);
@@ -206,6 +207,8 @@ void setupTime()
     delay(500);
     Serial.println(F("Retry set time"));
   }
+
+  lastTimeSync = esp_timer_get_time() / 1000000;
 }
 
 void setupPreferences()
@@ -300,7 +303,7 @@ void setupHardware()
 
   if (!LittleFS.open("/index.html.gz", "r"))
   {
-    Serial.println("Error loading WebUI");
+    Serial.println(F("Error loading WebUI"));
   }
 
   setupLeds();
@@ -568,25 +571,25 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
   switch (event)
   {
   case ARDUINO_EVENT_WIFI_READY:
-    Serial.println("WiFi interface ready");
+    Serial.println(F("WiFi interface ready"));
     break;
   case ARDUINO_EVENT_WIFI_SCAN_DONE:
-    Serial.println("Completed scan for access points");
+    Serial.println(F("Completed scan for access points"));
     break;
   case ARDUINO_EVENT_WIFI_STA_START:
-    Serial.println("WiFi client started");
+    Serial.println(F("WiFi client started"));
     break;
   case ARDUINO_EVENT_WIFI_STA_STOP:
-    Serial.println("WiFi clients stopped");
+    Serial.println(F("WiFi clients stopped"));
     break;
   case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-    Serial.println("Connected to access point");
+    Serial.println(F("Connected to access point"));
     break;
   case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
   {
     if (!first_connect)
     {
-      Serial.println("Disconnected from WiFi access point");
+      Serial.println(F("Disconnected from WiFi access point"));
       queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
       uint8_t reason = info.wifi_sta_disconnected.reason;
       if (reason)
@@ -596,7 +599,7 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
     break;
   }
   case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-    Serial.println("Authentication mode of access point has changed");
+    Serial.println(F("Authentication mode of access point has changed"));
     break;
   case ARDUINO_EVENT_WIFI_STA_GOT_IP:
   {
@@ -608,33 +611,33 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
     break;
   }
   case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-    Serial.println("Lost IP address and IP address is reset to 0");
+    Serial.println(F("Lost IP address and IP address is reset to 0"));
     queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
     WiFi.reconnect();
     break;
   case ARDUINO_EVENT_WIFI_AP_START:
-    Serial.println("WiFi access point started");
+    Serial.println(F("WiFi access point started"));
     break;
   case ARDUINO_EVENT_WIFI_AP_STOP:
-    Serial.println("WiFi access point  stopped");
+    Serial.println(F("WiFi access point  stopped"));
     break;
   case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
-    Serial.println("Client connected");
+    Serial.println(F("Client connected"));
     break;
   case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
-    Serial.println("Client disconnected");
+    Serial.println(F("Client disconnected"));
     break;
   case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
-    Serial.println("Assigned IP address to client");
+    Serial.println(F("Assigned IP address to client"));
     break;
   case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
-    Serial.println("Received probe request");
+    Serial.println(F("Received probe request"));
     break;
   case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
-    Serial.println("AP IPv6 is preferred");
+    Serial.println(F("AP IPv6 is preferred"));
     break;
   case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-    Serial.println("STA IPv6 is preferred");
+    Serial.println(F("STA IPv6 is preferred"));
     break;
   default:
     break;
@@ -651,4 +654,8 @@ String getMyHostname()
   snprintf(hostname, sizeof(hostname), "%s-%02x%02x%02x", hostnamePrefix,
            mac[3], mac[4], mac[5]);
   return hostname;
+}
+
+uint getLastTimeSync() {
+  return lastTimeSync;
 }

@@ -127,7 +127,7 @@ void downloadUpdate() {
 }
 
 void onOTAError(ota_error_t error) {
-  Serial.println("\nOTA update error, restarting");
+  Serial.println(F("\nOTA update error, restarting"));
   Wire.end();
   SPI.end();
   delay(1000);
@@ -135,7 +135,7 @@ void onOTAError(ota_error_t error) {
 }
 
 void onOTAComplete() {
-  Serial.println("\nOTA update finished");
+  Serial.println(F("\nOTA update finished"));
   Wire.end();
   SPI.end();
   delay(1000);
