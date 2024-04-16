@@ -248,12 +248,27 @@ void stopBlockNotify()
   if (blockNotifyClient == NULL)
     return;
 
-  esp_websocket_client_close(blockNotifyClient, portMAX_DELAY);
+  esp_websocket_client_close(blockNotifyClient, pdMS_TO_TICKS(5000));
   esp_websocket_client_stop(blockNotifyClient);
   esp_websocket_client_destroy(blockNotifyClient);
 
   blockNotifyClient = NULL;
 }
+
+void restartBlockNotify()
+{
+  stopBlockNotify();
+  
+  if (blockNotifyClient == NULL) {
+    setupBlockNotify();
+    return;
+  }
+
+  // esp_websocket_client_close(blockNotifyClient, pdMS_TO_TICKS(5000));
+  // esp_websocket_client_stop(blockNotifyClient);
+  // esp_websocket_client_start(blockNotifyClient);
+}
+
 
 int getBlockFetch()
 {

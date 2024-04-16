@@ -124,9 +124,20 @@ bool getPriceNotifyInit() {
 
 void stopPriceNotify() {
   if (clientPrice == NULL) return;
-  esp_websocket_client_close(clientPrice, portMAX_DELAY);
+  esp_websocket_client_close(clientPrice, pdMS_TO_TICKS(5000));
   esp_websocket_client_stop(clientPrice);
   esp_websocket_client_destroy(clientPrice);
 
   clientPrice = NULL;
+}
+
+void restartPriceNotify() {
+  stopPriceNotify();
+  if (clientPrice == NULL) {
+    setupPriceNotify();
+    return;
+  }
+  // esp_websocket_client_close(clientPrice, pdMS_TO_TICKS(5000));
+  // esp_websocket_client_stop(clientPrice);
+  // esp_websocket_client_start(clientPrice);
 }

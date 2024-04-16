@@ -22,6 +22,8 @@
 uint wifiLostConnection;
 uint priceNotifyLostConnection = 0;
 uint blockNotifyLostConnection = 0;
+//char ptrTaskList[1500];
+
 
 extern "C" void app_main()
 {
@@ -78,10 +80,13 @@ extern "C" void app_main()
       {
         Serial.println(F("Restarting price handler..."));
 
-        stopPriceNotify();
-        setupPriceNotify();
+        restartPriceNotify();
+      //  setupPriceNotify();
         priceNotifyLostConnection = 0;
       }
+    } else if (priceNotifyLostConnection > 0 && isPriceNotifyConnected())
+    {
+      priceNotifyLostConnection = 0;
     }
 
     if (getBlockNotifyInit() && !isBlockNotifyConnected())
@@ -94,15 +99,14 @@ extern "C" void app_main()
       {
         Serial.println(F("Restarting block handler..."));
 
-        stopBlockNotify();
-        setupBlockNotify();
+        restartBlockNotify();
+        //setupBlockNotify();
         blockNotifyLostConnection = 0;
       }
     }
-    else if (blockNotifyLostConnection > 0 || priceNotifyLostConnection > 0)
+    else if (blockNotifyLostConnection > 0 && isBlockNotifyConnected())
     {
       blockNotifyLostConnection = 0;
-      priceNotifyLostConnection = 0;
     }
 
     // if more than 5 price updates are missed, there is probably something wrong, reconnect
@@ -110,8 +114,8 @@ extern "C" void app_main()
     {
       Serial.println(F("Detected 5 missed price updates... restarting price handler."));
 
-      stopPriceNotify();
-      setupPriceNotify();
+      restartPriceNotify();
+     // setupPriceNotify();
 
       priceNotifyLostConnection = 0;
     }
@@ -127,8 +131,8 @@ extern "C" void app_main()
         {
           Serial.println(F("Detected stuck block height... restarting block handler."));
           // Mempool source stuck, restart
-          stopBlockNotify();
-          setupBlockNotify();
+          restartBlockNotify();
+         // setupBlockNotify();
         }
         // set last block update so it doesn't fetch for 45 minutes
         setLastBlockUpdate(currentUptime);

@@ -718,10 +718,10 @@ void onApiRestartDataSources(AsyncWebServerRequest *request) {
   AsyncResponseStream *response =
       request->beginResponseStream("application/json");
 
-  stopPriceNotify();
-  stopBlockNotify();
-  setupPriceNotify();
-  setupBlockNotify();
+  restartPriceNotify();
+  restartBlockNotify();
+//  setupPriceNotify();
+//  setupBlockNotify();
 
   request->send(response);
 }

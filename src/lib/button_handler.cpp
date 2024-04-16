@@ -50,7 +50,7 @@ void IRAM_ATTR handleButtonInterrupt() {
 }
 
 void setupButtonTask() {
-  xTaskCreate(buttonTask, "ButtonTask", 4096, NULL, tskIDLE_PRIORITY,
+  xTaskCreate(buttonTask, "ButtonTask", 3072, NULL, tskIDLE_PRIORITY,
               &buttonTaskHandle);  // Create the FreeRTOS task
   // Use interrupt instead of task
   attachInterrupt(MCP_INT_PIN, handleButtonInterrupt, CHANGE);
