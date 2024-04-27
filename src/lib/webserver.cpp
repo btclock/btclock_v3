@@ -45,6 +45,7 @@ void setupWebserver() {
       "/api/show/custom", onApiShowTextAdvanced);
   server.addHandler(handler);
 
+
   AsyncCallbackJsonWebHandler *lightsJsonHandler =
       new AsyncCallbackJsonWebHandler("/api/lights", onApiLightsSetJson);
   server.addHandler(lightsJsonHandler);
@@ -301,7 +302,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json) {
     }
   }
 
-  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness"};
+  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness"};
 
   for (String setting : uintSettings) {
     if (settings.containsKey(setting)) {
@@ -417,6 +418,13 @@ void onApiSettingsGet(AsyncWebServerRequest *request) {
   root["hostname"] = getMyHostname();
   root["ip"] = WiFi.localIP();
   root["txPower"] = WiFi.getTxPower();
+
+  #ifdef HAS_FRONTLIGHT
+  root["hasFrontlight"] = true;
+  root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", 4095);
+  #else
+  root["hasFrontlight"] = false;
+  #endif
 
 #ifdef GIT_REV
   root["gitRev"] = String(GIT_REV);
@@ -761,6 +769,11 @@ void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json) {
   JsonArray lights = json.as<JsonArray>();
 
   if (lights.size() != pixels.numPixels()) {
+    if (!lights.size()) {
+      // if empty, assume off request
+        return onApiLightsOff(request);
+    }
+
     Serial.printf("Invalid values for LED set %d\n", lights.size());
     request->send(400);
     return;

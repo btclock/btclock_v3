@@ -20,6 +20,9 @@
 #include "lib/screen_handler.hpp"
 #include "lib/shared.hpp"
 #include "lib/webserver.hpp"
+#ifdef HAS_FRONTLIGHT
+#include "PCA9685.h"
+#endif
 
 #define NTP_SERVER "pool.ntp.org"
 #define DEFAULT_MEMPOOL_INSTANCE "mempool.space"
@@ -42,6 +45,11 @@ void tryImprovSetup();
 void setupTimers();
 void finishSetup();
 void setupMcp();
+#ifdef HAS_FRONTLIGHT
+void setupFrontlight();
+extern PCA9685 flArray;
+#endif
+
 String getMyHostname();
 std::vector<std::string> getScreenNameMap();
 

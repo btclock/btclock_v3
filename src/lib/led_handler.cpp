@@ -330,3 +330,39 @@ void ledTheaterChaseRainbow(int wait) {
 }
 
 Adafruit_NeoPixel getPixels() { return pixels; }
+
+#ifdef HAS_FRONTLIGHT
+int flDelayTime = 10; 
+
+void frontlightFadeInAll() {
+  for (int dutyCycle = 0; dutyCycle <= preferences.getUInt("flMaxBrightness"); dutyCycle += 5) {
+    for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
+      flArray.setPWM(ledPin, 0, dutyCycle);
+    }
+    delay(flDelayTime);
+  }
+}
+
+void frontlightFadeOutAll() {
+  for (int dutyCycle = preferences.getUInt("flMaxBrightness"); dutyCycle >= 0; dutyCycle -= 5) {
+    for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
+      flArray.setPWM(ledPin, 0, dutyCycle);
+    }
+    delay(flDelayTime);
+  }
+}
+
+void frontlightFadeIn(uint num) {
+  for (int dutyCycle = 0; dutyCycle <= preferences.getUInt("flMaxBrightness"); dutyCycle += 5) {
+    flArray.setPWM(num, 0, dutyCycle);
+    delay(flDelayTime);
+  }
+}
+
+void frontlightFadeOut(uint num) {
+  for (int dutyCycle = preferences.getUInt("flMaxBrightness"); dutyCycle >= 0; dutyCycle -= 5) {
+    flArray.setPWM(num, 0, dutyCycle);
+    delay(flDelayTime);
+  }
+}
+#endif

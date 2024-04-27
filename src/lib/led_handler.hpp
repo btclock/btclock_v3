@@ -57,3 +57,10 @@ void ledRainbow(int wait);
 void ledTheaterChaseRainbow(int wait);
 void ledTheaterChase(uint32_t color, int wait);
 Adafruit_NeoPixel getPixels();
+
+#ifdef HAS_FRONTLIGHT
+void frontlightFadeInAll();
+void frontlightFadeOutAll();
+void frontlightFadeIn(uint num);
+void frontlightFadeOut(uint num);
+#endif

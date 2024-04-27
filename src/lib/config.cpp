@@ -7,6 +7,11 @@ Adafruit_MCP23X17 mcp1;
 #ifdef IS_BTCLOCK_S3
 Adafruit_MCP23X17 mcp2;
 #endif
+
+#ifdef HAS_FRONTLIGHT
+PCA9685 flArray(PCA_I2C_ADDR);
+#endif
+
 std::vector<std::string> screenNameMap(SCREEN_COUNT);
 std::mutex mcpMutex;
 uint lastTimeSync;
@@ -352,6 +357,10 @@ void setupHardware()
     //         ;
   }
 #endif
+
+#ifdef HAS_FRONTLIGHT
+  setupFrontlight();
+#endif
 }
 
 void improvGetAvailableWifiNetworks()
@@ -659,3 +668,20 @@ String getMyHostname()
 uint getLastTimeSync() {
   return lastTimeSync;
 }
+
+#ifdef HAS_FRONTLIGHT
+void setupFrontlight() {
+  flArray.begin();
+  flArray.setFrequency(1000);
+  flArray.setOutputEnablePin(PCA_OE_PIN);
+
+  if (!preferences.isKey("flMaxBrightness")) {
+    preferences.putUInt("flMaxBrightness", 4095);
+  }
+  // Initialize all LEDs to off
+  // for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
+  //   flArray.setPWM(ledPin, 0, 0); // Turn off LED
+  // }
+  flArray.allOFF();
+}
+#endif
