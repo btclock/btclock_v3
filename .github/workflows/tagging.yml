@@ -37,7 +37,12 @@ jobs:
         chip:
           - name: lolin_s3_mini
             version: esp32s3
+          - name: btclock_rev_b
+            version: esp32s3
         epd_variant: [213epd, 29epd]
+        exclude:
+            - chip: btclock_rev_b
+              epd_variant: 29epd
     steps:
       - uses: actions/download-artifact@v4
         with:

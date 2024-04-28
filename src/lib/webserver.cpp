@@ -54,6 +54,13 @@ void setupWebserver() {
   server.on("/api/lights/color", HTTP_GET, onApiLightsSetColor);
   server.on("/api/lights", HTTP_GET, onApiLightsStatus);
 
+
+  #ifdef HAS_FRONTLIGHT
+  server.on("/api/frontlight/on", HTTP_GET, onApiFrontlightOn);
+  server.on("/api/frontlight/status", HTTP_GET, onApiFrontlightStatus);
+  server.on("/api/frontlight/off", HTTP_GET, onApiFrontlightOff);
+  #endif
+
   // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET,
   // onApiLightsSetColor);
 
@@ -868,3 +875,36 @@ void eventSourceTask(void *pvParameters) {
     eventSourceUpdate();
   }
 }
+
+#ifdef HAS_FRONTLIGHT
+void onApiFrontlightOn(AsyncWebServerRequest *request) {
+  frontlightFadeInAll();
+
+  request->send(200);
+}
+
+void onApiFrontlightStatus(AsyncWebServerRequest *request) {
+  AsyncResponseStream *response =
+      request->beginResponseStream("application/json");
+
+  JsonDocument root;
+  JsonArray ledStates = root["data"].to<JsonArray>();
+
+  for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
+      uint16_t onTime, offTime;
+      flArray.getPWM(ledPin, &onTime, &offTime);
+
+      ledStates.add(onTime);
+  }
+
+  serializeJson(ledStates, *response);
+
+  request->send(response);
+}
+
+void onApiFrontlightOff(AsyncWebServerRequest *request) {
+  frontlightFadeOutAll();
+
+  request->send(200);
+}
+#endif
