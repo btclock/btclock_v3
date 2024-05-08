@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <esp_websocket_client.h>
-
+#include "block_notify.hpp"
 #include <string>
 
 #include "lib/screen_handler.hpp"

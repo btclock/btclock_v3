@@ -329,7 +329,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json) {
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled",   "otaEnabled",     "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownPriceSource", "flAlwaysOn"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn"};
 
   for (String setting : boolSettings) {
     if (settings.containsKey(setting)) {
@@ -425,7 +425,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request) {
   root["hostname"] = getMyHostname();
   root["ip"] = WiFi.localIP();
   root["txPower"] = WiFi.getTxPower();
-  root["ownPriceSource"] = preferences.getBool("ownPriceSource", true);
+  root["ownDataSource"] = preferences.getBool("ownDataSource", true);
 
   #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;

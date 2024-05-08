@@ -87,6 +87,11 @@ void setupBlockNotify()
     xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
   }
 
+  if (preferences.getBool("ownDataSource", true))
+  {
+    return;
+  }
+
   // std::strcpy(wsServer, String("wss://" + mempoolInstance +
   // "/api/v1/ws").c_str());
 
@@ -99,11 +104,11 @@ void setupBlockNotify()
 
   blockNotifyClient = esp_websocket_client_init(&config);
   esp_websocket_register_events(blockNotifyClient, WEBSOCKET_EVENT_ANY,
-                                onWebsocketEvent, blockNotifyClient);
+                                onWebsocketBlockEvent, blockNotifyClient);
   esp_websocket_client_start(blockNotifyClient);
 }
 
-void onWebsocketEvent(void *handler_args, esp_event_base_t base,
+void onWebsocketBlockEvent(void *handler_args, esp_event_base_t base,
                       int32_t event_id, void *event_data)
 {
   esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
@@ -124,7 +129,7 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base,
 
     break;
   case WEBSOCKET_EVENT_DATA:
-    onWebsocketMessage(data);
+    onWebsocketBlockMessage(data);
     break;
   case WEBSOCKET_EVENT_ERROR:
     Serial.println(F("Mempool.space WS Connnection error"));
@@ -135,7 +140,7 @@ void onWebsocketEvent(void *handler_args, esp_event_base_t base,
   }
 }
 
-void onWebsocketMessage(esp_websocket_event_data_t *event_data)
+void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
 {
   JsonDocument doc;
 

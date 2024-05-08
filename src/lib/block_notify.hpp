@@ -17,9 +17,9 @@
 
 void setupBlockNotify();
 
-void onWebsocketEvent(void *handler_args, esp_event_base_t base,
+void onWebsocketBlockEvent(void *handler_args, esp_event_base_t base,
                       int32_t event_id, void *event_data);
-void onWebsocketMessage(esp_websocket_event_data_t *event_data);
+void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data);
 
 void setBlockHeight(uint newBlockHeight);
 uint getBlockHeight();

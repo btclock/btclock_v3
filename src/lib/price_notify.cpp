@@ -45,7 +45,7 @@ void setupPriceNotify()
 {
   //    currentPrice = preferences.get("lastPrice", 30000);
 
-  if (preferences.getBool("ownPriceSource", true))
+  if (preferences.getBool("ownDataSource", true))
   {
     config = {.uri = wsOwnServerPrice,
               .user_agent = USER_AGENT};
@@ -76,6 +76,10 @@ void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
     break;
   case WEBSOCKET_EVENT_DATA:
     onWebsocketPriceMessage(data);
+    if (preferences.getBool("ownDataSource", true))
+    {
+      onWebsocketBlockMessage(data);
+    }
     break;
   case WEBSOCKET_EVENT_ERROR:
     Serial.println(F("Price WS Connnection error"));
