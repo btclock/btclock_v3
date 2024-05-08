@@ -1,5 +1,6 @@
 #include "price_notify.hpp"
 
+const char *wsOwnServerPrice = "wss://ws.btclock.store/ws?assets=bitcoin";
 const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 
 // const char* coinCapWsCert = R"(-----BEGIN CERTIFICATE-----
@@ -35,17 +36,25 @@ const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 
 // WebsocketsClient client;
 esp_websocket_client_handle_t clientPrice = NULL;
-uint currentPrice = 30000;
+esp_websocket_client_config_t config;
+uint currentPrice = 50000;
 unsigned long int lastPriceUpdate;
 bool priceNotifyInit = false;
 
-void setupPriceNotify() {
+void setupPriceNotify()
+{
   //    currentPrice = preferences.get("lastPrice", 30000);
 
-  esp_websocket_client_config_t config = {.uri = wsServerPrice,
-                                          //    .task_stack = (7*1024),
-                                          //      .cert_pem = coinCapWsCert,
-                                          .user_agent = USER_AGENT};
+  if (preferences.getBool("ownPriceSource", true))
+  {
+    config = {.uri = wsOwnServerPrice,
+              .user_agent = USER_AGENT};
+  }
+  else
+  {
+    config = {.uri = wsServerPrice,
+              .user_agent = USER_AGENT};
+  }
 
   clientPrice = esp_websocket_client_init(&config);
   esp_websocket_register_events(clientPrice, WEBSOCKET_EVENT_ANY,
@@ -54,40 +63,46 @@ void setupPriceNotify() {
 }
 
 void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
-                           int32_t event_id, void *event_data) {
+                           int32_t event_id, void *event_data)
+{
   esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
 
-  switch (event_id) {
-    case WEBSOCKET_EVENT_CONNECTED:
-      Serial.println(F("Connected to CoinCap.io WebSocket"));
-      priceNotifyInit = true;
+  switch (event_id)
+  {
+  case WEBSOCKET_EVENT_CONNECTED:
+    Serial.println("Connected to " + String(config.uri) + " WebSocket");
+    priceNotifyInit = true;
 
-      break;
-    case WEBSOCKET_EVENT_DATA:
-      onWebsocketPriceMessage(data);
-      break;
-    case WEBSOCKET_EVENT_ERROR:
-      Serial.println(F("Price WS Connnection error"));
-      break;
-    case WEBSOCKET_EVENT_DISCONNECTED:
-      Serial.println(F("Price WS Connnection Closed"));
-      break;
+    break;
+  case WEBSOCKET_EVENT_DATA:
+    onWebsocketPriceMessage(data);
+    break;
+  case WEBSOCKET_EVENT_ERROR:
+    Serial.println(F("Price WS Connnection error"));
+    break;
+  case WEBSOCKET_EVENT_DISCONNECTED:
+    Serial.println(F("Price WS Connnection Closed"));
+    break;
   }
 }
 
-void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data) {
+void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data)
+{
   JsonDocument doc;
 
   deserializeJson(doc, (char *)event_data->data_ptr);
 
-  if (doc.containsKey("bitcoin")) {
-    if (currentPrice != doc["bitcoin"].as<long>()) {
+  if (doc.containsKey("bitcoin"))
+  {
+    if (currentPrice != doc["bitcoin"].as<long>())
+    {
       uint minSecPriceUpd = preferences.getUInt(
           "minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
       uint currentTime = esp_timer_get_time() / 1000000;
 
       if (lastPriceUpdate == 0 ||
-          (currentTime - lastPriceUpdate) > minSecPriceUpd) {
+          (currentTime - lastPriceUpdate) > minSecPriceUpd)
+      {
         //   const unsigned long oldPrice = currentPrice;
         currentPrice = doc["bitcoin"].as<uint>();
         preferences.putUInt("lastPrice", currentPrice);
@@ -95,7 +110,8 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data) {
         // if (abs((int)(oldPrice-currentPrice)) > round(0.0015*oldPrice)) {
         if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER ||
                                      getCurrentScreen() == SCREEN_MSCW_TIME ||
-                                     getCurrentScreen() == SCREEN_MARKET_CAP)) {
+                                     getCurrentScreen() == SCREEN_MARKET_CAP))
+        {
           WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
           xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
         }
@@ -105,7 +121,8 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data) {
   }
 }
 
-uint getLastPriceUpdate() {
+uint getLastPriceUpdate()
+{
   return lastPriceUpdate;
 }
 
@@ -113,17 +130,22 @@ uint getPrice() { return currentPrice; }
 
 void setPrice(uint newPrice) { currentPrice = newPrice; }
 
-bool isPriceNotifyConnected() {
-  if (clientPrice == NULL) return false;
+bool isPriceNotifyConnected()
+{
+  if (clientPrice == NULL)
+    return false;
   return esp_websocket_client_is_connected(clientPrice);
 }
 
-bool getPriceNotifyInit() {
+bool getPriceNotifyInit()
+{
   return priceNotifyInit;
 }
 
-void stopPriceNotify() {
-  if (clientPrice == NULL) return;
+void stopPriceNotify()
+{
+  if (clientPrice == NULL)
+    return;
   esp_websocket_client_close(clientPrice, pdMS_TO_TICKS(5000));
   esp_websocket_client_stop(clientPrice);
   esp_websocket_client_destroy(clientPrice);
@@ -131,9 +153,11 @@ void stopPriceNotify() {
   clientPrice = NULL;
 }
 
-void restartPriceNotify() {
+void restartPriceNotify()
+{
   stopPriceNotify();
-  if (clientPrice == NULL) {
+  if (clientPrice == NULL)
+  {
     setupPriceNotify();
     return;
   }

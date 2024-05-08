@@ -339,7 +339,7 @@ void frontlightFadeInAll() {
     for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
       flArray.setPWM(ledPin, 0, dutyCycle);
     }
-    delay(flDelayTime);
+    vTaskDelay(pdMS_TO_TICKS(flDelayTime));
   }
 }
 
@@ -348,21 +348,21 @@ void frontlightFadeOutAll() {
     for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
       flArray.setPWM(ledPin, 0, dutyCycle);
     }
-    delay(flDelayTime);
+    vTaskDelay(pdMS_TO_TICKS(flDelayTime));
   }
 }
 
 void frontlightFadeIn(uint num) {
   for (int dutyCycle = 0; dutyCycle <= preferences.getUInt("flMaxBrightness"); dutyCycle += 5) {
     flArray.setPWM(num, 0, dutyCycle);
-    delay(flDelayTime);
+    vTaskDelay(pdMS_TO_TICKS(flDelayTime));
   }
 }
 
 void frontlightFadeOut(uint num) {
   for (int dutyCycle = preferences.getUInt("flMaxBrightness"); dutyCycle >= 0; dutyCycle -= 5) {
     flArray.setPWM(num, 0, dutyCycle);
-    delay(flDelayTime);
+    vTaskDelay(pdMS_TO_TICKS(flDelayTime));
   }
 }
 #endif

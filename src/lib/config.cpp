@@ -41,7 +41,8 @@ void setup()
     if (mcp1.digitalRead(0) == LOW)
     {
       // Then loop forever to prevent anything else from writing to the screen
-      while (true) {
+      while (true)
+      {
         delay(1000);
       }
     }
@@ -84,7 +85,7 @@ void tryImprovSetup()
     }
   }
 
- // if (!preferences.getBool("wifiConfigured", false))
+  // if (!preferences.getBool("wifiConfigured", false))
   {
 
     queueLedEffect(LED_EFFECT_WIFI_WAIT_FOR_CONFIG);
@@ -130,13 +131,23 @@ void tryImprovSetup()
         const String explainText = "*SSID: *\r\n" +
                                    wifiManager->getConfigPortalSSID() +
                                    "\r\n\r\n*Password:*\r\n" + softAP_password;
+        // Set the UNIX timestamp
+        time_t timestamp = LAST_BUILD_TIME; // Example timestamp: March 7, 2021 00:00:00 UTC
+
+        // Convert the timestamp to a struct tm in UTC
+        struct tm *timeinfo = gmtime(&timestamp);
+
+        // Format the date
+        char formattedDate[20];
+        strftime(formattedDate, sizeof(formattedDate), "%y-%m-%d\r\n%H:%M:%S", timeinfo);
+  
         std::array<String, NUM_SCREENS> epdContent = {
             "Welcome!",
             "Bienvenidos!",
             "To setup\r\nscan QR or\r\nconnect\r\nmanually",
             "Para\r\nconfigurar\r\nescanear QR\r\no conectar\r\nmanualmente",
             explainText,
-            "*Hostname*:\r\n" + getMyHostname(),
+            "*Hostname*:\r\n" + getMyHostname() + "\r\n\r\n" + "*FW build date:*\r\n" + formattedDate,
             qrText};
         setEpdContent(epdContent); });
 
@@ -310,6 +321,17 @@ void setupHardware()
   {
     Serial.println(F("Error loading WebUI"));
   }
+
+  // if (!LittleFS.exists("/qr.txt"))
+  // {
+  //   File f = LittleFS.open("/qr.txt", "w");
+
+  //   if(f) {
+
+  //   } else {
+  //     Serial.println(F("Can't write QR to FS"));
+  //   }
+  // }
 
   setupLeds();
 
@@ -665,17 +687,27 @@ String getMyHostname()
   return hostname;
 }
 
-uint getLastTimeSync() {
+uint getLastTimeSync()
+{
   return lastTimeSync;
 }
 
 #ifdef HAS_FRONTLIGHT
-void setupFrontlight() {
-  flArray.begin();
+void setupFrontlight()
+{
+  if (!flArray.begin(PCA9685_MODE1_AUTOINCR, PCA9685_MODE2_INVERT))
+  {
+    Serial.println(F("FL driver error"));
+    return;
+  }
+  Serial.println(F("FL driver active"));
   flArray.setFrequency(1000);
   flArray.setOutputEnablePin(PCA_OE_PIN);
-
-  if (!preferences.isKey("flMaxBrightness")) {
+  flArray.setOutputEnable(true);
+  delay(1000);
+  flArray.setOutputEnable(false);
+  if (!preferences.isKey("flMaxBrightness"))
+  {
     preferences.putUInt("flMaxBrightness", 4095);
   }
   // Initialize all LEDs to off
