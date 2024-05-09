@@ -236,14 +236,30 @@ emscripten::val parsePriceDataArray(std::uint32_t price, const std::string& curr
     return arrayToStringArray(parsePriceData(price, currencySymbol[0], useSuffixFormat));
 }
 
+emscripten::val parseHalvingCountdownArray(std::uint32_t blockHeight, bool asBlocks) {
+    return arrayToStringArray(parseHalvingCountdown(blockHeight, asBlocks));
+}
+
+emscripten::val parseMarketCapArray(std::uint32_t blockHeight, std::uint32_t price, const std::string& currencySymbol, bool bigChars) {
+    return arrayToStringArray(parseMarketCap(blockHeight, price, currencySymbol[0], bigChars));
+}
+
+emscripten::val parseBlockFeesArray(std::uint16_t blockFees) {
+    return arrayToStringArray(parseBlockFees(blockFees));
+}
+
+emscripten::val parseSatsPerCurrencyArray(std::uint32_t price,  const std::string& currencySymbol, bool withSatsSymbol) {
+    return arrayToStringArray(parseSatsPerCurrency(price, currencySymbol[0], withSatsSymbol));
+}
+
 EMSCRIPTEN_BINDINGS(my_module) {
 //    emscripten::register_vector<std::string>("StringList");
 
     emscripten::function("parseBlockHeight",  &parseBlockHeightArray);
-    // emscripten::function("parseHalvingCountdown", &parseBlockHeightArray);
-    // emscripten::function("parseMarketCap", &parseBlockHeightArray);
-    // emscripten::function("parseBlockFees", &parseBlockHeightArray);
-    // emscripten::function("parseSatsPerCurrency", &parseBlockHeightArray);
+    emscripten::function("parseHalvingCountdown", &parseHalvingCountdownArray);
+    emscripten::function("parseMarketCap", &parseMarketCapArray);
+    emscripten::function("parseBlockFees", &parseBlockFeesArray);
+    emscripten::function("parseSatsPerCurrency", &parseSatsPerCurrencyArray);
     emscripten::function("parsePriceData", &parsePriceDataArray);
 
     emscripten::function("arrayToStringArray", &arrayToStringArray);
