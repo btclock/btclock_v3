@@ -1,4 +1,8 @@
 #include "data_handler.hpp"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/bind.h>
+#endif
 
 std::array<std::string, NUM_SCREENS> parsePriceData(std::uint32_t price, char currencySymbol, bool useSuffixFormat)
 {
@@ -37,7 +41,7 @@ std::array<std::string, NUM_SCREENS> parseSatsPerCurrency(std::uint32_t price, c
     std::array<std::string, NUM_SCREENS> ret;
     std::string priceString = std::to_string(int(round(1 / float(price) * 10e7)));
     std::uint32_t firstIndex = 0;
-    uint insertSatSymbol = NUM_SCREENS - priceString.length() - 1;
+    std::uint8_t insertSatSymbol = NUM_SCREENS - priceString.length() - 1;
 
     if (priceString.length() < (NUM_SCREENS))
     {
@@ -99,7 +103,7 @@ std::array<std::string, NUM_SCREENS> parseBlockFees(std::uint16_t blockFees) {
         firstIndex = 1;
     }
 
-    for (uint i = firstIndex; i < NUM_SCREENS-1; i++)
+    for (std::uint8_t i = firstIndex; i < NUM_SCREENS-1; i++)
     {
         ret[i] = blockFeesString[i];
     }
@@ -206,3 +210,43 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(std::uint32_t blockHeight, s
 
     return ret;
 }
+
+#ifdef __EMSCRIPTEN__
+emscripten::val arrayToStringArray(const std::array<std::string, NUM_SCREENS>& arr) {
+    emscripten::val jsArray = emscripten::val::array();
+    for (const auto& str : arr) {
+        jsArray.call<void>("push", str);
+    }
+    return jsArray;
+}
+
+emscripten::val vectorToStringArray(const std::vector<std::string>& vec) {
+    emscripten::val jsArray = emscripten::val::array();
+    for (size_t i = 0; i < vec.size(); ++i) {
+        jsArray.set(i, vec[i]);
+    }
+    return jsArray;
+}
+
+emscripten::val parseBlockHeightArray(std::uint32_t blockHeight) {
+    return arrayToStringArray(parseBlockHeight(blockHeight));
+}
+
+emscripten::val parsePriceDataArray(std::uint32_t price, const std::string& currencySymbol, bool useSuffixFormat = false) {
+    return arrayToStringArray(parsePriceData(price, currencySymbol[0], useSuffixFormat));
+}
+
+EMSCRIPTEN_BINDINGS(my_module) {
+//    emscripten::register_vector<std::string>("StringList");
+
+    emscripten::function("parseBlockHeight",  &parseBlockHeightArray);
+    // emscripten::function("parseHalvingCountdown", &parseBlockHeightArray);
+    // emscripten::function("parseMarketCap", &parseBlockHeightArray);
+    // emscripten::function("parseBlockFees", &parseBlockHeightArray);
+    // emscripten::function("parseSatsPerCurrency", &parseBlockHeightArray);
+    emscripten::function("parsePriceData", &parsePriceDataArray);
+
+    emscripten::function("arrayToStringArray", &arrayToStringArray);
+    emscripten::function("vectorToStringArray", &vectorToStringArray);
+}
+#endif
