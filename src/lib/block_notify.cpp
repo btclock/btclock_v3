@@ -160,6 +160,10 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
   {
     JsonObject block = doc["block"];
 
+    if (block["height"].as<uint>() == currentBlockHeight) {
+      return;
+    }
+
     currentBlockHeight = block["height"].as<uint>();
 
     // Serial.printf("New block found: %d\r\n", block["height"].as<uint>());

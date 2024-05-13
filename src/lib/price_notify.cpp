@@ -1,6 +1,6 @@
 #include "price_notify.hpp"
 
-const char *wsOwnServerPrice = "wss://ws.btclock.store/ws?assets=bitcoin";
+const char *wsOwnServerPrice = "wss://ws.btclock.dev/ws?assets=bitcoin";
 const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 
 // const char* coinCapWsCert = R"(-----BEGIN CERTIFICATE-----
