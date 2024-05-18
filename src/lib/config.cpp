@@ -717,3 +717,11 @@ void setupFrontlight()
   flArray.allOFF();
 }
 #endif
+
+String getHwRev() {
+  #ifndef HW_REV
+    return "REV_0";
+  #else
+    return HW_REV;
+  #endif
+}

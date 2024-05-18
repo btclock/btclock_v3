@@ -94,6 +94,7 @@ void setupWebserver() {
     MDNS.addServiceTxt("http", "tcp", "model", "BTClock");
     MDNS.addServiceTxt("http", "tcp", "version", "3.0");
     MDNS.addServiceTxt("http", "tcp", "rev", GIT_REV);
+    MDNS.addServiceTxt("http", "tcp", "hw_rev", getHwRev());
   }
 
   xTaskCreate(eventSourceTask, "eventSourceTask", 4096, NULL, tskIDLE_PRIORITY,

@@ -63,3 +63,4 @@ void improv_send_response(std::vector<uint8_t> &response);
 void improv_set_error(improv::Error error);
 
 void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
+String getHwRev();
