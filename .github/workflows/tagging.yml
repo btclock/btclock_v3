@@ -60,6 +60,9 @@ jobs:
       - name: Copy all artifacts to output folder
         run: cp .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.bin .pio/boot_app0.bin ${{ matrix.chip.name }}_${{ matrix.epd_variant }}
 
+      - name: Create OTA binary file
+        run: mv ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}_fw_only.bin
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
