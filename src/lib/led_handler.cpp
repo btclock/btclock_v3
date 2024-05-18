@@ -43,6 +43,12 @@ void ledTask(void *parameter) {
           case LED_DATA_PRICE_ERROR:
             blinkDelayColor(150, 2, 177, 90, 31);
             break;
+          case LED_FLASH_IDENTIFY:
+            blinkDelayTwoColor(100, 2, pixels.Color(255, 0, 0),
+                               pixels.Color(0, 255, 255));
+            blinkDelayTwoColor(100, 2, pixels.Color(0, 255, 0),
+                               pixels.Color(0, 0, 255));
+            break;
           case LED_EFFECT_WIFI_CONNECT_SUCCESS:
           case LED_FLASH_SUCCESS:
             blinkDelayColor(150, 3, 0, 255, 0);

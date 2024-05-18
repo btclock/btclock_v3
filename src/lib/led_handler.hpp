@@ -35,7 +35,7 @@ const int LED_PROGRESS_100 = 203;
 
 const int LED_DATA_PRICE_ERROR = 300;
 const int LED_DATA_BLOCK_ERROR = 301;
-
+const int LED_FLASH_IDENTIFY = 990;
 const int LED_POWER_TEST = 999;
 extern TaskHandle_t ledTaskHandle;
 extern Adafruit_NeoPixel pixels;

@@ -3,6 +3,13 @@ import os
 import gzip
 from shutil import copyfileobj, rmtree
 from pathlib import Path
+import subprocess
+
+revision = (
+    subprocess.check_output(["git", "rev-parse", "HEAD"])
+    .strip()
+    .decode("utf-8")
+)
 
 def gzip_file(input_file, output_file):
     with open(input_file, 'rb') as f_in:
@@ -24,7 +31,9 @@ def process_directory(input_dir, output_dir):
                 output_file_path = os.path.join(output_root, file + '.gz')
                 gzip_file(input_file_path, output_file_path)
                 print(f'Compressed: {input_file_path} -> {output_file_path}')
-
+    file_path = os.path.join(output_dir, "fs_hash.txt")
+    with open(file_path, "w") as file:
+        file.write(revision)
 
 
 # Build web interface before building FS

@@ -48,8 +48,8 @@ class Listener(ServiceListener):
             #arguments = [f"-i {str()} -f  -r"]
             namespace = argparse.Namespace(
                 esp_ip=info.parsed_addresses()[0], 
-                image=f"{os.getcwd()}/.pio/build/lolin_s3_mini_qr/firmware.bin",
-                littlefs=f"{os.getcwd()}/.pio/build/lolin_s3_mini_qr/littlefs.bin",
+                image=f"{os.getcwd()}/.pio/build/lolin_s3_mini_213epd/firmware.bin",
+                littlefs=f"{os.getcwd()}/.pio/build/lolin_s3_mini_213epd/littlefs.bin",
                 progress=True
                 )
             if (str(info.properties.get(b"version").decode())) != "3.0":
@@ -64,7 +64,7 @@ class Listener(ServiceListener):
                 print("Different version, going to update")
                 #espota.serve(namespace.esp_ip, "0.0.0.0", 3232, random.randint(10000,60000), "", namespace.littlefs, SPIFFS)
 
-                #espota.serve(namespace.esp_ip, "0.0.0.0", 3232, random.randint(10000,60000), "", namespace.image, FLASH)
+                espota.serve(namespace.esp_ip, "0.0.0.0", 3232, random.randint(10000,60000), "", namespace.image, FLASH)
             #print(arguments)
             
             #logging.basicConfig(level = logging.DEBUG, format = '%(asctime)-8s [%(levelname)s]: %(message)s', datefmt = '%H:%M:%S')

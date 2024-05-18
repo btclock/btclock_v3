@@ -27,6 +27,8 @@ void onApiSetWifiTxPower(AsyncWebServerRequest *request);
 
 void onApiShowScreen(AsyncWebServerRequest *request);
 void onApiShowText(AsyncWebServerRequest *request);
+void onApiIdentify(AsyncWebServerRequest *request);
+
 void onApiShowTextAdvanced(AsyncWebServerRequest *request, JsonVariant &json);
 
 void onApiActionPause(AsyncWebServerRequest *request);
