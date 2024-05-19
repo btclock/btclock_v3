@@ -18,8 +18,9 @@ uint lastTimeSync;
 
 void setup()
 {
-  setupPreferences();
   setupHardware();
+
+  setupPreferences();
   setupDisplays();
   if (preferences.getBool("ledTestOnPower", true))
   {
@@ -196,8 +197,8 @@ void tryImprovSetup()
       // esp_task_wdt_deinit();
       // esp_task_wdt_reset();
     }
-    setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
-    setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
+    setFgColor(preferences.getUInt("fgColor", isWhiteVersion() ? GxEPD_BLACK : GxEPD_WHITE));
+    setBgColor(preferences.getUInt("bgColor", isWhiteVersion() ? GxEPD_WHITE : GxEPD_BLACK));
   }
   // else
   // {
@@ -369,6 +370,11 @@ void setupHardware()
     }
 #endif
   }
+
+#ifdef IS_HW_REV_B
+pinMode(39, INPUT_PULLUP);
+
+#endif
 
 #ifdef IS_BTCLOCK_S3
   if (!mcp2.begin_I2C(0x21))
@@ -723,5 +729,13 @@ String getHwRev() {
     return "REV_0";
   #else
     return HW_REV;
+  #endif
+}
+
+bool isWhiteVersion() {
+  #ifdef IS_HW_REV_B
+  return digitalRead(39);
+  #else
+  return false;
   #endif
 }
