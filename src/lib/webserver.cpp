@@ -56,8 +56,12 @@ void setupWebserver()
 
 #ifdef HAS_FRONTLIGHT
   server.on("/api/frontlight/on", HTTP_GET, onApiFrontlightOn);
-  server.on("/api/frontlight/status", HTTP_GET, onApiFrontlightStatus);
+  server.on("/api/frontlight/flash", HTTP_GET, onApiFrontlightFlash);
+  server.on("/api/frontlight/brightness", HTTP_GET, onApiFrontlightSetBrightness);
   server.on("/api/frontlight/off", HTTP_GET, onApiFrontlightOff);
+
+  server.addRewrite(
+      new OneParamRewrite("/api/frontlight/brightness/{b}", "/api/frontlight/brightness?b={b}"));
 #endif
 
   // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET,
@@ -334,7 +338,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
     }
   }
 
-  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness"};
+  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay"};
 
   for (String setting : uintSettings)
   {
@@ -357,7 +361,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd"};
 
   for (String setting : boolSettings)
   {
@@ -478,8 +482,10 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;
-  root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", 4095);
+  root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", 2048);
   root["flAlwaysOn"] = preferences.getBool("flAlwaysOn", false);
+  root["flEffectDelay"] = preferences.getUInt("flEffectDelay");
+  root["flFlashOnUpd"] = preferences.getBool("flFlashOnUpd", false);
 
 #else
   root["hasFrontlight"] = false;
@@ -1033,6 +1039,26 @@ void onApiFrontlightStatus(AsyncWebServerRequest *request)
   serializeJson(ledStates, *response);
 
   request->send(response);
+}
+
+void onApiFrontlightFlash(AsyncWebServerRequest *request)
+{
+  frontlightFlash(preferences.getUInt("flEffectDelay"));
+
+  request->send(200);
+}
+
+void onApiFrontlightSetBrightness(AsyncWebServerRequest *request)
+{
+  if (request->hasParam("b"))
+  {
+    frontlightSetBrightness(request->getParam("b")->value().toInt());
+    request->send(200);
+  }
+  else
+  {
+    request->send(400);
+  }
 }
 
 void onApiFrontlightOff(AsyncWebServerRequest *request)

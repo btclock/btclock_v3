@@ -67,6 +67,14 @@ void setup()
   setupOTA();
 
   waitUntilNoneBusy();
+
+  #ifdef HAS_FRONTLIGHT
+  if (!preferences.getBool("flAlwaysOn", false)) {
+    frontlightFadeOutAll(preferences.getUInt("flEffectDelay"), true);
+    flArray.allOFF();
+  }
+  #endif
+
   forceFullRefresh();
 }
 
@@ -712,15 +720,17 @@ void setupFrontlight()
   {
     preferences.putUInt("flMaxBrightness", 2048);
   }
-
-  if (preferences.getBool("flAlwaysOn", false)) {
-    Serial.println(F("FL Always on"));
-
-    frontlightFadeInAll();
-  } else {
-    Serial.println(F("FL all off"));
-    flArray.allOFF();
+  if (!preferences.isKey("flEffectDelay"))
+  {
+    preferences.putUInt("flEffectDelay", 5);
   }
+
+  if (!preferences.isKey("flFlashOnUpd"))
+  {
+    preferences.putBool("flFlashOnUpd", false);
+  }
+
+  frontlightFadeInAll(preferences.getUInt("flEffectDelay"), true);
 }
 #endif
 

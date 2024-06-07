@@ -58,6 +58,9 @@ void onApiRestartDataSources(AsyncWebServerRequest *request);
 
 #ifdef HAS_FRONTLIGHT
 void onApiFrontlightOn(AsyncWebServerRequest *request);
+void onApiFrontlightFlash(AsyncWebServerRequest *request);
+void onApiFrontlightSetBrightness(AsyncWebServerRequest *request);
+
 void onApiFrontlightStatus(AsyncWebServerRequest *request);
 void onApiFrontlightOff(AsyncWebServerRequest *request);
 #endif

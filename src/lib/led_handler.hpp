@@ -59,8 +59,19 @@ void ledTheaterChase(uint32_t color, int wait);
 Adafruit_NeoPixel getPixels();
 
 #ifdef HAS_FRONTLIGHT
+void frontlightFlash(int flDelayTime);
 void frontlightFadeInAll();
 void frontlightFadeOutAll();
 void frontlightFadeIn(uint num);
 void frontlightFadeOut(uint num);
+
+void frontlightSetBrightness(uint brightness);
+
+void frontlightFadeInAll(int flDelayTime);
+void frontlightFadeInAll(int flDelayTime, bool staggered);
+void frontlightFadeOutAll(int flDelayTime);
+void frontlightFadeOutAll(int flDelayTime, bool staggered);
+
+void frontlightFadeIn(uint num, int flDelayTime);
+void frontlightFadeOut(uint num, int flDelayTime);
 #endif

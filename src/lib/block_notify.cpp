@@ -148,7 +148,7 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
   filter["block"]["height"] = true;
   filter["mempool-blocks"][0]["medianFee"] = true;
 
-  DeserializationError error = deserializeJson(doc, (char *)event_data->data_ptr, DeserializationOption::Filter(filter));
+  deserializeJson(doc, (char *)event_data->data_ptr, DeserializationOption::Filter(filter));
 
   // if (error) {
   //   Serial.print("deserializeJson() failed: ");
