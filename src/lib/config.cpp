@@ -18,9 +18,9 @@ uint lastTimeSync;
 
 void setup()
 {
+  setupPreferences();
   setupHardware();
 
-  setupPreferences();
   setupDisplays();
   if (preferences.getBool("ledTestOnPower", true))
   {
@@ -701,26 +701,26 @@ uint getLastTimeSync()
 #ifdef HAS_FRONTLIGHT
 void setupFrontlight()
 {
-  if (!flArray.begin(PCA9685_MODE1_AUTOINCR, PCA9685_MODE2_INVERT))
+  if (!flArray.begin(PCA9685_MODE1_AUTOINCR | PCA9685_MODE1_ALLCALL, PCA9685_MODE2_TOTEMPOLE))
   {
     Serial.println(F("FL driver error"));
     return;
   }
   Serial.println(F("FL driver active"));
-  flArray.setFrequency(1000);
-  flArray.setOutputEnablePin(PCA_OE_PIN);
-  flArray.setOutputEnable(true);
-  delay(1000);
-  flArray.setOutputEnable(false);
+
   if (!preferences.isKey("flMaxBrightness"))
   {
-    preferences.putUInt("flMaxBrightness", 4095);
+    preferences.putUInt("flMaxBrightness", 2048);
   }
-  // Initialize all LEDs to off
-  // for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++) {
-  //   flArray.setPWM(ledPin, 0, 0); // Turn off LED
-  // }
-  flArray.allOFF();
+
+  if (preferences.getBool("flAlwaysOn", false)) {
+    Serial.println(F("FL Always on"));
+
+    frontlightFadeInAll();
+  } else {
+    Serial.println(F("FL all off"));
+    flArray.allOFF();
+  }
 }
 #endif
 
