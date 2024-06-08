@@ -68,12 +68,13 @@ void setup()
 
   waitUntilNoneBusy();
 
-  #ifdef HAS_FRONTLIGHT
-  if (!preferences.getBool("flAlwaysOn", false)) {
+#ifdef HAS_FRONTLIGHT
+  if (!preferences.getBool("flAlwaysOn", false))
+  {
     frontlightFadeOutAll(preferences.getUInt("flEffectDelay"), true);
     flArray.allOFF();
   }
-  #endif
+#endif
 
   forceFullRefresh();
 }
@@ -380,7 +381,7 @@ void setupHardware()
   }
 
 #ifdef IS_HW_REV_B
-pinMode(39, INPUT_PULLUP);
+  pinMode(39, INPUT_PULLUP);
 
 #endif
 
@@ -734,18 +735,33 @@ void setupFrontlight()
 }
 #endif
 
-String getHwRev() {
-  #ifndef HW_REV
-    return "REV_0";
-  #else
-    return HW_REV;
-  #endif
+String getHwRev()
+{
+#ifndef HW_REV
+  return "REV_0";
+#else
+  return HW_REV;
+#endif
 }
 
-bool isWhiteVersion() {
-  #ifdef IS_HW_REV_B
+bool isWhiteVersion()
+{
+#ifdef IS_HW_REV_B
   return digitalRead(39);
-  #else
+#else
   return false;
-  #endif
+#endif
+}
+
+String getFsRev()
+{
+  File fsHash = LittleFS.open("/fs_hash.txt", "r");
+  if (!fsHash)
+  {
+    Serial.println(F("Error loading WebUI"));
+  }
+
+  String ret = fsHash.readString();
+  fsHash.close();
+  return ret;
 }

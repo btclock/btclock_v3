@@ -67,8 +67,10 @@ void setupWebserver()
   // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET,
   // onApiLightsSetColor);
 
-  server.on("/firmware/update", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
-  server.on("/firmware/update_webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
+  if (preferences.getBool("otaEnabled", true)) {
+    server.on("/upload/firmware", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
+    server.on("/upload/webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
+  }
 
   server.on("/api/restart", HTTP_GET, onApiRestart);
   server.addRewrite(new OneParamRewrite("/api/lights/color/{color}",
@@ -120,8 +122,6 @@ void onFirmwareUpdate(AsyncWebServerRequest *request)
   request->send(response);
 }
 
-
-
 void asyncWebuiUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
   asyncFileUpdateHandler(request, filename, index, data, len, final, U_SPIFFS);
@@ -129,14 +129,27 @@ void asyncWebuiUpdateHandler(AsyncWebServerRequest *request, String filename, si
 
 void asyncFileUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final, int command)
 {
-    if (!index)
+  if (!index)
   {
     Serial.printf("Update Start: %s\n", filename.c_str());
 
-    // Update.runAsync(true);
-    if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000), command)
+    if (command == U_FLASH)
     {
-      Update.printError(Serial);
+      // Update.runAsync(true);
+      if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000), command)
+      {
+        Update.printError(Serial);
+        return;
+      }
+    }
+    else if (command == U_SPIFFS)
+    {
+      size_t fsSize = UPDATE_SIZE_UNKNOWN; // or specify the size of your filesystem partition
+      if (!Update.begin(fsSize, U_SPIFFS)) // or U_FS for LittleFS
+      {
+        Update.printError(Serial);
+        return;
+      }
     }
   }
   if (!Update.hasError())
@@ -162,7 +175,7 @@ void asyncFileUpdateHandler(AsyncWebServerRequest *request, String filename, siz
 
 void asyncFirmwareUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    asyncFileUpdateHandler(request, filename, index, data, len, final, U_FLASH);
+  asyncFileUpdateHandler(request, filename, index, data, len, final, U_FLASH);
 
   // if (!index)
   // {
@@ -577,9 +590,16 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["hasFrontlight"] = false;
 #endif
 
+  root["hwRev"] = getHwRev();
+  root["fsRev"] = getFsRev();
+
 #ifdef GIT_REV
   root["gitRev"] = String(GIT_REV);
 #endif
+#ifdef GIT_TAG
+  root["gitTag"] = String(GIT_TAG);
+#endif
+
 #ifdef LAST_BUILD_TIME
   root["lastBuildTime"] = String(LAST_BUILD_TIME);
 #endif
