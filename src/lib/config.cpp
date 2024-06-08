@@ -722,7 +722,7 @@ void setupFrontlight()
   }
   if (!preferences.isKey("flEffectDelay"))
   {
-    preferences.putUInt("flEffectDelay", 5);
+    preferences.putUInt("flEffectDelay", 15);
   }
 
   if (!preferences.isKey("flFlashOnUpd"))

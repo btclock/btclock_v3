@@ -6,7 +6,7 @@ Adafruit_NeoPixel pixels(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 uint ledTaskParams;
 
 #ifdef HAS_FRONTLIGHT
-#define FL_FADE_STEP 50
+#define FL_FADE_STEP 25
 
 bool frontlightOn = false;
 bool flInTransition = false;
@@ -15,13 +15,13 @@ void frontlightFlash(int flDelayTime)
 {
   if (frontlightOn)
   {
-    frontlightFadeOutAll(flDelayTime);
-    frontlightFadeInAll(flDelayTime);
+    frontlightFadeOutAll(flDelayTime, true);
+    frontlightFadeInAll(flDelayTime, true);
   }
   else
   {
-    frontlightFadeInAll(flDelayTime);
-    frontlightFadeOutAll(flDelayTime);
+    frontlightFadeInAll(flDelayTime, true);
+    frontlightFadeOutAll(flDelayTime, true);
   }
 }
 
@@ -264,6 +264,7 @@ void ledTask(void *parameter)
 #ifdef HAS_FRONTLIGHT
           if (preferences.getBool("flFlashOnUpd", false))
           {
+            vTaskDelay(pdMS_TO_TICKS(10));
             if (frontlightWasOn)
             {
               frontlightFadeInAll(1);

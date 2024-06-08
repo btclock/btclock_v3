@@ -46,7 +46,7 @@ void setupWebserver()
   server.addHandler(handler);
 
   AsyncCallbackJsonWebHandler *lightsJsonHandler =
-      new AsyncCallbackJsonWebHandler("/api/lights", onApiLightsSetJson);
+      new AsyncCallbackJsonWebHandler("/api/lights/set", onApiLightsSetJson);
   server.addHandler(lightsJsonHandler);
 
   server.on("/api/lights/off", HTTP_GET, onApiLightsOff);
@@ -68,7 +68,7 @@ void setupWebserver()
   // onApiLightsSetColor);
 
   server.on("/api/restart", HTTP_GET, onApiRestart);
-  server.addRewrite(new OneParamRewrite("/api/lights/{color}",
+  server.addRewrite(new OneParamRewrite("/api/lights/color/{color}",
                                         "/api/lights/color?c={color}"));
   server.addRewrite(
       new OneParamRewrite("/api/show/screen/{s}", "/api/show/screen?s={s}"));
