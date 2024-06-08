@@ -12,7 +12,7 @@ try:
         .strip()
         .decode("utf-8")
     )
-    git_tag_define = '-DGIT_TAG="%s"' % tag
+    git_tag_define = '\'-DGIT_TAG=\"%s\"\'' % tag
 except subprocess.CalledProcessError:
     git_tag_define = ''
     
