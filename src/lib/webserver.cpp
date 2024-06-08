@@ -67,6 +67,9 @@ void setupWebserver()
   // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET,
   // onApiLightsSetColor);
 
+  server.on("/firmware/update", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
+  server.on("/firmware/update_webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
+
   server.on("/api/restart", HTTP_GET, onApiRestart);
   server.addRewrite(new OneParamRewrite("/api/lights/color/{color}",
                                         "/api/lights/color?c={color}"));
@@ -108,6 +111,89 @@ void setupWebserver()
 }
 
 void stopWebServer() { server.end(); }
+
+void onFirmwareUpdate(AsyncWebServerRequest *request)
+{
+  bool shouldReboot = !Update.hasError();
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
+  response->addHeader("Connection", "close");
+  request->send(response);
+}
+
+
+
+void asyncWebuiUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  asyncFileUpdateHandler(request, filename, index, data, len, final, U_SPIFFS);
+}
+
+void asyncFileUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final, int command)
+{
+    if (!index)
+  {
+    Serial.printf("Update Start: %s\n", filename.c_str());
+
+    // Update.runAsync(true);
+    if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000), command)
+    {
+      Update.printError(Serial);
+    }
+  }
+  if (!Update.hasError())
+  {
+    if (Update.write(data, len) != len)
+    {
+      Update.printError(Serial);
+    }
+  }
+  if (final)
+  {
+    if (Update.end(true))
+    {
+      Serial.printf("Update Success: %uB\n", index + len);
+      onApiRestart(request);
+    }
+    else
+    {
+      Update.printError(Serial);
+    }
+  }
+}
+
+void asyncFirmwareUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+    asyncFileUpdateHandler(request, filename, index, data, len, final, U_FLASH);
+
+  // if (!index)
+  // {
+  //   Serial.printf("Update Start: %s\n", filename.c_str());
+
+  //   // Update.runAsync(true);
+  //   if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
+  //   {
+  //     Update.printError(Serial);
+  //   }
+  // }
+  // if (!Update.hasError())
+  // {
+  //   if (Update.write(data, len) != len)
+  //   {
+  //     Update.printError(Serial);
+  //   }
+  // }
+  // if (final)
+  // {
+  //   if (Update.end(true))
+  //   {
+  //     Serial.printf("Update Success: %uB\n", index + len);
+  //     onApiRestart(request);
+  //   }
+  //   else
+  //   {
+  //     Update.printError(Serial);
+  //   }
+  // }
+}
 
 JsonDocument getStatusObject()
 {

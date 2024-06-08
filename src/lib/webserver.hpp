@@ -44,6 +44,10 @@ void onApiLightsSetColor(AsyncWebServerRequest *request);
 void onApiLightsSetJson(AsyncWebServerRequest *request, JsonVariant &json);
 
 void onApiRestart(AsyncWebServerRequest *request);
+void onFirmwareUpdate(AsyncWebServerRequest *request);
+void asyncFirmwareUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+void asyncFileUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final, int command);
+void asyncWebuiUpdateHandler(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 
 void onIndex(AsyncWebServerRequest *request);
 void onNotFound(AsyncWebServerRequest *request);

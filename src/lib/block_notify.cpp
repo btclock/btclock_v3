@@ -192,6 +192,7 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
           esp_timer_start_periodic(screenRotateTimer,
                                    timerPeriod * usPerSecond);
         }
+        vTaskDelay(pdMS_TO_TICKS(315*NUM_SCREENS)); // Extra delay because of screen switching
       }
 
       if (preferences.getBool("ledFlashOnUpd", false))
