@@ -57,7 +57,7 @@ void workerTask(void *pvParameters) {
           if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN) {
             taskEpdContent = parseBlockHeight(getBlockHeight());
           } else {
-            taskEpdContent = parseHalvingCountdown(getBlockHeight(), preferences.getBool("useBlkCountdown", false));
+            taskEpdContent = parseHalvingCountdown(getBlockHeight(), preferences.getBool("useBlkCountdown", true));
           }
 
           if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN ||

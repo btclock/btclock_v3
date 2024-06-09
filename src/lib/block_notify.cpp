@@ -177,7 +177,7 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
       // xTaskNotifyGive(blockUpdateTaskHandle);
 
       if (getCurrentScreen() != SCREEN_BLOCK_HEIGHT &&
-          preferences.getBool("stealFocus", true))
+          preferences.getBool("stealFocus", false))
       {
         uint64_t timerPeriod = 0;
         if (isTimerActive())

@@ -569,7 +569,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["otaEnabled"] = preferences.getBool("otaEnabled", true);
   root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", false);
   root["useSatsSymbol"] = preferences.getBool("useSatsSymbol", false);
-  root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", false);
+  root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", true);
   root["suffixPrice"] = preferences.getBool("suffixPrice", false);
   root["disableLeds"] = preferences.getBool("disableLeds", false);
 
@@ -749,10 +749,10 @@ void onApiSettingsPost(AsyncWebServerRequest *request)
     settingsChanged = true;
   }
 
-  if (request->hasParam("stealFocusOnBlock", true))
+  if (request->hasParam("stealFocus", false))
   {
     AsyncWebParameter *stealFocusOnBlock =
-        request->getParam("stealFocusOnBlock", true);
+        request->getParam("stealFocus", false);
 
     preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
     settingsChanged = true;
