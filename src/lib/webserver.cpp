@@ -348,7 +348,7 @@ void onApiShowScreen(AsyncWebServerRequest *request)
 {
   if (request->hasParam("s"))
   {
-    AsyncWebParameter *p = request->getParam("s");
+    const AsyncWebParameter *p = request->getParam("s");
     uint currentScreen = p->value().toInt();
     setCurrentScreen(currentScreen);
   }
@@ -359,7 +359,7 @@ void onApiShowText(AsyncWebServerRequest *request)
 {
   if (request->hasParam("t"))
   {
-    AsyncWebParameter *p = request->getParam("t");
+    const AsyncWebParameter *p = request->getParam("t");
     String t = p->value();
     t.toUpperCase(); // This is needed as long as lowercase letters are glitchy
 
@@ -629,7 +629,7 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
   bool settingsChanged = false;
   if (request->hasParam("fgColor", true))
   {
-    AsyncWebParameter *fgColor = request->getParam("fgColor", true);
+    const AsyncWebParameter *fgColor = request->getParam("fgColor", true);
     preferences.putUInt("fgColor", strtol(fgColor->value().c_str(), NULL, 16));
     setFgColor(int(strtol(fgColor->value().c_str(), NULL, 16)));
     // Serial.print(F("Setting foreground color to "));
@@ -638,7 +638,7 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
   }
   if (request->hasParam("bgColor", true))
   {
-    AsyncWebParameter *bgColor = request->getParam("bgColor", true);
+    const AsyncWebParameter *bgColor = request->getParam("bgColor", true);
 
     preferences.putUInt("bgColor", strtol(bgColor->value().c_str(), NULL, 16));
     setBgColor(int(strtol(bgColor->value().c_str(), NULL, 16)));
@@ -652,226 +652,226 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
 
 void onApiSettingsPost(AsyncWebServerRequest *request)
 {
-  bool settingsChanged = false;
+  // bool settingsChanged = false;
 
-  settingsChanged = processEpdColorSettings(request);
+  // settingsChanged = processEpdColorSettings(request);
 
-  int headers = request->headers();
-  int i;
-  for (i = 0; i < headers; i++)
-  {
-    AsyncWebHeader *h = request->getHeader(i);
-    Serial.printf("HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
-  }
+  // int headers = request->headers();
+  // int i;
+  // for (i = 0; i < headers; i++)
+  // {
+  //   AsyncWebHeader *h = request->getHeader(i);
+  //   Serial.printf("HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+  // }
 
-  int params = request->params();
-  for (int i = 0; i < params; i++)
-  {
-    AsyncWebParameter *p = request->getParam(i);
-    if (p->isFile())
-    { // p->isPost() is also true
-      Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(),
-                    p->value().c_str(), p->size());
-    }
-    else if (p->isPost())
-    {
-      Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-    }
-    else
-    {
-      Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-    }
-  }
+  // int params = request->params();
+  // for (int i = 0; i < params; i++)
+  // {
+  //   const AsyncWebParameter *p = request->getParam(i);
+  //   if (p->isFile())
+  //   { // p->isPost() is also true
+  //     Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(),
+  //                   p->value().c_str(), p->size());
+  //   }
+  //   else if (p->isPost())
+  //   {
+  //     Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+  //   }
+  //   else
+  //   {
+  //     Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+  //   }
+  // }
 
-  if (request->hasParam("fetchEurPrice", true))
-  {
-    AsyncWebParameter *fetchEurPrice = request->getParam("fetchEurPrice", true);
+  // if (request->hasParam("fetchEurPrice", true))
+  // {
+  //   const AsyncWebParameter *fetchEurPrice = request->getParam("fetchEurPrice", true);
 
-    preferences.putBool("fetchEurPrice", fetchEurPrice->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("fetchEurPrice", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("fetchEurPrice", fetchEurPrice->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("fetchEurPrice", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("ledTestOnPower", true))
-  {
-    AsyncWebParameter *ledTestOnPower =
-        request->getParam("ledTestOnPower", true);
+  // if (request->hasParam("ledTestOnPower", true))
+  // {
+  //   const AsyncWebParameter *ledTestOnPower =
+  //       request->getParam("ledTestOnPower", true);
 
-    preferences.putBool("ledTestOnPower", ledTestOnPower->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("ledTestOnPower", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("ledTestOnPower", ledTestOnPower->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("ledTestOnPower", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("ledFlashOnUpd", true))
-  {
-    AsyncWebParameter *ledFlashOnUpdate =
-        request->getParam("ledFlashOnUpd", true);
+  // if (request->hasParam("ledFlashOnUpd", true))
+  // {
+  //   const AsyncWebParameter *ledFlashOnUpdate =
+  //       request->getParam("ledFlashOnUpd", true);
 
-    preferences.putBool("ledFlashOnUpd", ledFlashOnUpdate->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("ledFlashOnUpd", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("ledFlashOnUpd", ledFlashOnUpdate->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("ledFlashOnUpd", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("mdnsEnabled", true))
-  {
-    AsyncWebParameter *mdnsEnabled = request->getParam("mdnsEnabled", true);
+  // if (request->hasParam("mdnsEnabled", true))
+  // {
+  //   const AsyncWebParameter *mdnsEnabled = request->getParam("mdnsEnabled", true);
 
-    preferences.putBool("mdnsEnabled", mdnsEnabled->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("mdnsEnabled", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("mdnsEnabled", mdnsEnabled->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("mdnsEnabled", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("otaEnabled", true))
-  {
-    AsyncWebParameter *otaEnabled = request->getParam("otaEnabled", true);
+  // if (request->hasParam("otaEnabled", true))
+  // {
+  //   const AsyncWebParameter *otaEnabled = request->getParam("otaEnabled", true);
 
-    preferences.putBool("otaEnabled", otaEnabled->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("otaEnabled", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("otaEnabled", otaEnabled->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("otaEnabled", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("stealFocus", false))
-  {
-    AsyncWebParameter *stealFocusOnBlock =
-        request->getParam("stealFocus", false);
+  // if (request->hasParam("stealFocus", false))
+  // {
+  //   const AsyncWebParameter *stealFocusOnBlock =
+  //       request->getParam("stealFocus", false);
 
-    preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("stealFocus", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("stealFocus", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("mcapBigChar", true))
-  {
-    AsyncWebParameter *mcapBigChar = request->getParam("mcapBigChar", true);
+  // if (request->hasParam("mcapBigChar", true))
+  // {
+  //   const AsyncWebParameter *mcapBigChar = request->getParam("mcapBigChar", true);
 
-    preferences.putBool("mcapBigChar", mcapBigChar->value().toInt());
-    settingsChanged = true;
-  }
-  else
-  {
-    preferences.putBool("mcapBigChar", 0);
-    settingsChanged = true;
-  }
+  //   preferences.putBool("mcapBigChar", mcapBigChar->value().toInt());
+  //   settingsChanged = true;
+  // }
+  // else
+  // {
+  //   preferences.putBool("mcapBigChar", 0);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("mempoolInstance", true))
-  {
-    AsyncWebParameter *mempoolInstance =
-        request->getParam("mempoolInstance", true);
+  // if (request->hasParam("mempoolInstance", true))
+  // {
+  //   const AsyncWebParameter *mempoolInstance =
+  //       request->getParam("mempoolInstance", true);
 
-    preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
-    settingsChanged = true;
-  }
+  //   preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("hostnamePrefix", true))
-  {
-    AsyncWebParameter *hostnamePrefix =
-        request->getParam("hostnamePrefix", true);
+  // if (request->hasParam("hostnamePrefix", true))
+  // {
+  //   const AsyncWebParameter *hostnamePrefix =
+  //       request->getParam("hostnamePrefix", true);
 
-    preferences.putString("hostnamePrefix", hostnamePrefix->value().c_str());
-    settingsChanged = true;
-  }
+  //   preferences.putString("hostnamePrefix", hostnamePrefix->value().c_str());
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("ledBrightness", true))
-  {
-    AsyncWebParameter *ledBrightness = request->getParam("ledBrightness", true);
+  // if (request->hasParam("ledBrightness", true))
+  // {
+  //   const AsyncWebParameter *ledBrightness = request->getParam("ledBrightness", true);
 
-    preferences.putUInt("ledBrightness", ledBrightness->value().toInt());
-    settingsChanged = true;
-  }
+  //   preferences.putUInt("ledBrightness", ledBrightness->value().toInt());
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("fullRefreshMin", true))
-  {
-    AsyncWebParameter *fullRefreshMin =
-        request->getParam("fullRefreshMin", true);
+  // if (request->hasParam("fullRefreshMin", true))
+  // {
+  //   const AsyncWebParameter *fullRefreshMin =
+  //       request->getParam("fullRefreshMin", true);
 
-    preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
-    settingsChanged = true;
-  }
+  //   preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("wpTimeout", true))
-  {
-    AsyncWebParameter *wpTimeout = request->getParam("wpTimeout", true);
+  // if (request->hasParam("wpTimeout", true))
+  // {
+  //   const AsyncWebParameter *wpTimeout = request->getParam("wpTimeout", true);
 
-    preferences.putUInt("wpTimeout", wpTimeout->value().toInt());
-    settingsChanged = true;
-  }
+  //   preferences.putUInt("wpTimeout", wpTimeout->value().toInt());
+  //   settingsChanged = true;
+  // }
 
-  std::vector<std::string> screenNameMap = getScreenNameMap();
+  // std::vector<std::string> screenNameMap = getScreenNameMap();
 
-  if (request->hasParam("screens"))
-  {
-    AsyncWebParameter *screenParam = request->getParam("screens", true);
+  // if (request->hasParam("screens"))
+  // {
+  //   const AsyncWebParameter *screenParam = request->getParam("screens", true);
 
-    Serial.printf(screenParam->value().c_str());
-  }
+  //   Serial.printf(screenParam->value().c_str());
+  // }
 
-  for (int i = 0; i < screenNameMap.size(); i++)
-  {
-    String key = "screen[" + String(i) + "]";
-    String prefKey = "screen" + String(i) + "Visible";
-    bool visible = false;
-    if (request->hasParam(key, true))
-    {
-      AsyncWebParameter *screenParam = request->getParam(key, true);
-      visible = screenParam->value().toInt();
-    }
+  // for (int i = 0; i < screenNameMap.size(); i++)
+  // {
+  //   String key = "screen[" + String(i) + "]";
+  //   String prefKey = "screen" + String(i) + "Visible";
+  //   bool visible = false;
+  //   if (request->hasParam(key, true))
+  //   {
+  //     const AsyncWebParameter *screenParam = request->getParam(key, true);
+  //     visible = screenParam->value().toInt();
+  //   }
 
-    preferences.putBool(prefKey.c_str(), visible);
-  }
+  //   preferences.putBool(prefKey.c_str(), visible);
+  // }
 
-  if (request->hasParam("tzOffset", true))
-  {
-    AsyncWebParameter *p = request->getParam("tzOffset", true);
-    int tzOffsetSeconds = p->value().toInt() * 60;
-    preferences.putInt("gmtOffset", tzOffsetSeconds);
-    settingsChanged = true;
-  }
+  // if (request->hasParam("tzOffset", true))
+  // {
+  //   const AsyncWebParameter *p = request->getParam("tzOffset", true);
+  //   int tzOffsetSeconds = p->value().toInt() * 60;
+  //   preferences.putInt("gmtOffset", tzOffsetSeconds);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("minSecPriceUpd", true))
-  {
-    AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
-    int minSecPriceUpd = p->value().toInt();
-    preferences.putUInt("minSecPriceUpd", minSecPriceUpd);
-    settingsChanged = true;
-  }
+  // if (request->hasParam("minSecPriceUpd", true))
+  // {
+  //   const AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
+  //   int minSecPriceUpd = p->value().toInt();
+  //   preferences.putUInt("minSecPriceUpd", minSecPriceUpd);
+  //   settingsChanged = true;
+  // }
 
-  if (request->hasParam("timePerScreen", true))
-  {
-    AsyncWebParameter *p = request->getParam("timePerScreen", true);
-    uint timerSeconds = p->value().toInt() * 60;
-    preferences.putUInt("timerSeconds", timerSeconds);
-    settingsChanged = true;
-  }
+  // if (request->hasParam("timePerScreen", true))
+  // {
+  //   const AsyncWebParameter *p = request->getParam("timePerScreen", true);
+  //   uint timerSeconds = p->value().toInt() * 60;
+  //   preferences.putUInt("timerSeconds", timerSeconds);
+  //   settingsChanged = true;
+  // }
 
-  request->send(200);
-  if (settingsChanged)
-  {
-    queueLedEffect(LED_FLASH_SUCCESS);
-  }
+  // request->send(200);
+  // if (settingsChanged)
+  // {
+  //   queueLedEffect(LED_FLASH_SUCCESS);
+  // }
 }
 
 void onApiSystemStatus(AsyncWebServerRequest *request)
@@ -900,7 +900,7 @@ void onApiSetWifiTxPower(AsyncWebServerRequest *request)
 {
   if (request->hasParam("txPower"))
   {
-    AsyncWebParameter *txPowerParam = request->getParam("txPower");
+    const AsyncWebParameter *txPowerParam = request->getParam("txPower");
     int txPower = txPowerParam->value().toInt();
     if (static_cast<int>(wifi_power_t::WIFI_POWER_MINUS_1dBm) <= txPower &&
         txPower <= static_cast<int>(wifi_power_t::WIFI_POWER_19_5dBm))
@@ -1076,7 +1076,7 @@ void onNotFound(AsyncWebServerRequest *request)
   // int params = request->params();
   // for (int i = 0; i < params; i++)
   // {
-  //     AsyncWebParameter *p = request->getParam(i);
+  //     const AsyncWebParameter *p = request->getParam(i);
   //     if (p->isFile())
   //     { // p->isPost() is also true
   //         Serial.printf("NotFound FILE[%s]: %s, size: %u\n",
