@@ -2,7 +2,7 @@
 
 char *wsServer;
 esp_websocket_client_handle_t blockNotifyClient = NULL;
-uint currentBlockHeight = 816000;
+uint currentBlockHeight = 840000;
 uint blockMedianFee = 1;
 bool blockNotifyInit = false;
 unsigned long int lastBlockUpdate;
@@ -59,7 +59,7 @@ void setupBlockNotify()
   String mempoolInstance =
       preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
 
-  while (dnsErr != 1)
+  while (dnsErr != 1 &&  !strchr(mempoolInstance.c_str(), ':'))
   {
     dnsErr = WiFi.hostByName(mempoolInstance.c_str(), result);
 
@@ -73,8 +73,10 @@ void setupBlockNotify()
   }
 
   // Get current block height through regular API
+  int blockFetch = getBlockFetch();
 
-  currentBlockHeight = getBlockFetch();
+  if (blockFetch > currentBlockHeight)
+    currentBlockHeight = blockFetch;
 
   if (currentBlockHeight != -1)
   {
@@ -95,12 +97,18 @@ void setupBlockNotify()
   // std::strcpy(wsServer, String("wss://" + mempoolInstance +
   // "/api/v1/ws").c_str());
 
+  const String protocol = preferences.getBool("mempoolSecure", true) ? "wss" : "ws";
+
+  String mempoolUri = protocol + "://" + preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE) + "/api/v1/ws";
+  
   esp_websocket_client_config_t config = {
-      .uri = "wss://mempool.space/api/v1/ws",
+     // .uri = "wss://mempool.space/api/v1/ws",
       //  .task_stack = (6*1024),
       // .cert_pem = mempoolWsCert,
       .user_agent = USER_AGENT,
   };
+
+  config.uri = mempoolUri.c_str();
 
   blockNotifyClient = esp_websocket_client_init(&config);
   esp_websocket_register_events(blockNotifyClient, WEBSOCKET_EVENT_ANY,
@@ -282,21 +290,40 @@ void restartBlockNotify()
 
 int getBlockFetch()
 {
-  String mempoolInstance =
-      preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
+  try {
+    WiFiClientSecure client;
+    client.setInsecure();
 
-  // Get current block height through regular API
-  HTTPClient *http = new HTTPClient();
-  http->begin("https://" + mempoolInstance + "/api/blocks/tip/height");
-  int httpCode = http->GET();
+    String mempoolInstance =
+        preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
 
-  if (httpCode > 0 && httpCode == HTTP_CODE_OK)
-  {
-    String blockHeightStr = http->getString();
-    return blockHeightStr.toInt();
+    // Get current block height through regular API
+    HTTPClient http;
+
+    const String protocol = preferences.getBool("mempoolSecure", true) ? "https" : "http";
+
+    if (preferences.getBool("mempoolSecure", true))
+      http.begin(client, protocol + "://" + mempoolInstance + "/api/blocks/tip/height");
+    else
+      http.begin(protocol + "://" + mempoolInstance + "/api/blocks/tip/height");
+
+    Serial.println("Fetching block height from " + protocol + "://" + mempoolInstance + "/api/blocks/tip/height");
+    int httpCode = http.GET();
+
+    if (httpCode > 0 && httpCode == HTTP_CODE_OK)
+    {
+      String blockHeightStr = http.getString();
+      return blockHeightStr.toInt();
+    } else {
+      Serial.println("HTTP code" + String(httpCode));
+      return 0;
+    }
+  }
+  catch (...) {
+    Serial.println(F("An exception occured while trying to get the latest block"));
   }
 
-  return -1;
+  return 2203; // B-T-C
 }
 
 uint getLastBlockUpdate()

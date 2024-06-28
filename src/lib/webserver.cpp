@@ -460,7 +460,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure"};
 
   for (String setting : boolSettings)
   {
@@ -557,9 +557,10 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
       preferences.getUInt("fullRefreshMin", DEFAULT_MINUTES_FULL_REFRESH);
   root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
   root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
-  root["useBitcoinNode"] = preferences.getBool("useNode", false);
+//  root["useBitcoinNode"] = preferences.getBool("useNode", false);
   root["mempoolInstance"] =
       preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
+  root["mempoolSecure"] = preferences.getBool("mempoolSecure", true);
   root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
   root["ledFlashOnUpd"] = preferences.getBool("ledFlashOnUpd", false);
   root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
