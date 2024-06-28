@@ -87,7 +87,7 @@ void setupBlockNotify()
     xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
   }
 
-  if (preferences.getBool("ownDataSource", true))
+  if (!preferences.getBool("fetchEurPrice", false) && preferences.getBool("ownDataSource", true))
   {
     return;
   }
