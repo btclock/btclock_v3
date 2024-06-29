@@ -112,6 +112,6 @@ jobs:
           target-directory: firmware_v3/
           destination-github-username: 'btclock'
           destination-repository-name: 'web-flasher'
-          target-branch: btclock
+          target-branch: main
           user-name: ${{github.actor}}
           user-email: ${{github.actor}}@users.noreply.github.com
