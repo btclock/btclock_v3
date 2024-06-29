@@ -752,6 +752,10 @@ void setupFrontlight()
 float getLightLevel() {
   return bh1750.readLightLevel();
 }
+
+bool hasLightLevel() {
+  return hasLuxSensor;
+}
 #endif
 
 String getHwRev()
@@ -785,7 +789,4 @@ String getFsRev()
   return ret;
 }
 
-bool hasLightLevel() {
-  return hasLuxSensor;
-}
 
