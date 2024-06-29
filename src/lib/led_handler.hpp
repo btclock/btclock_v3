@@ -65,7 +65,10 @@ void frontlightFadeOutAll();
 void frontlightFadeIn(uint num);
 void frontlightFadeOut(uint num);
 
+std::vector<uint16_t> frontlightGetStatus();
+
 void frontlightSetBrightness(uint brightness);
+bool frontlightIsOn();
 
 void frontlightFadeInAll(int flDelayTime);
 void frontlightFadeInAll(int flDelayTime, bool staggered);

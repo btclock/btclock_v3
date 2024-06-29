@@ -1,6 +1,7 @@
 #include "ota.hpp"
 
 TaskHandle_t taskOtaHandle = NULL;
+bool isOtaUpdating = false;
 
 void setupOTA() {
   if (preferences.getBool("otaEnabled", true)) {
@@ -47,7 +48,7 @@ void onOTAStart() {
   // Stop all timers
   esp_timer_stop(screenRotateTimer);
   esp_timer_stop(minuteTimer);
-
+  isOtaUpdating = true;
   // Stop or suspend all tasks
   //  vTaskSuspend(priceUpdateTaskHandle);
   //    vTaskSuspend(blockUpdateTaskHandle);
@@ -65,7 +66,7 @@ void onOTAStart() {
 void handleOTATask(void *parameter) {
   for (;;) {
     ArduinoOTA.handle();  // Allow OTA updates to occur
-    vTaskDelay(pdMS_TO_TICKS(2500));
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 
@@ -130,6 +131,7 @@ void onOTAError(ota_error_t error) {
   Serial.println(F("\nOTA update error, restarting"));
   Wire.end();
   SPI.end();
+  isOtaUpdating = false;
   delay(1000);
   ESP.restart();
 }
@@ -140,4 +142,8 @@ void onOTAComplete() {
   SPI.end();
   delay(1000);
   ESP.restart();
+}
+
+bool getIsOTAUpdating() {
+  return isOtaUpdating;
 }

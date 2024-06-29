@@ -65,6 +65,8 @@ void frontlightFadeInAll(int flDelayTime)
 
 void frontlightFadeInAll(int flDelayTime, bool staggered)
 {
+  if (frontlightIsOn())
+    return;
   if (flInTransition)
     return;
 
@@ -113,6 +115,8 @@ void frontlightFadeOutAll(int flDelayTime)
 
 void frontlightFadeOutAll(int flDelayTime, bool staggered)
 {
+  if (!frontlightIsOn())
+    return;
   if (flInTransition)
     return;
   flInTransition = true;
@@ -155,6 +159,22 @@ void frontlightFadeOutAll(int flDelayTime, bool staggered)
   flInTransition = false;
 }
 
+std::vector<uint16_t> frontlightGetStatus() {
+  std::vector<uint16_t> statuses;
+  for (int ledPin = 1; ledPin <= NUM_SCREENS; ledPin++)
+  {
+    uint16_t a = 0, b = 0;
+    flArray.getPWM(ledPin, &a, &b);
+    statuses.push_back(round(b-a/4096));
+  }
+
+  return statuses;
+}
+
+bool frontlightIsOn() {
+  return frontlightOn;
+}
+
 void frontlightFadeIn(uint num, int flDelayTime)
 {
   for (int dutyCycle = 0; dutyCycle <= preferences.getUInt("flMaxBrightness"); dutyCycle += 5)
@@ -166,6 +186,9 @@ void frontlightFadeIn(uint num, int flDelayTime)
 
 void frontlightFadeOut(uint num, int flDelayTime)
 {
+  if (!frontlightIsOn())
+    return;
+
   for (int dutyCycle = preferences.getUInt("flMaxBrightness"); dutyCycle >= 0; dutyCycle -= 5)
   {
     flArray.setPWM(num, 0, dutyCycle);

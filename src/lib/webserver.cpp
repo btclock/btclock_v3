@@ -57,6 +57,8 @@ void setupWebserver()
 #ifdef HAS_FRONTLIGHT
   server.on("/api/frontlight/on", HTTP_GET, onApiFrontlightOn);
   server.on("/api/frontlight/flash", HTTP_GET, onApiFrontlightFlash);
+  server.on("/api/frontlight/status", HTTP_GET, onApiFrontlightStatus);
+
   server.on("/api/frontlight/brightness", HTTP_GET, onApiFrontlightSetBrightness);
   server.on("/api/frontlight/off", HTTP_GET, onApiFrontlightOff);
 
@@ -67,7 +69,8 @@ void setupWebserver()
   // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET,
   // onApiLightsSetColor);
 
-  if (preferences.getBool("otaEnabled", true)) {
+  if (preferences.getBool("otaEnabled", true))
+  {
     server.on("/upload/firmware", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
     server.on("/upload/webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
   }
@@ -228,6 +231,20 @@ JsonDocument getStatusObject()
   conStatus["blocks"] = isBlockNotifyConnected();
 
   root["rssi"] = WiFi.RSSI();
+
+#ifdef HAS_FRONTLIGHT
+  std::vector<uint16_t> statuses = frontlightGetStatus();
+  uint16_t arr[NUM_SCREENS];
+  std::copy(statuses.begin(), statuses.end(), arr);
+
+  JsonArray data = root["flStatus"].to<JsonArray>();
+  copyArray(arr, data);
+
+  if (hasLightLevel())
+  {
+    root["lightLevel"] = getLightLevel();
+  }
+#endif
 
   return root;
 }
@@ -437,7 +454,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
     }
   }
 
-  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay"};
+  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay", "luxLightToggle"};
 
   for (String setting : uintSettings)
   {
@@ -557,7 +574,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
       preferences.getUInt("fullRefreshMin", DEFAULT_MINUTES_FULL_REFRESH);
   root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
   root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
-//  root["useBitcoinNode"] = preferences.getBool("useNode", false);
+  //  root["useBitcoinNode"] = preferences.getBool("useNode", false);
   root["mempoolInstance"] =
       preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
   root["mempoolSecure"] = preferences.getBool("mempoolSecure", true);
@@ -586,9 +603,11 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["flAlwaysOn"] = preferences.getBool("flAlwaysOn", false);
   root["flEffectDelay"] = preferences.getUInt("flEffectDelay");
   root["flFlashOnUpd"] = preferences.getBool("flFlashOnUpd", false);
-
+  root["hasLightLevel"] = hasLightLevel();
+  root["luxLightToggle"] = preferences.getUInt("luxLightToggle", 128);
 #else
   root["hasFrontlight"] = false;
+  root["hasLightLevel"] = false;
 #endif
 
   root["hwRev"] = getHwRev();
@@ -1133,17 +1152,14 @@ void onApiFrontlightStatus(AsyncWebServerRequest *request)
       request->beginResponseStream("application/json");
 
   JsonDocument root;
-  JsonArray ledStates = root["data"].to<JsonArray>();
 
-  for (int ledPin = 0; ledPin < NUM_SCREENS; ledPin++)
-  {
-    uint16_t onTime, offTime;
-    flArray.getPWM(ledPin, &onTime, &offTime);
+  std::vector<uint16_t> statuses = frontlightGetStatus();
+  uint16_t arr[NUM_SCREENS];
+  std::copy(statuses.begin(), statuses.end(), arr);
 
-    ledStates.add(onTime);
-  }
-
-  serializeJson(ledStates, *response);
+  JsonArray data = root["flStatus"].to<JsonArray>();
+  copyArray(arr, data);
+  serializeJson(root, *response);
 
   request->send(response);
 }

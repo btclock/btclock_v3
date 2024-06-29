@@ -22,6 +22,7 @@
 #include "lib/webserver.hpp"
 #ifdef HAS_FRONTLIGHT
 #include "PCA9685.h"
+#include "BH1750.h"
 #endif
 
 #define NTP_SERVER "pool.ntp.org"
@@ -49,6 +50,8 @@ void finishSetup();
 void setupMcp();
 #ifdef HAS_FRONTLIGHT
 void setupFrontlight();
+float getLightLevel();
+bool hasLightLevel();
 extern PCA9685 flArray;
 #endif
 
@@ -67,5 +70,4 @@ void improv_set_error(improv::Error error);
 void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 String getHwRev();
 bool isWhiteVersion();
-
 String getFsRev();

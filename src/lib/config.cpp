@@ -10,6 +10,8 @@ Adafruit_MCP23X17 mcp2;
 
 #ifdef HAS_FRONTLIGHT
 PCA9685 flArray(PCA_I2C_ADDR);
+BH1750 bh1750;
+bool hasLuxSensor = false;
 #endif
 
 std::vector<std::string> screenNameMap(SCREEN_COUNT);
@@ -401,6 +403,15 @@ void setupHardware()
 
 #ifdef HAS_FRONTLIGHT
   setupFrontlight();
+
+   Wire.beginTransmission(0x5C);
+   byte error = Wire.endTransmission();
+
+   if (error == 0) {
+    Serial.println(F("Found BH1750"));
+    hasLuxSensor = true;
+    bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE, 0x5C);
+   }
 #endif
 }
 
@@ -737,6 +748,10 @@ void setupFrontlight()
 
   frontlightFadeInAll(preferences.getUInt("flEffectDelay"), true);
 }
+
+float getLightLevel() {
+  return bh1750.readLightLevel();
+}
 #endif
 
 String getHwRev()
@@ -769,3 +784,8 @@ String getFsRev()
   fsHash.close();
   return ret;
 }
+
+bool hasLightLevel() {
+  return hasLuxSensor;
+}
+
