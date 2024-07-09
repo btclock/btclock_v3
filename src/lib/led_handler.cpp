@@ -159,19 +159,21 @@ void frontlightFadeOutAll(int flDelayTime, bool staggered)
   flInTransition = false;
 }
 
-std::vector<uint16_t> frontlightGetStatus() {
+std::vector<uint16_t> frontlightGetStatus()
+{
   std::vector<uint16_t> statuses;
   for (int ledPin = 1; ledPin <= NUM_SCREENS; ledPin++)
   {
     uint16_t a = 0, b = 0;
     flArray.getPWM(ledPin, &a, &b);
-    statuses.push_back(round(b-a/4096));
+    statuses.push_back(round(b - a / 4096));
   }
 
   return statuses;
 }
 
-bool frontlightIsOn() {
+bool frontlightIsOn()
+{
   return frontlightOn;
 }
 
@@ -223,6 +225,9 @@ void ledTask(void *parameter)
         switch (ledTaskParams)
         {
         case LED_POWER_TEST:
+#ifdef HAS_FRONTLIGHT
+          frontlightFadeInAll(preferences.getUInt("flEffectDelay"), true);
+#endif
           ledRainbow(20);
           pixels.clear();
           break;

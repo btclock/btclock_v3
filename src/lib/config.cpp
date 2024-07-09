@@ -746,7 +746,6 @@ void setupFrontlight()
     preferences.putBool("flFlashOnUpd", false);
   }
 
-  frontlightFadeInAll(preferences.getUInt("flEffectDelay"), true);
 }
 
 float getLightLevel() {
