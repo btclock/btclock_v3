@@ -26,17 +26,12 @@
 #endif
 
 #define NTP_SERVER "pool.ntp.org"
-#define DEFAULT_MEMPOOL_INSTANCE "mempool.space"
-#define TIME_OFFSET_SECONDS 3600
+#define DEFAULT_TIME_OFFSET_SECONDS 3600
 #define USER_AGENT "BTClock/3.0"
 #ifndef MCP_DEV_ADDR
 #define MCP_DEV_ADDR 0x20
 #endif
-#define DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE 30
-#define DEFAULT_MINUTES_FULL_REFRESH 60
 
-#define DEFAULT_FG_COLOR GxEPD_WHITE
-#define DEFAULT_BG_COLOR GxEPD_BLACK
 
 void setup();
 void syncTime();

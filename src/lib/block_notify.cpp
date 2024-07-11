@@ -89,7 +89,7 @@ void setupBlockNotify()
     xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
   }
 
-  if (!preferences.getBool("fetchEurPrice", false) && preferences.getBool("ownDataSource", true))
+  if (!preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE) && preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE))
   {
     return;
   }
@@ -97,7 +97,7 @@ void setupBlockNotify()
   // std::strcpy(wsServer, String("wss://" + mempoolInstance +
   // "/api/v1/ws").c_str());
 
-  const String protocol = preferences.getBool("mempoolSecure", true) ? "wss" : "ws";
+  const String protocol = preferences.getBool("mempoolSecure", DEFAULT_MEMPOOL_SECURE) ? "wss" : "ws";
 
   String mempoolUri = protocol + "://" + preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE) + "/api/v1/ws";
   
@@ -185,7 +185,7 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
       // xTaskNotifyGive(blockUpdateTaskHandle);
 
       if (getCurrentScreen() != SCREEN_BLOCK_HEIGHT &&
-          preferences.getBool("stealFocus", false))
+          preferences.getBool("stealFocus", DEFAULT_STEAL_FOCUS))
       {
         uint64_t timerPeriod = 0;
         if (isTimerActive())
@@ -203,7 +203,7 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
         vTaskDelay(pdMS_TO_TICKS(315*NUM_SCREENS)); // Extra delay because of screen switching
       }
 
-      if (preferences.getBool("ledFlashOnUpd", false))
+      if (preferences.getBool("ledFlashOnUpd", DEFAULT_LED_FLASH_ON_UPD))
       {
         vTaskDelay(pdMS_TO_TICKS(250)); // Wait until screens are updated
         queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
@@ -300,9 +300,9 @@ int getBlockFetch()
     // Get current block height through regular API
     HTTPClient http;
 
-    const String protocol = preferences.getBool("mempoolSecure", true) ? "https" : "http";
+    const String protocol = preferences.getBool("mempoolSecure", DEFAULT_MEMPOOL_SECURE) ? "https" : "http";
 
-    if (preferences.getBool("mempoolSecure", true))
+    if (preferences.getBool("mempoolSecure", DEFAULT_MEMPOOL_SECURE))
       http.begin(client, protocol + "://" + mempoolInstance + "/api/blocks/tip/height");
     else
       http.begin(protocol + "://" + mempoolInstance + "/api/blocks/tip/height");

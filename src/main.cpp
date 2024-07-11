@@ -48,7 +48,7 @@ extern "C" void app_main()
     if (!getIsOTAUpdating())
     {
 #ifdef HAS_FRONTLIGHT
-      if (preferences.getUInt("luxLightToggle", 128) != 0)
+      if (preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE) != 0)
       {
         if (hasLightLevel() && getLightLevel() == 0)
         {
@@ -56,11 +56,11 @@ extern "C" void app_main()
             frontlightFadeOutAll();
           }
         }
-        else if (hasLightLevel() && getLightLevel() < preferences.getUInt("luxLightToggle", 128) && !frontlightIsOn())
+        else if (hasLightLevel() && getLightLevel() < preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE) && !frontlightIsOn())
         {
           frontlightFadeInAll();
         }
-        else if (frontlightIsOn() && getLightLevel() > preferences.getUInt("luxLightToggle", 128))
+        else if (frontlightIsOn() && getLightLevel() > preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE))
         {
           frontlightFadeOutAll();
         }
@@ -91,7 +91,7 @@ extern "C" void app_main()
         Serial.println(F("Connection restored, reset timer."));
       }
 
-      if (getPriceNotifyInit() && !preferences.getBool("fetchEurPrice", false) && !isPriceNotifyConnected())
+      if (getPriceNotifyInit() && !preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE) && !isPriceNotifyConnected())
       {
         priceNotifyLostConnection++;
         Serial.println(F("Lost price data connection..."));

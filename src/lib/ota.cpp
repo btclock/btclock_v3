@@ -4,7 +4,7 @@ TaskHandle_t taskOtaHandle = NULL;
 bool isOtaUpdating = false;
 
 void setupOTA() {
-  if (preferences.getBool("otaEnabled", true)) {
+  if (preferences.getBool("otaEnabled", DEFAULT_OTA_ENABLED)) {
     ArduinoOTA.onStart(onOTAStart);
 
     ArduinoOTA.onProgress(onOTAProgress);

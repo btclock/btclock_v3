@@ -209,7 +209,7 @@ void ledTask(void *parameter)
           pdPASS)
       {
 
-        if (preferences.getBool("disableLeds", false))
+        if (preferences.getBool("disableLeds", DEFAULT_DISABLE_LEDS))
         {
           continue;
         }
@@ -221,7 +221,9 @@ void ledTask(void *parameter)
         {
           oldLights[i] = pixels.getPixelColor(i);
         }
-
+        #ifdef HAS_FRONTLIGHT
+        uint flDelayTime = preferences.getUInt("flEffectDelay");
+        #endif
         switch (ledTaskParams)
         {
         case LED_POWER_TEST:
@@ -274,32 +276,32 @@ void ledTask(void *parameter)
 #ifdef HAS_FRONTLIGHT
           bool frontlightWasOn = false;
 
-          if (preferences.getBool("flFlashOnUpd", false))
+          if (preferences.getBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE))
           {
             if (frontlightOn)
             {
               frontlightWasOn = true;
-              frontlightFadeOutAll(1);
+              frontlightFadeOutAll(flDelayTime, true);
             }
             else
             {
-              frontlightFadeInAll(1);
+              frontlightFadeInAll(flDelayTime, true);
             }
           }
 #endif
           blinkDelayTwoColor(250, 3, pixels.Color(224, 67, 0),
                              pixels.Color(8, 2, 0));
 #ifdef HAS_FRONTLIGHT
-          if (preferences.getBool("flFlashOnUpd", false))
+          if (preferences.getBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE))
           {
             vTaskDelay(pdMS_TO_TICKS(10));
             if (frontlightWasOn)
             {
-              frontlightFadeInAll(1);
+              frontlightFadeInAll(flDelayTime, true);
             }
             else
             {
-              frontlightFadeOutAll(1);
+              frontlightFadeOutAll(flDelayTime, true);
             }
           }
 #endif
@@ -397,11 +399,11 @@ void ledTask(void *parameter)
 void setupLeds()
 {
   pixels.begin();
-  pixels.setBrightness(preferences.getUInt("ledBrightness", 128));
+  pixels.setBrightness(preferences.getUInt("ledBrightness", DEFAULT_LED_BRIGHTNESS));
   pixels.clear();
   pixels.show();
   setupLedTask();
-  if (preferences.getBool("ledTestOnPower", true))
+  if (preferences.getBool("ledTestOnPower", DEFAULT_LED_TEST_ON_POWER))
   {
     while (!ledTaskQueue)
     {

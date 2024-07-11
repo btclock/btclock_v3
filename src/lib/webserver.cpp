@@ -69,7 +69,7 @@ void setupWebserver()
   // server.on("^\\/api\\/lights\\/([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", HTTP_GET,
   // onApiLightsSetColor);
 
-  if (preferences.getBool("otaEnabled", true))
+  if (preferences.getBool("otaEnabled", DEFAULT_OTA_ENABLED))
   {
     server.on("/upload/firmware", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
     server.on("/upload/webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
@@ -94,7 +94,7 @@ void setupWebserver()
 
   server.begin();
 
-  if (preferences.getBool("mdnsEnabled", true))
+  if (preferences.getBool("mdnsEnabled", DEFAULT_MDNS_ENABLED))
   {
     if (!MDNS.begin(getMyHostname()))
     {
@@ -454,7 +454,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
     }
   }
 
-  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay", "luxLightToggle"};
+  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay", "luxLightToggle", "wpTimeout"};
 
   for (String setting : uintSettings)
   {
@@ -572,39 +572,38 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
       "minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
   root["fullRefreshMin"] =
       preferences.getUInt("fullRefreshMin", DEFAULT_MINUTES_FULL_REFRESH);
-  root["wpTimeout"] = preferences.getUInt("wpTimeout", 600);
-  root["tzOffset"] = preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS) / 60;
-  //  root["useBitcoinNode"] = preferences.getBool("useNode", false);
+  root["wpTimeout"] = preferences.getUInt("wpTimeout", DEFAULT_WP_TIMEOUT);
+  root["tzOffset"] = preferences.getInt("gmtOffset", DEFAULT_TIME_OFFSET_SECONDS) / 60;
   root["mempoolInstance"] =
       preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
-  root["mempoolSecure"] = preferences.getBool("mempoolSecure", true);
-  root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", true);
-  root["ledFlashOnUpd"] = preferences.getBool("ledFlashOnUpd", false);
-  root["ledBrightness"] = preferences.getUInt("ledBrightness", 128);
-  root["stealFocus"] = preferences.getBool("stealFocus", false);
-  root["mcapBigChar"] = preferences.getBool("mcapBigChar", true);
-  root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", true);
-  root["otaEnabled"] = preferences.getBool("otaEnabled", true);
-  root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", false);
-  root["useSatsSymbol"] = preferences.getBool("useSatsSymbol", false);
-  root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", true);
-  root["suffixPrice"] = preferences.getBool("suffixPrice", false);
-  root["disableLeds"] = preferences.getBool("disableLeds", false);
+  root["mempoolSecure"] = preferences.getBool("mempoolSecure", DEFAULT_MEMPOOL_SECURE);
+  root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", DEFAULT_LED_TEST_ON_POWER);
+  root["ledFlashOnUpd"] = preferences.getBool("ledFlashOnUpd", DEFAULT_LED_FLASH_ON_UPD);
+  root["ledBrightness"] = preferences.getUInt("ledBrightness", DEFAULT_LED_BRIGHTNESS);
+  root["stealFocus"] = preferences.getBool("stealFocus", DEFAULT_STEAL_FOCUS);
+  root["mcapBigChar"] = preferences.getBool("mcapBigChar", DEFAULT_MCAP_BIG_CHAR);
+  root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", DEFAULT_MDNS_ENABLED);
+  root["otaEnabled"] = preferences.getBool("otaEnabled", DEFAULT_OTA_ENABLED);
+  root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE);
+  root["useSatsSymbol"] = preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL);
+  root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", DEFAULT_USE_BLOCK_COUNTDOWN);
+  root["suffixPrice"] = preferences.getBool("suffixPrice", DEFAULT_SUFFIX_PRICE);
+  root["disableLeds"] = preferences.getBool("disableLeds", DEFAULT_DISABLE_LEDS);
 
-  root["hostnamePrefix"] = preferences.getString("hostnamePrefix", "btclock");
+  root["hostnamePrefix"] = preferences.getString("hostnamePrefix", DEFAULT_HOSTNAME_PREFIX);
   root["hostname"] = getMyHostname();
   root["ip"] = WiFi.localIP();
   root["txPower"] = WiFi.getTxPower();
-  root["ownDataSource"] = preferences.getBool("ownDataSource", true);
+  root["ownDataSource"] = preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE);
 
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;
-  root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", 2048);
-  root["flAlwaysOn"] = preferences.getBool("flAlwaysOn", false);
-  root["flEffectDelay"] = preferences.getUInt("flEffectDelay");
-  root["flFlashOnUpd"] = preferences.getBool("flFlashOnUpd", false);
+  root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", DEFAULT_FL_MAX_BRIGHTNESS);
+  root["flAlwaysOn"] = preferences.getBool("flAlwaysOn", DEFAULT_FL_ALWAYS_ON);
+  root["flEffectDelay"] = preferences.getUInt("flEffectDelay", DEFAULT_FL_EFFECT_DELAY);
+  root["flFlashOnUpd"] = preferences.getBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE);
   root["hasLightLevel"] = hasLightLevel();
-  root["luxLightToggle"] = preferences.getUInt("luxLightToggle", 128);
+  root["luxLightToggle"] = preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE);
 #else
   root["hasFrontlight"] = false;
   root["hasLightLevel"] = false;

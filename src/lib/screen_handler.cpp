@@ -30,17 +30,17 @@ void workerTask(void *pvParameters) {
         case TASK_PRICE_UPDATE: {
           uint price = getPrice();
           char priceSymbol = '$';
-          if (preferences.getBool("fetchEurPrice", false)) {
+          if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE)) {
             priceSymbol = '[';
           }
           if (getCurrentScreen() == SCREEN_BTC_TICKER) {
-            taskEpdContent = parsePriceData(price, priceSymbol, preferences.getBool("suffixPrice", false));
+            taskEpdContent = parsePriceData(price, priceSymbol, preferences.getBool("suffixPrice", DEFAULT_SUFFIX_PRICE));
           } else if (getCurrentScreen() == SCREEN_MSCW_TIME) {
-            taskEpdContent = parseSatsPerCurrency(price, priceSymbol, preferences.getBool("useSatsSymbol", false));
+            taskEpdContent = parseSatsPerCurrency(price, priceSymbol, preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL));
           } else {
             taskEpdContent =
                 parseMarketCap(getBlockHeight(), price, priceSymbol,
-                               preferences.getBool("mcapBigChar", true));
+                               preferences.getBool("mcapBigChar", DEFAULT_MCAP_BIG_CHAR));
           }
 
           setEpdContent(taskEpdContent);
@@ -57,7 +57,7 @@ void workerTask(void *pvParameters) {
           if (getCurrentScreen() != SCREEN_HALVING_COUNTDOWN) {
             taskEpdContent = parseBlockHeight(getBlockHeight());
           } else {
-            taskEpdContent = parseHalvingCountdown(getBlockHeight(), preferences.getBool("useBlkCountdown", true));
+            taskEpdContent = parseHalvingCountdown(getBlockHeight(), preferences.getBool("useBlkCountdown", DEFAULT_USE_BLOCK_COUNTDOWN));
           }
 
           if (getCurrentScreen() == SCREEN_HALVING_COUNTDOWN ||
@@ -147,7 +147,7 @@ void setupTasks() {
               &taskScreenRotateTaskHandle);
 
   waitUntilNoneBusy();
-  setCurrentScreen(preferences.getUInt("currentScreen", 0));
+  setCurrentScreen(preferences.getUInt("currentScreen", DEFAULT_CURRENT_SCREEN));
 }
 
 void setupTimeUpdateTimer(void *pvParameters) {
@@ -180,7 +180,7 @@ void setupScreenRotateTimer(void *pvParameters) {
 
   esp_timer_create(&screenRotateTimerConfig, &screenRotateTimer);
 
-  if (preferences.getBool("timerActive", true)) {
+  if (preferences.getBool("timerActive", DEFAULT_TIMER_ACTIVE)) {
     esp_timer_start_periodic(screenRotateTimer,
                              getTimerSeconds() * usPerSecond);
   }
@@ -188,7 +188,7 @@ void setupScreenRotateTimer(void *pvParameters) {
   vTaskDelete(NULL);
 }
 
-uint getTimerSeconds() { return preferences.getUInt("timerSeconds", 1800); }
+uint getTimerSeconds() { return preferences.getUInt("timerSeconds", DEFAULT_TIMER_SECONDS); }
 
 bool isTimerActive() { return esp_timer_is_active(screenRotateTimer); }
 

@@ -24,7 +24,7 @@ void setup()
   setupHardware();
 
   setupDisplays();
-  if (preferences.getBool("ledTestOnPower", true))
+  if (preferences.getBool("ledTestOnPower", DEFAULT_LED_TEST_ON_POWER))
   {
     queueLedEffect(LED_POWER_TEST);
   }
@@ -75,7 +75,7 @@ void setup()
   waitUntilNoneBusy();
 
 #ifdef HAS_FRONTLIGHT
-  if (!preferences.getBool("flAlwaysOn", false))
+  if (!preferences.getBool("flAlwaysOn", DEFAULT_FL_ALWAYS_ON))
   {
     frontlightFadeOutAll(preferences.getUInt("flEffectDelay"), true);
     flArray.allOFF();
@@ -91,23 +91,20 @@ void tryImprovSetup()
   WiFi.setAutoConnect(true);
   WiFi.setAutoReconnect(true);
   WiFi.begin();
-  if (preferences.getInt("txPower", 0))
+  if (preferences.getInt("txPower", DEFAULT_TX_POWER))
   {
     if (WiFi.setTxPower(
-            static_cast<wifi_power_t>(preferences.getInt("txPower", 0))))
+            static_cast<wifi_power_t>(preferences.getInt("txPower", DEFAULT_TX_POWER))))
     {
       Serial.printf("WiFi max tx power set to %d\n",
-                    preferences.getInt("txPower", 0));
+                    preferences.getInt("txPower", DEFAULT_TX_POWER));
     }
   }
 
-  // if (!preferences.getBool("wifiConfigured", false))
+  // if (!preferences.getBool("wifiConfigured", DEFAULT_WIFI_CONFIGURED)
   {
 
     queueLedEffect(LED_EFFECT_WIFI_WAIT_FOR_CONFIG);
-
-    uint8_t x_buffer[16];
-    uint8_t x_position = 0;
 
     bool buttonPress = false;
     {
@@ -128,7 +125,7 @@ void tryImprovSetup()
                          String(mac[5], 16) + String(mac[1], 16))
               .substring(2, 10);
 
-      // wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", 600));
+      wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", DEFAULT_WP_TIMEOUT));
       wm.setWiFiAutoReconnect(false);
       wm.setDebugOutput(false);
       wm.setConfigPortalBlocking(true);
@@ -228,13 +225,13 @@ void tryImprovSetup()
 
 void syncTime()
 {
-  configTime(preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS), 0,
+  configTime(preferences.getInt("gmtOffset", DEFAULT_TIME_OFFSET_SECONDS), 0,
              NTP_SERVER);
   struct tm timeinfo;
 
   while (!getLocalTime(&timeinfo))
   {
-    configTime(preferences.getInt("gmtOffset", TIME_OFFSET_SECONDS), 0,
+    configTime(preferences.getInt("gmtOffset", DEFAULT_TIME_OFFSET_SECONDS), 0,
                NTP_SERVER);
     delay(500);
     Serial.println(F("Retry set time"));
@@ -249,8 +246,8 @@ void setupPreferences()
 
   setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
   setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
-  setBlockHeight(preferences.getUInt("blockHeight", 816000));
-  setPrice(preferences.getUInt("lastPrice", 30000));
+  setBlockHeight(preferences.getUInt("blockHeight", INITIAL_BLOCK_HEIGHT));
+  setPrice(preferences.getUInt("lastPrice", INITIAL_LAST_PRICE));
 
   screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
   screenNameMap[SCREEN_BLOCK_FEE_RATE] = "Block Fee Rate";
@@ -265,7 +262,7 @@ void setupWebsocketClients(void *pvParameters)
 {
   setupBlockNotify();
 
-  if (preferences.getBool("fetchEurPrice", false))
+  if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE))
   {
     setupPriceFetchTask();
   }
@@ -287,7 +284,7 @@ void setupTimers()
 
 void finishSetup()
 {
-  if (preferences.getBool("ledStatus", false))
+  if (preferences.getBool("ledStatus", DEFAULT_LED_STATUS))
   {
     restoreLedState();
   }
@@ -711,7 +708,7 @@ String getMyHostname()
   // WiFi.macAddress(mac);
   esp_efuse_mac_get_default(mac);
   char hostname[15];
-  String hostnamePrefix = preferences.getString("hostnamePrefix", "btclock");
+  String hostnamePrefix = preferences.getString("hostnamePrefix", DEFAULT_HOSTNAME_PREFIX);
   snprintf(hostname, sizeof(hostname), "%s-%02x%02x%02x", hostnamePrefix,
            mac[3], mac[4], mac[5]);
   return hostname;
@@ -734,16 +731,16 @@ void setupFrontlight()
 
   if (!preferences.isKey("flMaxBrightness"))
   {
-    preferences.putUInt("flMaxBrightness", 2048);
+    preferences.putUInt("flMaxBrightness", DEFAULT_FL_MAX_BRIGHTNESS);
   }
   if (!preferences.isKey("flEffectDelay"))
   {
-    preferences.putUInt("flEffectDelay", 15);
+    preferences.putUInt("flEffectDelay", DEFAULT_FL_EFFECT_DELAY);
   }
 
   if (!preferences.isKey("flFlashOnUpd"))
   {
-    preferences.putBool("flFlashOnUpd", false);
+    preferences.putBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE);
   }
 
 }
