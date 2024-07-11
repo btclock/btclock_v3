@@ -31,6 +31,9 @@ bool isBlockNotifyConnected();
 void stopBlockNotify();
 void restartBlockNotify();
 
+void processNewBlock(uint newBlockHeight);
+void processNewBlockFee(uint newBlockFee);
+
 bool getBlockNotifyInit();
 uint getLastBlockUpdate();
 int getBlockFetch();

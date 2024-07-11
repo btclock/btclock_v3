@@ -442,7 +442,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
                         settings["timePerScreen"].as<uint>() * 60);
   }
 
-  String strSettings[] = {"hostnamePrefix", "mempoolInstance"};
+  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay"};
 
   for (String setting : strSettings)
   {
@@ -477,7 +477,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr"};
 
   for (String setting : boolSettings)
   {
@@ -577,6 +577,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["mempoolInstance"] =
       preferences.getString("mempoolInstance", DEFAULT_MEMPOOL_INSTANCE);
   root["mempoolSecure"] = preferences.getBool("mempoolSecure", DEFAULT_MEMPOOL_SECURE);
+  root["useNostr"] = preferences.getBool("useNostr", DEFAULT_USE_NOSTR);
   root["ledTestOnPower"] = preferences.getBool("ledTestOnPower", DEFAULT_LED_TEST_ON_POWER);
   root["ledFlashOnUpd"] = preferences.getBool("ledFlashOnUpd", DEFAULT_LED_FLASH_ON_UPD);
   root["ledBrightness"] = preferences.getUInt("ledBrightness", DEFAULT_LED_BRIGHTNESS);
@@ -595,6 +596,9 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["ip"] = WiFi.localIP();
   root["txPower"] = WiFi.getTxPower();
   root["ownDataSource"] = preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE);
+
+  root["nostrPubKey"] = preferences.getString("nostrPubKey", DEFAULT_NOSTR_NPUB);
+  root["nostrRelay"] = preferences.getString("nostrRelay", DEFAULT_NOSTR_RELAY);
 
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;

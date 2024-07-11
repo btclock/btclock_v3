@@ -172,7 +172,25 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
       return;
     }
 
-    currentBlockHeight = block["height"].as<uint>();
+    processNewBlock(block["height"].as<uint>());
+  }
+  else if (doc.containsKey("mempool-blocks"))
+  {
+    JsonArray blockInfo = doc["mempool-blocks"].as<JsonArray>();
+
+    uint medianFee = (uint)round(blockInfo[0]["medianFee"].as<double>());
+
+    processNewBlockFee(medianFee);
+  }
+
+  doc.clear();
+}
+
+void processNewBlock(uint newBlockHeight) {
+  if (newBlockHeight < currentBlockHeight)
+    return;
+
+  currentBlockHeight = newBlockHeight;
 
     // Serial.printf("New block found: %d\r\n", block["height"].as<uint>());
     preferences.putUInt("blockHeight", currentBlockHeight);
@@ -209,30 +227,22 @@ void onWebsocketBlockMessage(esp_websocket_event_data_t *event_data)
         queueLedEffect(LED_FLASH_BLOCK_NOTIFY);
       }
     }
-  }
-  else if (doc.containsKey("mempool-blocks"))
-  {
-    JsonArray blockInfo = doc["mempool-blocks"].as<JsonArray>();
+}
 
-    uint medianFee = (uint)round(blockInfo[0]["medianFee"].as<double>());
-
-    if (blockMedianFee == medianFee)
+void processNewBlockFee(uint newBlockFee) {
+  if (blockMedianFee == newBlockFee)
     {
-      doc.clear();
       return;
     }
 
     //  Serial.printf("New median fee: %d\r\n", medianFee);
-    blockMedianFee = medianFee;
+    blockMedianFee = newBlockFee;
 
     if (workQueue != nullptr)
     {
       WorkItem blockUpdate = {TASK_FEE_UPDATE, 0};
       xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
     }
-  }
-
-  doc.clear();
 }
 
 uint getBlockHeight() { return currentBlockHeight; }

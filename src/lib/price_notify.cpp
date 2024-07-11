@@ -98,28 +98,37 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data)
   {
     if (currentPrice != doc["bitcoin"].as<long>())
     {
-      uint minSecPriceUpd = preferences.getUInt(
-          "minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
-      uint currentTime = esp_timer_get_time() / 1000000;
-
-      if (lastPriceUpdate == 0 ||
-          (currentTime - lastPriceUpdate) > minSecPriceUpd)
-      {
-        //   const unsigned long oldPrice = currentPrice;
-        currentPrice = doc["bitcoin"].as<uint>();
-        preferences.putUInt("lastPrice", currentPrice);
-        lastPriceUpdate = currentTime;
-        // if (abs((int)(oldPrice-currentPrice)) > round(0.0015*oldPrice)) {
-        if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER ||
-                                     getCurrentScreen() == SCREEN_MSCW_TIME ||
-                                     getCurrentScreen() == SCREEN_MARKET_CAP))
-        {
-          WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
-          xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
-        }
-        //}
-      }
+      processNewPrice(doc["bitcoin"].as<long>());
     }
+  }
+}
+
+void processNewPrice(uint newPrice)
+{
+  uint minSecPriceUpd = preferences.getUInt(
+      "minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
+  uint currentTime = esp_timer_get_time() / 1000000;
+
+  if (lastPriceUpdate == 0 ||
+      (currentTime - lastPriceUpdate) > minSecPriceUpd)
+  {
+    //   const unsigned long oldPrice = currentPrice;
+    currentPrice = newPrice;
+    if (lastPriceUpdate == 0 ||
+        (currentTime - lastPriceUpdate) > 120)
+    {
+      preferences.putUInt("lastPrice", currentPrice);
+    }
+    lastPriceUpdate = currentTime;
+    // if (abs((int)(oldPrice-currentPrice)) > round(0.0015*oldPrice)) {
+    if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER ||
+                                 getCurrentScreen() == SCREEN_MSCW_TIME ||
+                                 getCurrentScreen() == SCREEN_MARKET_CAP))
+    {
+      WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
+      xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
+    }
+    //}
   }
 }
 

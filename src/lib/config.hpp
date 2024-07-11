@@ -16,6 +16,8 @@
 #include "lib/improv.hpp"
 #include "lib/led_handler.hpp"
 #include "lib/ota.hpp"
+#include "lib/nostr_notify.hpp"
+
 #include "lib/price_notify.hpp"
 #include "lib/screen_handler.hpp"
 #include "lib/shared.hpp"

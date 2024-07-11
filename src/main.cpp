@@ -44,7 +44,7 @@ extern "C" void app_main()
 
     int64_t currentUptime = esp_timer_get_time() / 1000000;
     ;
-
+    
     if (!getIsOTAUpdating())
     {
 #ifdef HAS_FRONTLIGHT

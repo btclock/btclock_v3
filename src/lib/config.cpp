@@ -48,7 +48,9 @@ void setup()
       {
         delay(1000);
       }
-    } else if (mcp1.digitalRead(1) == LOW) {
+    }
+    else if (mcp1.digitalRead(1) == LOW)
+    {
       preferences.clear();
       queueLedEffect(LED_EFFECT_WIFI_ERASE_SETTINGS);
       ESP.restart();
@@ -66,8 +68,16 @@ void setup()
   setupTasks();
   setupTimers();
 
-  xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 8192, NULL,
-              tskIDLE_PRIORITY, NULL);
+  if (preferences.getBool("useNostr", DEFAULT_USE_NOSTR))
+  {
+    setupNostrNotify();
+    setupNostrTask();
+  }
+  else
+  {
+    xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 8192, NULL,
+                tskIDLE_PRIORITY, NULL);
+  }
 
   setupButtonTask();
   setupOTA();
@@ -401,14 +411,15 @@ void setupHardware()
 #ifdef HAS_FRONTLIGHT
   setupFrontlight();
 
-   Wire.beginTransmission(0x5C);
-   byte error = Wire.endTransmission();
+  Wire.beginTransmission(0x5C);
+  byte error = Wire.endTransmission();
 
-   if (error == 0) {
+  if (error == 0)
+  {
     Serial.println(F("Found BH1750"));
     hasLuxSensor = true;
     bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE, 0x5C);
-   }
+  }
 #endif
 }
 
@@ -742,14 +753,15 @@ void setupFrontlight()
   {
     preferences.putBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE);
   }
-
 }
 
-float getLightLevel() {
+float getLightLevel()
+{
   return bh1750.readLightLevel();
 }
 
-bool hasLightLevel() {
+bool hasLightLevel()
+{
   return hasLuxSensor;
 }
 #endif
@@ -784,5 +796,3 @@ String getFsRev()
   fsHash.close();
   return ret;
 }
-
-

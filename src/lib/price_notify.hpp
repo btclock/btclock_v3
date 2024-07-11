@@ -17,6 +17,8 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data);
 uint getPrice();
 void setPrice(uint newPrice);
 
+void processNewPrice(uint newPrice);
+
 bool isPriceNotifyConnected();
 void stopPriceNotify();
 void restartPriceNotify();
