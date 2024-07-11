@@ -7,8 +7,12 @@ TaskHandle_t nostrTaskHandle = NULL;
 void setupNostrNotify()
 {
     nostr::esp32::ESP32Platform::initNostr(false);
-
-    
+    time_t now;
+    time(&now);
+    struct tm* utcTimeInfo;
+    utcTimeInfo = gmtime(&now);
+    time_t utcNow = mktime(utcTimeInfo);
+    time_t timestamp60MinutesAgo = utcNow - 3600;
 
     try
     {
@@ -23,6 +27,7 @@ void setupNostrNotify()
             {{// we set the filters here (see
               // https://github.com/nostr-protocol/nips/blob/master/01.md#from-client-to-relay-sending-events-and-creating-subscriptions)
               {"kinds", {"1"}},
+              {"since", {String(timestamp60MinutesAgo)}},
               {"authors", {pubKey}}}},
             [&](const String &subId, nostr::SignedNostrEvent *event)
             {
