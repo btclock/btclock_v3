@@ -229,6 +229,7 @@ JsonDocument getStatusObject()
   JsonObject conStatus = root["connectionStatus"].to<JsonObject>();
   conStatus["price"] = isPriceNotifyConnected();
   conStatus["blocks"] = isBlockNotifyConnected();
+  conStatus["nostr"] = nostrConnected();
 
   root["rssi"] = WiFi.RSSI();
 

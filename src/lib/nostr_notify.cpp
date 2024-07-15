@@ -3,13 +3,14 @@
 std::vector<nostr::NostrPool *> pools;
 nostr::Transport *transport;
 TaskHandle_t nostrTaskHandle = NULL;
+boolean nostrIsConnected = false;
 
 void setupNostrNotify()
 {
     nostr::esp32::ESP32Platform::initNostr(false);
     time_t now;
     time(&now);
-    struct tm* utcTimeInfo;
+    struct tm *utcTimeInfo;
     utcTimeInfo = gmtime(&now);
     time_t utcNow = mktime(utcTimeInfo);
     time_t timestamp60MinutesAgo = utcNow - 3600;
@@ -98,6 +99,25 @@ void setupNostrNotify()
                 // EOSE
                 Serial.println("Subscription EOSE: " + subId);
             });
+
+        std::vector<nostr::NostrRelay *> *relays = pool->getConnectedRelays();
+        for (nostr::NostrRelay *relay : *relays)
+        {
+            Serial.println("Registering to connection events of: " + relay->getUrl());
+            relay->getConnection()->addConnectionStatusListener([&](const nostr::ConnectionStatus &status)
+                                                                { 
+                String sstatus="UNKNOWN";
+                if(status==nostr::ConnectionStatus::CONNECTED){
+                    nostrIsConnected = true;
+                    sstatus="CONNECTED";
+                }else if(status==nostr::ConnectionStatus::DISCONNECTED){
+                    nostrIsConnected = false;
+                    sstatus="DISCONNECTED";
+                }else if(status==nostr::ConnectionStatus::ERROR){
+                    sstatus = "ERROR";
+                }
+                Serial.println("Connection status changed: " + sstatus); });
+        }
     }
     catch (const std::exception &e)
     {
@@ -125,4 +145,9 @@ void nostrTask(void *pvParameters)
 void setupNostrTask()
 {
     xTaskCreate(nostrTask, "nostrTask", 16384, NULL, 10, &nostrTaskHandle);
+}
+
+boolean nostrConnected()
+{
+    return nostrIsConnected;
 }

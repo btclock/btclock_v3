@@ -15,3 +15,5 @@ void setupNostrNotify();
 
 void nostrTask(void *pvParameters);
 void setupNostrTask();
+
+boolean nostrConnected();
