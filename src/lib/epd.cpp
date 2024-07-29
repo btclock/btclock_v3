@@ -264,6 +264,10 @@ void prepareDisplayUpdateTask(void *pvParameters)
       {
         renderQr(epdIndex, epdContent[epdIndex], updatePartial);
       }
+      else if (epdContent[epdIndex].startsWith(F("mdi")))
+      {
+        renderIcon(epdIndex, epdContent[epdIndex], updatePartial);
+      }
       else if (epdContent[epdIndex].length() > 5)
       {
         renderText(epdIndex, epdContent[epdIndex], updatePartial);
@@ -511,6 +515,24 @@ void renderText(const uint dispNum, const String &text, bool partial)
       displays[dispNum].println(line.c_str());
     }
   }
+}
+
+void renderIcon(const uint dispNum, const String &text, bool partial)
+{
+  displays[dispNum].setRotation(2);
+
+  displays[dispNum].setPartialWindow(0, 0, displays[dispNum].width(),
+                                     displays[dispNum].height());
+  displays[dispNum].fillScreen(getBgColor());
+  displays[dispNum].setTextColor(getFgColor());
+
+  uint iconIndex = 0;
+  if (text.endsWith("rocket"))  {
+    iconIndex = 1;
+  }
+
+  displays[dispNum].drawInvertedBitmap(0,0, epd_icons_allArray[iconIndex], 122, 250, getFgColor());
+
 }
 
 void renderQr(const uint dispNum, const String &text, bool partial)

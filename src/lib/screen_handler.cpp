@@ -27,6 +27,18 @@ void workerTask(void *pvParameters) {
 
       // Process the work item based on its type
       switch (receivedItem.type) {
+        case TASK_BITAXE_UPDATE: {
+          if (getCurrentScreen() == SCREEN_BITAXE_HASHRATE) {
+          taskEpdContent =
+                parseBitaxeHashRate(getBitAxeHashRate());
+          } else if (getCurrentScreen() == SCREEN_BITAXE_BESTDIFF) {
+          taskEpdContent =
+                parseBitaxeBestDiff(getBitaxeBestDiff());
+          }
+          setEpdContent(taskEpdContent);
+
+        }
+        break;
         case TASK_PRICE_UPDATE: {
           uint price = getPrice();
           char priceSymbol = '$';
@@ -104,15 +116,7 @@ void taskScreenRotate(void *pvParameters) {
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    int nextScreen = (currentScreen + 1) % SCREEN_COUNT;
-    String key = "screen" + String(nextScreen) + "Visible";
-
-    while (!preferences.getBool(key.c_str(), true)) {
-      nextScreen = (nextScreen + 1) % SCREEN_COUNT;
-      key = "screen" + String(nextScreen) + "Visible";
-    }
-
-    setCurrentScreen(nextScreen);
+    nextScreen();
   }
 }
 
@@ -124,6 +128,11 @@ void IRAM_ATTR minuteTimerISR(void *arg) {
   if (priceFetchTaskHandle != NULL) {
     vTaskNotifyGiveFromISR(priceFetchTaskHandle, &xHigherPriorityTaskWoken);
   }
+
+  if (bitaxeFetchTaskHandle != NULL) {
+    vTaskNotifyGiveFromISR(bitaxeFetchTaskHandle, &xHigherPriorityTaskWoken);
+  }
+
   if (xHigherPriorityTaskWoken == pdTRUE) {
     portYIELD_FROM_ISR();
   }
@@ -245,28 +254,72 @@ void setCurrentScreen(uint newScreen) {
       xQueueSend(workQueue, &blockUpdate, portMAX_DELAY);
       break;
     }
+    case SCREEN_BITAXE_BESTDIFF:
+    case SCREEN_BITAXE_HASHRATE: {
+      if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED)) {
+        WorkItem bitaxeUpdate = {TASK_BITAXE_UPDATE, 0};
+        xQueueSend(workQueue, &bitaxeUpdate, portMAX_DELAY);
+      } else {
+        setCurrentScreen(SCREEN_BLOCK_HEIGHT);
+        return;
+      }
+      break;
+    }
   }
 
   if (eventSourceTaskHandle != NULL) xTaskNotifyGive(eventSourceTaskHandle);
 }
 
 void nextScreen() {
-  int newCurrentScreen = (getCurrentScreen() + 1) % SCREEN_COUNT;
-  String key = "screen" + String(newCurrentScreen) + "Visible";
+  int currentIndex = findScreenIndexByValue(getCurrentScreen());
+  std::vector<ScreenMapping> screenMappings = getScreenNameMap();
+
+  int newCurrentScreen;
+
+  if (currentIndex < screenMappings.size() - 1) {
+    newCurrentScreen = (screenMappings[currentIndex + 1].value);
+  } else {
+    newCurrentScreen = screenMappings.front().value;
+  }
+
+  String key = "screen" + String(screenMappings[currentIndex - 1].value) + "Visible";
 
   while (!preferences.getBool(key.c_str(), true)) {
-    newCurrentScreen = (newCurrentScreen + 1) % SCREEN_COUNT;
+    currentIndex = findScreenIndexByValue(newCurrentScreen);
+    if (currentIndex < screenMappings.size() - 1) {
+      newCurrentScreen = (screenMappings[currentIndex + 1].value);
+    } else {
+      newCurrentScreen = screenMappings.front().value;
+    }
+
     key = "screen" + String(newCurrentScreen) + "Visible";
   }
+
   setCurrentScreen(newCurrentScreen);
 }
 
 void previousScreen() {
-  int newCurrentScreen = modulo(getCurrentScreen() - 1, SCREEN_COUNT);
+  int currentIndex = findScreenIndexByValue(getCurrentScreen());
+  std::vector<ScreenMapping> screenMappings = getScreenNameMap();
+
+  int newCurrentScreen;
+
+  if (currentIndex > 0) {
+    newCurrentScreen = screenMappings[currentIndex - 1].value;
+  } else {
+    newCurrentScreen = screenMappings.back().value;
+  }
+
   String key = "screen" + String(newCurrentScreen) + "Visible";
 
   while (!preferences.getBool(key.c_str(), true)) {
-    newCurrentScreen = modulo(newCurrentScreen - 1, SCREEN_COUNT);
+    int currentIndex = findScreenIndexByValue(newCurrentScreen);
+    if (currentIndex > 0) {
+      newCurrentScreen = screenMappings[currentIndex - 1].value;
+    } else {
+      newCurrentScreen = screenMappings.back().value;
+    }
+
     key = "screen" + String(newCurrentScreen) + "Visible";
   }
   setCurrentScreen(newCurrentScreen);

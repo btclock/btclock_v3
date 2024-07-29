@@ -443,7 +443,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
                         settings["timePerScreen"].as<uint>() * 60);
   }
 
-  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay"};
+  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay", "bitaxeHostname"};
 
   for (String setting : strSettings)
   {
@@ -478,7 +478,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled"};
 
   for (String setting : boolSettings)
   {
@@ -601,6 +601,9 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["nostrPubKey"] = preferences.getString("nostrPubKey", DEFAULT_NOSTR_NPUB);
   root["nostrRelay"] = preferences.getString("nostrRelay", DEFAULT_NOSTR_RELAY);
 
+  root["bitaxeEnabled"] = preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED);
+  root["bitaxeHostname"] = preferences.getString("bitaxeHostname", DEFAULT_BITAXE_HOSTNAME);
+
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;
   root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", DEFAULT_FL_MAX_BRIGHTNESS);
@@ -629,14 +632,14 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 #endif
   JsonArray screens = root["screens"].to<JsonArray>();
 
-  std::vector<std::string> screenNameMap = getScreenNameMap();
+  std::vector<ScreenMapping> screenNameMap = getScreenNameMap();
 
   for (int i = 0; i < screenNameMap.size(); i++)
   {
     JsonObject o = screens.add<JsonObject>();
-    String key = "screen" + String(i) + "Visible";
-    o["id"] = i;
-    o["name"] = screenNameMap[i];
+    String key = "screen" + String(screenNameMap.at(i).value) + "Visible";
+    o["id"] = screenNameMap.at(i).value;
+    o["name"] = screenNameMap.at(i).name;
     o["enabled"] = preferences.getBool(key.c_str(), true);
   }
 

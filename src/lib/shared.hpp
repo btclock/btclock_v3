@@ -35,6 +35,8 @@ const PROGMEM int SCREEN_TIME = 3;
 const PROGMEM int SCREEN_HALVING_COUNTDOWN = 4;
 const PROGMEM int SCREEN_MARKET_CAP = 5;
 const PROGMEM int SCREEN_BLOCK_FEE_RATE = 6;
+const PROGMEM int SCREEN_BITAXE_HASHRATE = 80;
+const PROGMEM int SCREEN_BITAXE_BESTDIFF = 81;
 
 const PROGMEM int SCREEN_COUNTDOWN = 98;
 const PROGMEM int SCREEN_CUSTOM = 99;
@@ -58,4 +60,9 @@ struct SpiRamAllocator : ArduinoJson::Allocator {
   void* reallocate(void* ptr, size_t new_size) override {
     return heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM);
   }
+};
+
+struct ScreenMapping {
+    int value;
+    const char* name;
 };

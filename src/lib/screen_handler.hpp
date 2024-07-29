@@ -5,6 +5,7 @@
 #include <freertos/task.h>
 
 #include <data_handler.hpp>
+#include <bitaxe_handler.hpp>
 
 #include "lib/epd.hpp"
 #include "lib/price_fetch.hpp"
@@ -25,7 +26,8 @@ typedef enum {
   TASK_PRICE_UPDATE,
   TASK_BLOCK_UPDATE,
   TASK_FEE_UPDATE,
-  TASK_TIME_UPDATE
+  TASK_TIME_UPDATE,
+  TASK_BITAXE_UPDATE
 } TaskType;
 
 typedef struct {

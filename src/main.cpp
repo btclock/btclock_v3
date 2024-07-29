@@ -48,24 +48,25 @@ extern "C" void app_main()
     if (!getIsOTAUpdating())
     {
 #ifdef HAS_FRONTLIGHT
-      if (preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE) != 0)
-      {
-        if (hasLightLevel() && getLightLevel() == 0)
+      if (hasLightLevel()) {
+        if (preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE) != 0)
         {
-          if (frontlightIsOn()) {
+          if (hasLightLevel() && getLightLevel() == 0)
+          {
+            if (frontlightIsOn()) {
+              frontlightFadeOutAll();
+            }
+          }
+          else if (hasLightLevel() && getLightLevel() < preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE) && !frontlightIsOn())
+          {
+            frontlightFadeInAll();
+          }
+          else if (frontlightIsOn() && getLightLevel() > preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE))
+          {
             frontlightFadeOutAll();
           }
         }
-        else if (hasLightLevel() && getLightLevel() < preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE) && !frontlightIsOn())
-        {
-          frontlightFadeInAll();
-        }
-        else if (frontlightIsOn() && getLightLevel() > preferences.getUInt("luxLightToggle", DEFAULT_LUX_LIGHT_TOGGLE))
-        {
-          frontlightFadeOutAll();
-        }
       }
-
 #endif
 
       if (!WiFi.isConnected())

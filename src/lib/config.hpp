@@ -17,6 +17,7 @@
 #include "lib/led_handler.hpp"
 #include "lib/ota.hpp"
 #include "lib/nostr_notify.hpp"
+#include "lib/bitaxe_fetch.hpp"
 
 #include "lib/price_notify.hpp"
 #include "lib/screen_handler.hpp"
@@ -53,7 +54,7 @@ extern PCA9685 flArray;
 #endif
 
 String getMyHostname();
-std::vector<std::string> getScreenNameMap();
+std::vector<ScreenMapping> getScreenNameMap();
 
 std::vector<std::string> getLocalUrl();
 bool improv_connectWifi(std::string ssid, std::string password);
@@ -68,3 +69,6 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 String getHwRev();
 bool isWhiteVersion();
 String getFsRev();
+
+void addScreenMapping(int value, const char* name);
+int findScreenIndexByValue(int value);

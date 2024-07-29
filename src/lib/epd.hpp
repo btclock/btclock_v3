@@ -12,6 +12,7 @@
 #include "fonts/fonts.hpp"
 #include "lib/config.hpp"
 #include "lib/shared.hpp"
+#include "icons/icons.h"
 
 #ifdef USE_QR
 #include "qrcodegen.h"
@@ -42,6 +43,7 @@ int getFgColor();
 void setBgColor(int color);
 void setFgColor(int color);
 
+void renderIcon(const uint dispNum, const String &text, bool partial);
 void renderText(const uint dispNum, const String &text, bool partial);
 void renderQr(const uint dispNum, const String &text, bool partial);
 

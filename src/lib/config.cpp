@@ -14,9 +14,13 @@ BH1750 bh1750;
 bool hasLuxSensor = false;
 #endif
 
-std::vector<std::string> screenNameMap(SCREEN_COUNT);
+std::vector<ScreenMapping> screenMappings;
 std::mutex mcpMutex;
 uint lastTimeSync;
+
+void addScreenMapping(int value, const char* name) {
+    screenMappings.push_back({value, name});
+}
 
 void setup()
 {
@@ -250,6 +254,7 @@ void syncTime()
   lastTimeSync = esp_timer_get_time() / 1000000;
 }
 
+
 void setupPreferences()
 {
   preferences.begin("btclock", false);
@@ -259,13 +264,26 @@ void setupPreferences()
   setBlockHeight(preferences.getUInt("blockHeight", INITIAL_BLOCK_HEIGHT));
   setPrice(preferences.getUInt("lastPrice", INITIAL_LAST_PRICE));
 
-  screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
-  screenNameMap[SCREEN_BLOCK_FEE_RATE] = "Block Fee Rate";
-  screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
-  screenNameMap[SCREEN_BTC_TICKER] = "Ticker";
-  screenNameMap[SCREEN_TIME] = "Time";
-  screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
-  screenNameMap[SCREEN_MARKET_CAP] = "Market Cap";
+  addScreenMapping(SCREEN_BLOCK_HEIGHT, "Block Height");
+  addScreenMapping(SCREEN_MSCW_TIME, "Sats per dollar");
+  addScreenMapping(SCREEN_BTC_TICKER, "Ticker");
+  addScreenMapping(SCREEN_TIME, "Time");
+  addScreenMapping(SCREEN_HALVING_COUNTDOWN, "Halving countdown");
+  addScreenMapping(SCREEN_MARKET_CAP, "Market Cap");
+  addScreenMapping(SCREEN_BLOCK_FEE_RATE, "Block Fee Rate");
+
+  // screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
+  // screenNameMap[SCREEN_BLOCK_FEE_RATE] = "Block Fee Rate";
+  // screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
+  // screenNameMap[SCREEN_BTC_TICKER] = "Ticker";
+  // screenNameMap[SCREEN_TIME] = "Time";
+  // screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
+  // screenNameMap[SCREEN_MARKET_CAP] = "Market Cap";
+
+  if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED)) {
+      addScreenMapping(SCREEN_BITAXE_HASHRATE, "BitAxe Hashrate");
+      addScreenMapping(SCREEN_BITAXE_BESTDIFF, "BitAxe Best Difficulty");
+  }
 }
 
 void setupWebsocketClients(void *pvParameters)
@@ -279,6 +297,11 @@ void setupWebsocketClients(void *pvParameters)
   else
   {
     setupPriceNotify();
+  }
+
+  if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED)) 
+  {
+    setupBitaxeFetchTask();
   }
 
   vTaskDelete(NULL);
@@ -304,7 +327,7 @@ void finishSetup()
   }
 }
 
-std::vector<std::string> getScreenNameMap() { return screenNameMap; }
+std::vector<ScreenMapping> getScreenNameMap() { return screenMappings; }
 
 void setupMcp()
 {
@@ -419,6 +442,9 @@ void setupHardware()
     Serial.println(F("Found BH1750"));
     hasLuxSensor = true;
     bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE, 0x5C);
+  } else {
+    Serial.println(F("BH1750 Not found"));
+    hasLuxSensor = false;
   }
 #endif
 }
@@ -795,4 +821,13 @@ String getFsRev()
   String ret = fsHash.readString();
   fsHash.close();
   return ret;
+}
+
+int findScreenIndexByValue(int value) {
+    for (int i = 0; i < screenMappings.size(); i++) {
+        if (screenMappings[i].value == value) {
+            return i;
+        }
+    }
+    return -1;  // Return -1 if value is not found
 }
