@@ -41,7 +41,7 @@ void workerTask(void *pvParameters) {
         break;
         case TASK_PRICE_UPDATE: {
           uint price = getPrice();
-          char priceSymbol = '$';
+          u_char priceSymbol = '$';
           if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE)) {
             priceSymbol = '[';
           }
