@@ -49,3 +49,4 @@ std::array<std::string, NUM_SCREENS> parseBitaxeBestDiff(std::string text)
 
     return ret;
 }
+

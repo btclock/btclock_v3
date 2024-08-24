@@ -83,3 +83,55 @@ std::string formatNumberWithSuffix(std::uint64_t num, int numCharacters)
 
     return result;
 }
+
+/**
+ * Get sat amount from a bolt11 invoice 
+ * 
+ * Based on https://github.com/lnbits/nostr-zap-lamp/blob/main/nostrZapLamp/nostrZapLamp.ino
+ */
+int64_t getAmountInSatoshis(std::string bolt11) {
+    int64_t number = -1;
+    char multiplier = ' ';
+
+    for (unsigned int i = 0; i < bolt11.length(); ++i) {
+        if (isdigit(bolt11[i])) {
+            number = 0;
+            while (isdigit(bolt11[i])) {
+                number = number * 10 + (bolt11[i] - '0');
+                ++i;
+            }
+            for (unsigned int j = i; j < bolt11.length(); ++j) {
+                if (isalpha(bolt11[j])) {
+                    multiplier = bolt11[j];
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    if (number == -1 || multiplier == ' ') {
+        return -1;
+    }
+
+    int64_t satoshis = number;
+
+    switch (multiplier) {
+        case 'm':
+            satoshis *= 100000; // 0.001 * 100,000,000
+            break;
+        case 'u':
+            satoshis *= 100; // 0.000001 * 100,000,000
+            break;
+        case 'n':
+            satoshis /= 10; // 0.000000001 * 100,000,000
+            break;
+        case 'p':
+            satoshis /= 10000; // 0.000000000001 * 100,000,000
+            break;
+        default:
+            return -1;
+    }
+
+    return satoshis;
+}

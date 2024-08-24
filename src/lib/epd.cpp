@@ -531,6 +531,10 @@ void renderIcon(const uint dispNum, const String &text, bool partial)
     iconIndex = 1;
   }
 
+  if (text.endsWith("lnbolt"))  {
+    iconIndex = 2;
+  }
+
   displays[dispNum].drawInvertedBitmap(0,0, epd_icons_allArray[iconIndex], 122, 250, getFgColor());
 
 }

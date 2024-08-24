@@ -221,9 +221,9 @@ void ledTask(void *parameter)
         {
           oldLights[i] = pixels.getPixelColor(i);
         }
-        #ifdef HAS_FRONTLIGHT
+#ifdef HAS_FRONTLIGHT
         uint flDelayTime = preferences.getUInt("flEffectDelay");
-        #endif
+#endif
         switch (ledTaskParams)
         {
         case LED_POWER_TEST:
@@ -269,6 +269,43 @@ void ledTask(void *parameter)
           pixels.setPixelColor(3, pixels.Color(0, 255, 0));
           pixels.show();
           break;
+        case LED_EFFECT_NOSTR_ZAP:
+        {
+#ifdef HAS_FRONTLIGHT
+          bool frontlightWasOn = false;
+
+          if (preferences.getBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE))
+          {
+            if (frontlightOn)
+            {
+              frontlightWasOn = true;
+              frontlightFadeOutAll(flDelayTime, true);
+            }
+            else
+            {
+              frontlightFadeInAll(flDelayTime, true);
+            }
+          }
+#endif
+          blinkDelayColor(250, 3, 142, 48, 235);
+       //   blinkDelayTwoColor(250, 3, pixels.Color(142, 48, 235),
+         //                    pixels.Color(169, 21, 255));
+#ifdef HAS_FRONTLIGHT
+          if (preferences.getBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE))
+          {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            if (frontlightWasOn)
+            {
+              frontlightFadeInAll(flDelayTime, true);
+            }
+            else
+            {
+              frontlightFadeOutAll(flDelayTime, true);
+            }
+          }
+#endif
+          break;
+        }
         case LED_FLASH_UPDATE:
           break;
         case LED_FLASH_BLOCK_NOTIFY:

@@ -443,7 +443,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
                         settings["timePerScreen"].as<uint>() * 60);
   }
 
-  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay", "bitaxeHostname"};
+  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay", "bitaxeHostname", "nostrZapPubkey"};
 
   for (String setting : strSettings)
   {
@@ -478,7 +478,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled", "nostrZapNotify"};
 
   for (String setting : boolSettings)
   {
@@ -600,6 +600,9 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 
   root["nostrPubKey"] = preferences.getString("nostrPubKey", DEFAULT_NOSTR_NPUB);
   root["nostrRelay"] = preferences.getString("nostrRelay", DEFAULT_NOSTR_RELAY);
+
+  root["nostrZapNotify"] = preferences.getBool("nostrZapNotify", DEFAULT_ZAP_NOTIFY_ENABLED);
+  root["nostrZapPubkey"] = preferences.getString("nostrZapPubkey", DEFAULT_ZAP_NOTIFY_PUBKEY);
 
   root["bitaxeEnabled"] = preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED);
   root["bitaxeHostname"] = preferences.getString("bitaxeHostname", DEFAULT_BITAXE_HOSTNAME);

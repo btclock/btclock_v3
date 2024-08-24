@@ -16,3 +16,4 @@ void nostrTask(void *pvParameters);
 void setupNostrTask();
 
 boolean nostrConnected();
+void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *event);

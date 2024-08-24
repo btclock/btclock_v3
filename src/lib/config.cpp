@@ -72,12 +72,13 @@ void setup()
   setupTasks();
   setupTimers();
 
-  if (preferences.getBool("useNostr", DEFAULT_USE_NOSTR))
+  if (preferences.getBool("useNostr", DEFAULT_USE_NOSTR) || preferences.getBool("nostrZapNotify", DEFAULT_ZAP_NOTIFY_ENABLED))
   {
     setupNostrNotify();
     setupNostrTask();
   }
-  else
+  
+  if (!preferences.getBool("useNostr", DEFAULT_USE_NOSTR))
   {
     xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 8192, NULL,
                 tskIDLE_PRIORITY, NULL);
