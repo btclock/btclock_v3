@@ -18,8 +18,9 @@ std::vector<ScreenMapping> screenMappings;
 std::mutex mcpMutex;
 uint lastTimeSync;
 
-void addScreenMapping(int value, const char* name) {
-    screenMappings.push_back({value, name});
+void addScreenMapping(int value, const char *name)
+{
+  screenMappings.push_back({value, name});
 }
 
 void setup()
@@ -74,14 +75,19 @@ void setup()
 
   if (preferences.getBool("useNostr", DEFAULT_USE_NOSTR) || preferences.getBool("nostrZapNotify", DEFAULT_ZAP_NOTIFY_ENABLED))
   {
-    setupNostrNotify();
+    setupNostrNotify(preferences.getBool("useNostr", DEFAULT_USE_NOSTR), preferences.getBool("nostrZapNotify", DEFAULT_ZAP_NOTIFY_ENABLED));
     setupNostrTask();
   }
-  
+
   if (!preferences.getBool("useNostr", DEFAULT_USE_NOSTR))
   {
     xTaskCreate(setupWebsocketClients, "setupWebsocketClients", 8192, NULL,
                 tskIDLE_PRIORITY, NULL);
+  }
+
+  if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED))
+  {
+    setupBitaxeFetchTask();
   }
 
   setupButtonTask();
@@ -255,7 +261,6 @@ void syncTime()
   lastTimeSync = esp_timer_get_time() / 1000000;
 }
 
-
 void setupPreferences()
 {
   preferences.begin("btclock", false);
@@ -281,9 +286,10 @@ void setupPreferences()
   // screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
   // screenNameMap[SCREEN_MARKET_CAP] = "Market Cap";
 
-  if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED)) {
-      addScreenMapping(SCREEN_BITAXE_HASHRATE, "BitAxe Hashrate");
-      addScreenMapping(SCREEN_BITAXE_BESTDIFF, "BitAxe Best Difficulty");
+  if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED))
+  {
+    addScreenMapping(SCREEN_BITAXE_HASHRATE, "BitAxe Hashrate");
+    addScreenMapping(SCREEN_BITAXE_BESTDIFF, "BitAxe Best Difficulty");
   }
 }
 
@@ -298,11 +304,6 @@ void setupWebsocketClients(void *pvParameters)
   else
   {
     setupPriceNotify();
-  }
-
-  if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED)) 
-  {
-    setupBitaxeFetchTask();
   }
 
   vTaskDelete(NULL);
@@ -443,13 +444,17 @@ void setupHardware()
     Serial.println(F("Found BH1750"));
     hasLuxSensor = true;
     bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE, 0x5C);
-  } else {
+  }
+  else
+  {
     Serial.println(F("BH1750 Not found"));
     hasLuxSensor = false;
   }
 #endif
 }
 
+
+#ifdef IMPROV_ENABLED
 void improvGetAvailableWifiNetworks()
 {
   int networkNum = WiFi.scanNetworks();
@@ -658,6 +663,8 @@ void improv_set_error(improv::Error error)
   Serial.write(data.data(), data.size());
 }
 
+#endif
+
 void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 {
   static bool first_connect = true;
@@ -824,11 +831,14 @@ String getFsRev()
   return ret;
 }
 
-int findScreenIndexByValue(int value) {
-    for (int i = 0; i < screenMappings.size(); i++) {
-        if (screenMappings[i].value == value) {
-            return i;
-        }
+int findScreenIndexByValue(int value)
+{
+  for (int i = 0; i < screenMappings.size(); i++)
+  {
+    if (screenMappings[i].value == value)
+    {
+      return i;
     }
-    return -1;  // Return -1 if value is not found
+  }
+  return -1; // Return -1 if value is not found
 }

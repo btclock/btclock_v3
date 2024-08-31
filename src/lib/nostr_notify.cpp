@@ -5,7 +5,7 @@ nostr::Transport *transport;
 TaskHandle_t nostrTaskHandle = NULL;
 boolean nostrIsConnected = false;
 
-void setupNostrNotify()
+void setupNostrNotify(bool asDatasource, bool zapNotify)
 {
     nostr::esp32::ESP32Platform::initNostr(false);
     time_t now;
@@ -23,49 +23,47 @@ void setupNostrNotify()
         String pubKey = preferences.getString("nostrPubKey");
         pools.push_back(pool);
 
-        // JsonArray filter = {
-        //       {"kinds", {"1"}},
-        //       {"since", {String(timestamp60MinutesAgo)}},
-        //       {"authors", {pubKey}},
-        //       };
+        std::vector<std::map<NostrString, std::initializer_list<NostrString>>> filters;
 
-        //                 { "kinds", {"9735"}, {"limit",{"1"},
-        //  {"#p", {"b5127a08cf33616274800a4387881a9f98e04b9c37116e92de5250498635c422"} },
+        if (zapNotify)
+        {
+            String subIdZap = pool->subscribeMany(
+                {relay},
+                {
+                    {
+                        {"kinds", {"9735"}},
+                        {"limit", {"1"}},
+                        {"since", {String(timestamp60MinutesAgo)}},
+                        {"#p", {preferences.getString("nostrZapPubkey", DEFAULT_ZAP_NOTIFY_PUBKEY)}},
+                    },
+                },
+                handleNostrZapCallback,
+                onNostrSubscriptionClosed,
+                onNostrSubscriptionEose);
+            Serial.println("[ Nostr ] Subscribing to Zap Notifications");
+        }
 
-        // Lets subscribe to the relay
-        String subId = pool->subscribeMany(
-            {relay},
-            {// First filter
-             {
-                 {"kinds", {"9735"}},
-                 {"limit", {"1"}},
-                 {"since", {String(timestamp60MinutesAgo)}},
-                 {"#p", {preferences.getString("nostrZapPubkey", DEFAULT_ZAP_NOTIFY_PUBKEY)}},
-             },
-             // Second filter
-             {
-                 {"kinds", {"1"}},
-                 {"since", {String(timestamp60MinutesAgo)}},
-                 {"authors", {pubKey}},
-             }},
-            handleNostrEventCallback,
-            [&](const String &subId, const String &reason)
-            {
-                // This is the callback that will be called when the subscription is
-                // closed
-                Serial.println("Subscription closed: " + reason);
-            },
-            [&](const String &subId)
-            {
-                // This is the callback that will be called when the subscription is
-                // EOSE
-                Serial.println("Subscription EOSE: " + subId);
-            });
+        if (asDatasource)
+        {
+            String subId = pool->subscribeMany(
+                {relay},
+                {// First filter
+                 {
+                     {"kinds", {"1"}},
+                     {"since", {String(timestamp60MinutesAgo)}},
+                     {"authors", {pubKey}},
+                 }},
+                handleNostrEventCallback,
+                onNostrSubscriptionClosed,
+                onNostrSubscriptionEose);
+
+            Serial.println("[ Nostr ] Subscribing to Nostr Data Feed");
+        }
 
         std::vector<nostr::NostrRelay *> *relays = pool->getConnectedRelays();
         for (nostr::NostrRelay *relay : *relays)
         {
-            Serial.println("Registering to connection events of: " + relay->getUrl());
+            Serial.println("[ Nostr ] Registering to connection events of: " + relay->getUrl());
             relay->getConnection()->addConnectionStatusListener([&](const nostr::ConnectionStatus &status)
                                                                 { 
                 String sstatus="UNKNOWN";
@@ -78,12 +76,12 @@ void setupNostrNotify()
                 }else if(status==nostr::ConnectionStatus::ERROR){
                     sstatus = "ERROR";
                 }
-                Serial.println("Connection status changed: " + sstatus); });
+                Serial.println("[ Nostr ] Connection status changed: " + sstatus); });
         }
     }
     catch (const std::exception &e)
     {
-        Serial.println("Error: " + String(e.what()));
+        Serial.println("[ Nostr ] Error: " + String(e.what()));
     }
 }
 
@@ -114,6 +112,20 @@ boolean nostrConnected()
     return nostrIsConnected;
 }
 
+void onNostrSubscriptionClosed(const String &subId, const String &reason)
+{
+    // This is the callback that will be called when the subscription is
+    // closed
+    Serial.println("[ Nostr ] Subscription closed: " + reason);
+}
+
+void onNostrSubscriptionEose(const String &subId)
+{
+    // This is the callback that will be called when the subscription is
+    // EOSE
+    Serial.println("[ Nostr ] Subscription EOSE: " + subId);
+}
+
 void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *event)
 {
     // Received events callback, we can access the event content with
@@ -124,11 +136,6 @@ void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *even
     event->toSendableEvent(arr);
     // Access the second element which is the object
     JsonObject obj = arr[1].as<JsonObject>();
-    String json;
-
-    // Serial.println(obj["kind"].as<String>());
-
-    // Access the "tags" array
     JsonArray tags = obj["tags"].as<JsonArray>();
 
     // Flag to check if the tag was found
@@ -155,31 +162,53 @@ void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *even
             {
                 medianFee = tag[1].as<uint>();
             }
+        }
+    }
+    if (tagFound)
+    {
+        if (typeValue.equals("priceUsd"))
+        {
+            processNewPrice(obj["content"].as<uint>());
+        }
+        else if (typeValue.equals("blockHeight"))
+        {
+            processNewBlock(obj["content"].as<uint>());
+        }
+
+        if (medianFee != 0)
+        {
+            processNewBlockFee(medianFee);
+        }
+    }
+}
+
+void handleNostrZapCallback(const String &subId, nostr::SignedNostrEvent *event) {
+    // Received events callback, we can access the event content with
+    // event->getContent() Here you should handle the event, for this
+    // test we will just serialize it and print to console
+    JsonDocument doc;
+    JsonArray arr = doc["data"].to<JsonArray>();
+    event->toSendableEvent(arr);
+    // Access the second element which is the object
+    JsonObject obj = arr[1].as<JsonObject>();
+    JsonArray tags = obj["tags"].as<JsonArray>();
+
+    // Iterate over the tags array
+    for (JsonArray tag : tags)
+    {
+        // Check if the tag is an array with two elements
+        if (tag.size() == 2)
+        {
+            const char *key = tag[0];
+            const char *value = tag[1];
 
             if (strcmp(key, "bolt11") == 0)
             {
+                Serial.println(F("Got a zap"));
+                
+                int64_t satsAmount = getAmountInSatoshis(std::string(value));
 
-                String text = String(getAmountInSatoshis(std::string(value)));
-
-                std::size_t textLength = text.length();
-
-                // Calculate the position where the digits should start
-                // Account for the position of the "mdi:pickaxe" and the "GH/S" label
-                std::size_t startIndex = NUM_SCREENS - textLength;
-
-                std::array<String, NUM_SCREENS> textEpdContent = {"ZAP", "mdi-lnbolt", "", "", "", "", ""};
-
-                // Insert the "mdi:pickaxe" icon just before the digits
-                if (startIndex > 0 && preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL))
-                {
-                    textEpdContent[startIndex - 1] = "STS";
-                }
-
-                // Place the digits
-                for (std::size_t i = 0; i < textLength; i++)
-                {
-                    textEpdContent[startIndex + i] = text.substring(i, i + 1);
-                }
+                std::array<std::string, NUM_SCREENS> textEpdContent = parseZapNotify(satsAmount, preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL));
 
                 uint64_t timerPeriod = 0;
                 if (isTimerActive())
@@ -199,22 +228,6 @@ void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *even
                                              timerPeriod * usPerSecond);
                 }
             }
-        }
-    }
-    if (tagFound)
-    {
-        if (typeValue.equals("priceUsd"))
-        {
-            processNewPrice(obj["content"].as<uint>());
-        }
-        else if (typeValue.equals("blockHeight"))
-        {
-            processNewBlock(obj["content"].as<uint>());
-        }
-
-        if (medianFee != 0)
-        {
-            processNewBlockFee(medianFee);
         }
     }
 }
