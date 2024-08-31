@@ -252,7 +252,7 @@ void prepareDisplayUpdateTask(void *pvParameters)
 
       bool updatePartial = true;
 
-      if (strstr(epdContent[epdIndex].c_str(), "/") != NULL)
+      if (epdContent[epdIndex].length() > 1 && strstr(epdContent[epdIndex].c_str(), "/") != NULL)
       {
         String top = epdContent[epdIndex].substring(
             0, epdContent[epdIndex].indexOf("/"));

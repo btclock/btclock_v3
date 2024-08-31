@@ -7,10 +7,9 @@
 
 const char CURRENCY_USD = '$';
 const char CURRENCY_EUR = '[';
-const char CURRENCY_GBP = '\\';
-const char CURRENCY_JPY = ']';
-const char CURRENCY_AUD = '^';
-const char CURRENCY_CHF = '_';
+const char CURRENCY_GBP = ']';
+const char CURRENCY_JPY = '^';
+const char CURRENCY_AUD = '_';
 const char CURRENCY_CAD = '`';
 
 std::array<std::string, NUM_SCREENS> parsePriceData(std::uint32_t price, char currency, bool useSuffixFormat = false);

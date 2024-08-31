@@ -12,10 +12,10 @@ char getCurrencySymbol(char input)
         return '[';
         break;
     case CURRENCY_GBP:
-        return '\\';
+        return ']';
         break;
     case CURRENCY_JPY:
-        return ']';
+        return '^';
         break;
     case CURRENCY_AUD:
     case CURRENCY_CAD:
@@ -42,9 +42,6 @@ std::string getCurrencyCode(char input)
         break;
     case CURRENCY_AUD:
         return "AUD";
-        break;
-    case CURRENCY_CHF:
-        return "CHF";
         break;
     case CURRENCY_CAD:
         return "CAD";

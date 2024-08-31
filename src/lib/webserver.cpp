@@ -455,7 +455,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
     }
   }
 
-  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay", "luxLightToggle", "wpTimeout"};
+  String uintSettings[] = {"minSecPriceUpd", "fullRefreshMin", "ledBrightness", "flMaxBrightness", "flEffectDelay", "luxLightToggle", "wpTimeout", "srcV2Currency"};
 
   for (String setting : uintSettings)
   {
@@ -478,7 +478,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled", "nostrZapNotify"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled", "nostrZapNotify", "stagingSource"};
 
   for (String setting : boolSettings)
   {
@@ -597,6 +597,8 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["ip"] = WiFi.localIP();
   root["txPower"] = WiFi.getTxPower();
   root["ownDataSource"] = preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE);
+  root["stagingSource"] = preferences.getBool("stagingSource", DEFAULT_STAGING_SOURCE);
+  root["srcV2Currency"] = preferences.getChar("srcV2Currency", DEFAULT_V2_SOURCE_CURRENCY);
 
   root["nostrPubKey"] = preferences.getString("nostrPubKey", DEFAULT_NOSTR_NPUB);
   root["nostrRelay"] = preferences.getString("nostrRelay", DEFAULT_NOSTR_RELAY);
