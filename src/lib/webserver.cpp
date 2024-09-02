@@ -37,6 +37,9 @@ void setupWebserver()
   server.on("/api/show/screen", HTTP_GET, onApiShowScreen);
   server.on("/api/show/text", HTTP_GET, onApiShowText);
 
+  server.on("/api/screen/next", HTTP_GET, onApiScreenNext);
+  server.on("/api/screen/previous", HTTP_GET, onApiScreenPrevious);
+
   AsyncCallbackJsonWebHandler *settingsPatchHandler =
       new AsyncCallbackJsonWebHandler("/api/json/settings", onApiSettingsPatch);
   server.addHandler(settingsPatchHandler);
@@ -373,6 +376,27 @@ void onApiShowScreen(AsyncWebServerRequest *request)
   request->send(200);
 }
 
+/**
+ * @Api
+ * @Path("/api/screen/next")
+ */
+void onApiScreenNext(AsyncWebServerRequest *request)
+{
+  nextScreen();
+  request->send(200);
+}
+
+/**
+ * @Api
+ * @Path("/api/screen/previous")
+ */
+void onApiScreenPrevious(AsyncWebServerRequest *request)
+{
+  previousScreen();
+
+  request->send(200);
+}
+
 void onApiShowText(AsyncWebServerRequest *request)
 {
   if (request->hasParam("t"))
@@ -478,7 +502,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled", "nostrZapNotify", "stagingSource"};
+                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flDisable", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled", "nostrZapNotify", "stagingSource"};
 
   for (String setting : boolSettings)
   {
@@ -611,6 +635,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;
+  root["flDisable"] = preferences.getBool("flDisable", DEFAULT_DISABLE_FL);
   root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", DEFAULT_FL_MAX_BRIGHTNESS);
   root["flAlwaysOn"] = preferences.getBool("flAlwaysOn", DEFAULT_FL_ALWAYS_ON);
   root["flEffectDelay"] = preferences.getUInt("flEffectDelay", DEFAULT_FL_EFFECT_DELAY);

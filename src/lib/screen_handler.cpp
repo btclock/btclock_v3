@@ -282,7 +282,7 @@ void nextScreen() {
     newCurrentScreen = screenMappings.front().value;
   }
 
-  String key = "screen" + String(screenMappings[currentIndex - 1].value) + "Visible";
+  String key = "screen" + String(newCurrentScreen) + "Visible";
 
   while (!preferences.getBool(key.c_str(), true)) {
     currentIndex = findScreenIndexByValue(newCurrentScreen);
@@ -294,7 +294,7 @@ void nextScreen() {
 
     key = "screen" + String(newCurrentScreen) + "Visible";
   }
-
+  
   setCurrentScreen(newCurrentScreen);
 }
 
@@ -326,8 +326,9 @@ void previousScreen() {
 }
 
 void showSystemStatusScreen() {
-  std::array<String, NUM_SCREENS> sysStatusEpdContent = {"", "", "", "",
-                                                         "", "", ""};
+  std::array<String, NUM_SCREENS> sysStatusEpdContent;
+  std::fill(sysStatusEpdContent.begin(), sysStatusEpdContent.end(), "");
+
 
   String ipAddr = WiFi.localIP().toString();
   String subNet = WiFi.subnetMask().toString();

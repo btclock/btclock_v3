@@ -13,6 +13,9 @@ bool flInTransition = false;
 
 void frontlightFlash(int flDelayTime)
 {
+  if (preferences.getBool("flDisable", DEFAULT_DISABLE_FL))
+    return;
+
   if (frontlightOn)
   {
     frontlightFadeOutAll(flDelayTime, true);
@@ -65,6 +68,8 @@ void frontlightFadeInAll(int flDelayTime)
 
 void frontlightFadeInAll(int flDelayTime, bool staggered)
 {
+  if (preferences.getBool("flDisable", DEFAULT_DISABLE_FL))
+    return;
   if (frontlightIsOn())
     return;
   if (flInTransition)
@@ -115,6 +120,8 @@ void frontlightFadeOutAll(int flDelayTime)
 
 void frontlightFadeOutAll(int flDelayTime, bool staggered)
 {
+  if (preferences.getBool("flDisable", DEFAULT_DISABLE_FL))
+    return;
   if (!frontlightIsOn())
     return;
   if (flInTransition)
@@ -179,6 +186,8 @@ bool frontlightIsOn()
 
 void frontlightFadeIn(uint num, int flDelayTime)
 {
+  if (preferences.getBool("flDisable", DEFAULT_DISABLE_FL))
+    return;
   for (int dutyCycle = 0; dutyCycle <= preferences.getUInt("flMaxBrightness"); dutyCycle += 5)
   {
     flArray.setPWM(num, 0, dutyCycle);
@@ -188,6 +197,8 @@ void frontlightFadeIn(uint num, int flDelayTime)
 
 void frontlightFadeOut(uint num, int flDelayTime)
 {
+  if (preferences.getBool("flDisable", DEFAULT_DISABLE_FL))
+    return;
   if (!frontlightIsOn())
     return;
 

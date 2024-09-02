@@ -25,6 +25,10 @@ void onApiStatus(AsyncWebServerRequest *request);
 void onApiSystemStatus(AsyncWebServerRequest *request);
 void onApiSetWifiTxPower(AsyncWebServerRequest *request);
 
+
+void onApiScreenNext(AsyncWebServerRequest *request);
+void onApiScreenPrevious(AsyncWebServerRequest *request);
+
 void onApiShowScreen(AsyncWebServerRequest *request);
 void onApiShowText(AsyncWebServerRequest *request);
 void onApiIdentify(AsyncWebServerRequest *request);
