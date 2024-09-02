@@ -10,14 +10,23 @@ void setupWebserver()
                    { client->send("welcome", NULL, millis(), 1000); });
   server.addHandler(&events);
 
+  //  server.ad.
   // server.serveStatic("/css", LittleFS, "/css/");
-  server.serveStatic("/fonts", LittleFS, "/fonts/");
-  server.serveStatic("/build", LittleFS, "/build");
-  server.serveStatic("/swagger.json", LittleFS, "/swagger.json");
-  server.serveStatic("/api.html", LittleFS, "/api.html");
-  server.serveStatic("/fs_hash.txt", LittleFS, "/fs_hash.txt");
+  // server.serveStatic("/fonts", LittleFS, "/fonts/");
+  // server.serveStatic("/build", LittleFS, "/build");
+  // server.serveStatic("/swagger.json", LittleFS, "/swagger.json");
+  // server.serveStatic("/api.html", LittleFS, "/api.html");
+  // server.serveStatic("/fs_hash.txt", LittleFS, "/fs_hash.txt");
 
-  server.on("/", HTTP_GET, onIndex);
+  AsyncStaticWebHandler &staticHandler = server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
+
+  if (preferences.getBool("httpAuthEnabled", DEFAULT_HTTP_AUTH_ENABLED))
+  {
+    staticHandler.setAuthentication(
+        preferences.getString("httpAuthUser", DEFAULT_HTTP_AUTH_USERNAME),
+        preferences.getString("httpAuthPass", DEFAULT_HTTP_AUTH_PASSWORD));
+  }
+  //  server.on("/", HTTP_GET, onIndex);
 
   server.on("/api/status", HTTP_GET, onApiStatus);
   server.on("/api/system_status", HTTP_GET, onApiSystemStatus);
@@ -437,6 +446,15 @@ void onApiShowTextAdvanced(AsyncWebServerRequest *request, JsonVariant &json)
 
 void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
 {
+  if (
+      preferences.getBool("httpAuthEnabled", DEFAULT_HTTP_AUTH_ENABLED) &&
+      !request->authenticate(
+          preferences.getString("httpAuthUser", DEFAULT_HTTP_AUTH_USERNAME).c_str(),
+          preferences.getString("httpAuthPass", DEFAULT_HTTP_AUTH_PASSWORD).c_str()))
+  {
+    return request->requestAuthentication();
+  }
+
   JsonObject settings = json.as<JsonObject>();
 
   bool settingsChanged = true;
@@ -502,7 +520,10 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
   String boolSettings[] = {"fetchEurPrice", "ledTestOnPower", "ledFlashOnUpd",
                            "mdnsEnabled", "otaEnabled", "stealFocus",
                            "mcapBigChar", "useSatsSymbol", "useBlkCountdown",
-                           "suffixPrice", "disableLeds", "ownDataSource", "flAlwaysOn", "flDisable", "flFlashOnUpd", "mempoolSecure", "useNostr", "bitaxeEnabled", "nostrZapNotify", "stagingSource"};
+                           "suffixPrice", "disableLeds", "ownDataSource",
+                           "flAlwaysOn", "flDisable", "flFlashOnUpd",
+                           "mempoolSecure", "useNostr", "bitaxeEnabled",
+                           "nostrZapNotify", "stagingSource", "httpAuthEnabled"};
 
   for (String setting : boolSettings)
   {
@@ -587,6 +608,15 @@ void onApiIdentify(AsyncWebServerRequest *request)
  */
 void onApiSettingsGet(AsyncWebServerRequest *request)
 {
+  if (
+      preferences.getBool("httpAuthEnabled", DEFAULT_HTTP_AUTH_ENABLED) &&
+      !request->authenticate(
+          preferences.getString("httpAuthUser", DEFAULT_HTTP_AUTH_USERNAME).c_str(),
+          preferences.getString("httpAuthPass", DEFAULT_HTTP_AUTH_PASSWORD).c_str()))
+  {
+    return request->requestAuthentication();
+  }
+
   JsonDocument root;
   root["numScreens"] = NUM_SCREENS;
   root["fgColor"] = getFgColor();
@@ -632,6 +662,10 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 
   root["bitaxeEnabled"] = preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED);
   root["bitaxeHostname"] = preferences.getString("bitaxeHostname", DEFAULT_BITAXE_HOSTNAME);
+
+  root["httpAuthEnabled"] = preferences.getBool("httpAuthEnabled", DEFAULT_HTTP_AUTH_ENABLED);
+  root["httpAuthUser"] = preferences.getString("httpAuthUser", DEFAULT_HTTP_AUTH_USERNAME);
+  root["httpAuthPass"] = preferences.getString("httpAuthPass", DEFAULT_HTTP_AUTH_PASSWORD);
 
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;
