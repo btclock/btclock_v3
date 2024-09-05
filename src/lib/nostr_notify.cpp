@@ -168,7 +168,7 @@ void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *even
     {
         if (typeValue.equals("priceUsd"))
         {
-            processNewPrice(obj["content"].as<uint>());
+            processNewPrice(obj["content"].as<uint>(), CURRENCY_USD);
         }
         else if (typeValue.equals("blockHeight"))
         {

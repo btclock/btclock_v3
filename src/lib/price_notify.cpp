@@ -5,36 +5,6 @@ const char *wsOwnServerV2 = "wss://ws-staging.btclock.dev/api/v2/ws";
 
 const char *wsServerPrice = "wss://ws.coincap.io/prices?assets=bitcoin";
 
-// const char* coinCapWsCert = R"(-----BEGIN CERTIFICATE-----
-// MIIFMjCCBNmgAwIBAgIQBtgXvFyc28MsvQ1HjCnXJTAKBggqhkjOPQQDAjBKMQsw
-// CQYDVQQGEwJVUzEZMBcGA1UEChMQQ2xvdWRmbGFyZSwgSW5jLjEgMB4GA1UEAxMX
-// Q2xvdWRmbGFyZSBJbmMgRUNDIENBLTMwHhcNMjMwNTEwMDAwMDAwWhcNMjQwNTA5
-// MjM1OTU5WjB1MQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQG
-// A1UEBxMNU2FuIEZyYW5jaXNjbzEZMBcGA1UEChMQQ2xvdWRmbGFyZSwgSW5jLjEe
-// MBwGA1UEAxMVc25pLmNsb3VkZmxhcmVzc2wuY29tMFkwEwYHKoZIzj0CAQYIKoZI
-// zj0DAQcDQgAEpvFIXzQKHuqTo+IE6c6sB4p0PMXK1KsseEGf2UN/CNRhG5hO7lr8
-// JtXrPZkawWBysZxOsEoetkPrDHMugCLfXKOCA3QwggNwMB8GA1UdIwQYMBaAFKXO
-// N+rrsHUOlGeItEX62SQQh5YfMB0GA1UdDgQWBBShsZDJohaR1a5E0Qj7yblZjKDC
-// gDA6BgNVHREEMzAxggwqLmNvaW5jYXAuaW+CCmNvaW5jYXAuaW+CFXNuaS5jbG91
-// ZGZsYXJlc3NsLmNvbTAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0lBBYwFAYIKwYBBQUH
-// AwEGCCsGAQUFBwMCMHsGA1UdHwR0MHIwN6A1oDOGMWh0dHA6Ly9jcmwzLmRpZ2lj
-// ZXJ0LmNvbS9DbG91ZGZsYXJlSW5jRUNDQ0EtMy5jcmwwN6A1oDOGMWh0dHA6Ly9j
-// cmw0LmRpZ2ljZXJ0LmNvbS9DbG91ZGZsYXJlSW5jRUNDQ0EtMy5jcmwwPgYDVR0g
-// BDcwNTAzBgZngQwBAgIwKTAnBggrBgEFBQcCARYbaHR0cDovL3d3dy5kaWdpY2Vy
-// dC5jb20vQ1BTMHYGCCsGAQUFBwEBBGowaDAkBggrBgEFBQcwAYYYaHR0cDovL29j
-// c3AuZGlnaWNlcnQuY29tMEAGCCsGAQUFBzAChjRodHRwOi8vY2FjZXJ0cy5kaWdp
-// Y2VydC5jb20vQ2xvdWRmbGFyZUluY0VDQ0NBLTMuY3J0MAwGA1UdEwEB/wQCMAAw
-// ggF+BgorBgEEAdZ5AgQCBIIBbgSCAWoBaAB1AO7N0GTV2xrOxVy3nbTNE6Iyh0Z8
-// vOzew1FIWUZxH7WbAAABiAPnoRAAAAQDAEYwRAIgAP2W09OozuhmKeKKMsaVBcae
-// o+nPHF1WUWk0i387YYYCIDIM1Wll7/4O3GNx2/Fx9bC6pi69Uya4pLxsCfW3fZMe
-// AHYASLDja9qmRzQP5WoC+p0w6xxSActW3SyB2bu/qznYhHMAAAGIA+eg+QAABAMA
-// RzBFAiEAuNpSqrbx47gYBgBMz5M6q0CnV/WMJqWQOxYFKrwfwVACIH3nCs4bKToT
-// e+MiBrqSDaekixk4kPFEQESO9qHCkWY5AHcA2ra/az+1tiKfm8K7XGvocJFxbLtR
-// hIU0vaQ9MEjX+6sAAAGIA+eg1gAABAMASDBGAiEAolCFl2IfbOHUPAOxoi4BLclS
-// v9FVXb7LwIvTuCfyrEQCIQDcvehwhV9XGopKGl17F2LYYKI7hvlO3RmpPZQJt1da
-// MDAKBggqhkjOPQQDAgNHADBEAiAXRWZ/JVMsfpSFFTHQHUSqRnQ/7cCOWx+9svIy
-// mYnFZQIgHMEG0Cm7O4cn5KUzKOsTwwK+2U15s/jPUQi2n2IDTEM=
-// -----END CERTIFICATE-----)";
 
 // WebsocketsClient client;
 esp_websocket_client_handle_t clientPrice = NULL;
@@ -42,6 +12,8 @@ esp_websocket_client_config_t config;
 uint currentPrice = 50000;
 unsigned long int lastPriceUpdate;
 bool priceNotifyInit = false;
+std::map<char, std::uint64_t> currencyMap;
+std::map<char, unsigned long int> lastUpdateMap;
 
 void setupPriceNotify()
 {
@@ -100,48 +72,59 @@ void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data)
   {
     if (currentPrice != doc["bitcoin"].as<long>())
     {
-      processNewPrice(doc["bitcoin"].as<long>());
+      processNewPrice(doc["bitcoin"].as<long>(), CURRENCY_USD);
     }
   }
 }
 
-void processNewPrice(uint newPrice)
+void processNewPrice(uint newPrice, char currency)
 {
   uint minSecPriceUpd = preferences.getUInt(
       "minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE);
   uint currentTime = esp_timer_get_time() / 1000000;
 
-  if (lastPriceUpdate == 0 ||
-      (currentTime - lastPriceUpdate) > minSecPriceUpd)
+  if (lastUpdateMap.find(currency) == lastUpdateMap.end()||
+      (currentTime - lastUpdateMap[currency]) > minSecPriceUpd)
   {
     //   const unsigned long oldPrice = currentPrice;
-    currentPrice = newPrice;
-    if (lastPriceUpdate == 0 ||
-        (currentTime - lastPriceUpdate) > 120)
-    {
-      preferences.putUInt("lastPrice", currentPrice);
-    }
-    lastPriceUpdate = currentTime;
+    currencyMap[currency] = newPrice;
+    // if (lastUpdateMap[currency] == 0 ||
+    //     (currentTime - lastUpdateMap[currency]) > 120)
+    // {
+    //   preferences.putUInt("lastPrice", currentPrice);
+    // }
+    lastUpdateMap[currency] = currentTime;
     // if (abs((int)(oldPrice-currentPrice)) > round(0.0015*oldPrice)) {
     if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER ||
-                                 getCurrentScreen() == SCREEN_MSCW_TIME ||
+                                 getCurrentScreen() == SCREEN_SATS_PER_CURRENCY ||
                                  getCurrentScreen() == SCREEN_MARKET_CAP))
     {
-      WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
+      WorkItem priceUpdate = {TASK_PRICE_UPDATE, currency};
       xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
     }
     //}
   }
 }
 
-uint getLastPriceUpdate()
+uint getLastPriceUpdate(char currency)
 {
-  return lastPriceUpdate;
+  if (lastUpdateMap.find(currency) == lastUpdateMap.end()) {
+    return 0;
+  }
+
+  return lastUpdateMap[currency];
 }
 
-uint getPrice() { return currentPrice; }
+uint getPrice(char currency) { 
+  if (currencyMap.find(currency) == currencyMap.end()) {
+    return 0;
+  }
+  return currencyMap[currency]; 
+}
 
-void setPrice(uint newPrice) { currentPrice = newPrice; }
+void setPrice(uint newPrice, char currency) { 
+  currencyMap[currency] = newPrice; 
+}
 
 bool isPriceNotifyConnected()
 {

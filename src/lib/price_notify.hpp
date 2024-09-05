@@ -14,14 +14,15 @@ void onWebsocketPriceEvent(void *handler_args, esp_event_base_t base,
                            int32_t event_id, void *event_data);
 void onWebsocketPriceMessage(esp_websocket_event_data_t *event_data);
 
-uint getPrice();
-void setPrice(uint newPrice);
+uint getPrice(char currency);
+void setPrice(uint newPrice, char currency);
 
-void processNewPrice(uint newPrice);
+//void processNewPrice(uint newPrice);
+void processNewPrice(uint newPrice, char currency);
 
 bool isPriceNotifyConnected();
 void stopPriceNotify();
 void restartPriceNotify();
 
 bool getPriceNotifyInit();
-uint getLastPriceUpdate();
+uint getLastPriceUpdate(char currency);

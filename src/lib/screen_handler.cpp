@@ -16,6 +16,7 @@ std::string priceString;
 QueueHandle_t workQueue = NULL;
 
 uint currentScreen;
+uint currentCurrency = CURRENCY_USD;
 
 void workerTask(void *pvParameters) {
   WorkItem receivedItem;
@@ -40,18 +41,19 @@ void workerTask(void *pvParameters) {
         }
         break;
         case TASK_PRICE_UPDATE: {
-          uint price = getPrice();
-          u_char priceSymbol = '$';
-          if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE)) {
-            priceSymbol = '[';
-          }
+          uint currency = getCurrentCurrency();
+          uint price = getPrice(currency);
+       //   u_char priceSymbol = '$';
+          // if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE)) {
+          //   priceSymbol = '[';
+          // }
           if (getCurrentScreen() == SCREEN_BTC_TICKER) {
-            taskEpdContent = parsePriceData(price, priceSymbol, preferences.getBool("suffixPrice", DEFAULT_SUFFIX_PRICE));
-          } else if (getCurrentScreen() == SCREEN_MSCW_TIME) {
-            taskEpdContent = parseSatsPerCurrency(price, priceSymbol, preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL));
+            taskEpdContent = parsePriceData(price, currency, preferences.getBool("suffixPrice", DEFAULT_SUFFIX_PRICE));
+          } else if (getCurrentScreen() == SCREEN_SATS_PER_CURRENCY) {
+            taskEpdContent = parseSatsPerCurrency(price, currency, preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL));
           } else {
             taskEpdContent =
-                parseMarketCap(getBlockHeight(), price, priceSymbol,
+                parseMarketCap(getBlockHeight(), price, currency,
                                preferences.getBool("mcapBigChar", DEFAULT_MCAP_BIG_CHAR));
           }
 
@@ -152,7 +154,7 @@ void setupTasks() {
   xTaskCreate(workerTask, "workerTask", 4096, NULL, tskIDLE_PRIORITY,
               &workerTaskHandle);
 
-  xTaskCreate(taskScreenRotate, "rotateScreen", 2048, NULL, tskIDLE_PRIORITY,
+  xTaskCreate(taskScreenRotate, "rotateScreen", 4096, NULL, tskIDLE_PRIORITY,
               &taskScreenRotateTaskHandle);
 
   waitUntilNoneBusy();
@@ -242,7 +244,7 @@ void setCurrentScreen(uint newScreen) {
       break;
     }
     case SCREEN_MARKET_CAP:
-    case SCREEN_MSCW_TIME:
+    case SCREEN_SATS_PER_CURRENCY:
     case SCREEN_BTC_TICKER: {
       WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
       xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);
@@ -270,9 +272,35 @@ void setCurrentScreen(uint newScreen) {
   if (eventSourceTaskHandle != NULL) xTaskNotifyGive(eventSourceTaskHandle);
 }
 
+bool isCurrencySpecific(uint screen) {
+  switch (screen) {
+    case SCREEN_BTC_TICKER:
+    case SCREEN_SATS_PER_CURRENCY:
+    case SCREEN_MARKET_CAP:
+      return true;
+    default:
+      return false;
+  }
+}
+
 void nextScreen() {
   int currentIndex = findScreenIndexByValue(getCurrentScreen());
   std::vector<ScreenMapping> screenMappings = getScreenNameMap();
+
+  if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE) && isCurrencySpecific(getCurrentScreen())) {
+    std::vector<std::string> ac = getActiveCurrencies();
+    std::string curCode = getCurrencyCode(getCurrentCurrency());
+    if (getCurrencyCode(getCurrentCurrency()) != ac.back()) {
+      auto it = std::find(ac.begin(), ac.end(), curCode);
+      if (it != ac.end()) {
+        size_t index = std::distance(ac.begin(), it);
+        setCurrentCurrency(getCurrencyChar(ac.at(index+1)));
+        setCurrentScreen(getCurrentScreen());
+        return;
+      }
+    } 
+    setCurrentCurrency(getCurrencyChar(ac.front()));
+  }
 
   int newCurrentScreen;
 
@@ -301,6 +329,23 @@ void nextScreen() {
 void previousScreen() {
   int currentIndex = findScreenIndexByValue(getCurrentScreen());
   std::vector<ScreenMapping> screenMappings = getScreenNameMap();
+
+  if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE) && isCurrencySpecific(getCurrentScreen())) {
+    std::vector<std::string> ac = getActiveCurrencies();
+    std::string curCode = getCurrencyCode(getCurrentCurrency());
+    if (getCurrencyCode(getCurrentCurrency()) != ac.front()) {
+      auto it = std::find(ac.begin(), ac.end(), curCode);
+      if (it != ac.end()) {
+        size_t index = std::distance(ac.begin(), it);
+        setCurrentCurrency(getCurrencyChar(ac.at(index-1)));
+        setCurrentScreen(getCurrentScreen());
+        return;
+      }
+    } 
+    setCurrentCurrency(getCurrencyChar(ac.back()));
+    
+  }
+
 
   int newCurrentScreen;
 
@@ -352,4 +397,13 @@ void showSystemStatusScreen() {
       (int)round(ESP.getHeapSize() / 1024);
   setCurrentScreen(SCREEN_CUSTOM);
   setEpdContent(sysStatusEpdContent);
+}
+
+void setCurrentCurrency(char currency) {
+  currentCurrency = currency;
+  preferences.putUChar("lastCurrency", currency);
+}
+
+uint getCurrentCurrency() {
+  return currentCurrency;
 }

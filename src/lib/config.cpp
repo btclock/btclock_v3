@@ -66,7 +66,6 @@ void setup()
 
   setupWebserver();
 
-  // setupWifi();
   syncTime();
   finishSetup();
 
@@ -268,23 +267,42 @@ void setupPreferences()
   setFgColor(preferences.getUInt("fgColor", DEFAULT_FG_COLOR));
   setBgColor(preferences.getUInt("bgColor", DEFAULT_BG_COLOR));
   setBlockHeight(preferences.getUInt("blockHeight", INITIAL_BLOCK_HEIGHT));
-  setPrice(preferences.getUInt("lastPrice", INITIAL_LAST_PRICE));
+  setPrice(preferences.getUInt("lastPrice", INITIAL_LAST_PRICE), CURRENCY_USD);
+
+  if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE))
+    setCurrentCurrency(preferences.getUChar("lastCurrency", CURRENCY_USD));
+  else
+    setCurrentCurrency(CURRENCY_USD);
+
 
   addScreenMapping(SCREEN_BLOCK_HEIGHT, "Block Height");
-  addScreenMapping(SCREEN_MSCW_TIME, "Sats per dollar");
-  addScreenMapping(SCREEN_BTC_TICKER, "Ticker");
+  
   addScreenMapping(SCREEN_TIME, "Time");
   addScreenMapping(SCREEN_HALVING_COUNTDOWN, "Halving countdown");
-  addScreenMapping(SCREEN_MARKET_CAP, "Market Cap");
   addScreenMapping(SCREEN_BLOCK_FEE_RATE, "Block Fee Rate");
+
+  addScreenMapping(SCREEN_SATS_PER_CURRENCY, "Sats per dollar");
+  addScreenMapping(SCREEN_BTC_TICKER, "Ticker");
+  addScreenMapping(SCREEN_MARKET_CAP, "Market Cap");
+
+
+  // addScreenMapping(SCREEN_SATS_PER_CURRENCY_USD, "Sats per USD");
+  // addScreenMapping(SCREEN_BTC_TICKER_USD, "Ticker USD");
+  // addScreenMapping(SCREEN_MARKET_CAP_USD, "Market Cap USD");
+
+  // addScreenMapping(SCREEN_SATS_PER_CURRENCY_EUR, "Sats per EUR");
+  // addScreenMapping(SCREEN_BTC_TICKER_EUR, "Ticker EUR");
+  // addScreenMapping(SCREEN_MARKET_CAP_EUR, "Market Cap EUR");
 
   // screenNameMap[SCREEN_BLOCK_HEIGHT] = "Block Height";
   // screenNameMap[SCREEN_BLOCK_FEE_RATE] = "Block Fee Rate";
-  // screenNameMap[SCREEN_MSCW_TIME] = "Sats per dollar";
+  // screenNameMap[SCREEN_SATS_PER_CURRENCY] = "Sats per dollar";
   // screenNameMap[SCREEN_BTC_TICKER] = "Ticker";
   // screenNameMap[SCREEN_TIME] = "Time";
   // screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
   // screenNameMap[SCREEN_MARKET_CAP] = "Market Cap";
+
+  //addCurrencyMappings(getActiveCurrencies());
 
   if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED))
   {
@@ -293,16 +311,74 @@ void setupPreferences()
   }
 }
 
+// void addCurrencyMappings(const std::vector<std::string>& currencies)
+// {
+//     for (const auto& currency : currencies)
+//     {
+//         int satsPerCurrencyScreen;
+//         int btcTickerScreen;
+//         int marketCapScreen;
+
+//         // Determine the corresponding screen IDs based on the currency code
+//         if (currency == "USD")
+//         {
+//             satsPerCurrencyScreen = SCREEN_SATS_PER_CURRENCY_USD;
+//             btcTickerScreen = SCREEN_BTC_TICKER_USD;
+//             marketCapScreen = SCREEN_MARKET_CAP_USD;
+//         }
+//         else if (currency == "EUR")
+//         {
+//             satsPerCurrencyScreen = SCREEN_SATS_PER_CURRENCY_EUR;
+//             btcTickerScreen = SCREEN_BTC_TICKER_EUR;
+//             marketCapScreen = SCREEN_MARKET_CAP_EUR;
+//         }
+//         else if (currency == "GBP")
+//         {
+//             satsPerCurrencyScreen = SCREEN_SATS_PER_CURRENCY_GBP;
+//             btcTickerScreen = SCREEN_BTC_TICKER_GBP;
+//             marketCapScreen = SCREEN_MARKET_CAP_GBP;
+//         }
+//         else if (currency == "JPY")
+//         {
+//             satsPerCurrencyScreen = SCREEN_SATS_PER_CURRENCY_JPY;
+//             btcTickerScreen = SCREEN_BTC_TICKER_JPY;
+//             marketCapScreen = SCREEN_MARKET_CAP_JPY;
+//         }
+//         else if (currency == "AUD")
+//         {
+//             satsPerCurrencyScreen = SCREEN_SATS_PER_CURRENCY_AUD;
+//             btcTickerScreen = SCREEN_BTC_TICKER_AUD;
+//             marketCapScreen = SCREEN_MARKET_CAP_AUD;
+//         }
+//         else if (currency == "CAD")
+//         {
+//             satsPerCurrencyScreen = SCREEN_SATS_PER_CURRENCY_CAD;
+//             btcTickerScreen = SCREEN_BTC_TICKER_CAD;
+//             marketCapScreen = SCREEN_MARKET_CAP_CAD;
+//         }
+//         else
+//         {
+//             continue;  // Unknown currency, skip it
+//         }
+
+//         // Create the string locally to ensure it persists
+//         std::string satsPerCurrencyString = "Sats per " + currency;
+//         std::string btcTickerString = "Ticker " + currency;
+//         std::string marketCapString = "Market Cap " + currency;
+
+//         // Pass the c_str() to the function
+//         addScreenMapping(satsPerCurrencyScreen, satsPerCurrencyString.c_str());
+//         addScreenMapping(btcTickerScreen, btcTickerString.c_str());
+//         addScreenMapping(marketCapScreen, marketCapString.c_str());
+//     }
+// }
+
 void setupWebsocketClients(void *pvParameters)
 {
-  setupBlockNotify();
-
-  if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE))
-  {
-    setupPriceFetchTask();
-  }
-  else
-  {
+  if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE)) {
+    setupV2Notify();
+  } else {
+    setupBlockNotify();
     setupPriceNotify();
   }
 
@@ -452,218 +528,6 @@ void setupHardware()
   }
 #endif
 }
-
-
-#ifdef IMPROV_ENABLED
-void improvGetAvailableWifiNetworks()
-{
-  int networkNum = WiFi.scanNetworks();
-
-  for (int id = 0; id < networkNum; ++id)
-  {
-    std::vector<uint8_t> data = improv::build_rpc_response(
-        improv::GET_WIFI_NETWORKS,
-        {WiFi.SSID(id), String(WiFi.RSSI(id)),
-         (WiFi.encryptionType(id) == WIFI_AUTH_OPEN ? "NO" : "YES")},
-        false);
-    improv_send_response(data);
-  }
-  // final response
-  std::vector<uint8_t> data = improv::build_rpc_response(
-      improv::GET_WIFI_NETWORKS, std::vector<std::string>{}, false);
-  improv_send_response(data);
-}
-
-bool improv_connectWifi(std::string ssid, std::string password)
-{
-  uint8_t count = 0;
-
-  WiFi.begin(ssid.c_str(), password.c_str());
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    blinkDelay(500, 2);
-
-    if (count > MAX_ATTEMPTS_WIFI_CONNECTION)
-    {
-      WiFi.disconnect();
-      return false;
-    }
-    count++;
-  }
-
-  return true;
-}
-
-void onImprovErrorCallback(improv::Error err)
-{
-  blinkDelayColor(100, 1, 255, 0, 0);
-  // pixels.setPixelColor(0, pixels.Color(255, 0, 0));
-  // pixels.setPixelColor(1, pixels.Color(255, 0, 0));
-  // pixels.setPixelColor(2, pixels.Color(255, 0, 0));
-  // pixels.setPixelColor(3, pixels.Color(255, 0, 0));
-  // pixels.show();
-  // vTaskDelay(pdMS_TO_TICKS(100));
-
-  // pixels.clear();
-  // pixels.show();
-  // vTaskDelay(pdMS_TO_TICKS(100));
-}
-
-std::vector<std::string> getLocalUrl()
-{
-  return {// URL where user can finish onboarding or use device
-          // Recommended to use website hosted by device
-          String("http://" + WiFi.localIP().toString()).c_str()};
-}
-
-bool onImprovCommandCallback(improv::ImprovCommand cmd)
-{
-  switch (cmd.command)
-  {
-  case improv::Command::GET_CURRENT_STATE:
-  {
-    if ((WiFi.status() == WL_CONNECTED))
-    {
-      improv_set_state(improv::State::STATE_PROVISIONED);
-      std::vector<uint8_t> data = improv::build_rpc_response(
-          improv::GET_CURRENT_STATE, getLocalUrl(), false);
-      improv_send_response(data);
-    }
-    else
-    {
-      improv_set_state(improv::State::STATE_AUTHORIZED);
-    }
-
-    break;
-  }
-
-  case improv::Command::WIFI_SETTINGS:
-  {
-    if (cmd.ssid.length() == 0)
-    {
-      improv_set_error(improv::Error::ERROR_INVALID_RPC);
-      break;
-    }
-
-    improv_set_state(improv::STATE_PROVISIONING);
-    queueLedEffect(LED_EFFECT_WIFI_CONNECTING);
-
-    if (improv_connectWifi(cmd.ssid, cmd.password))
-    {
-      queueLedEffect(LED_EFFECT_WIFI_CONNECT_SUCCESS);
-
-      // std::array<String, NUM_SCREENS> epdContent = {"S", "U", "C", "C",
-      // "E", "S", "S"}; setEpdContent(epdContent);
-
-      preferences.putBool("wifiConfigured", true);
-
-      improv_set_state(improv::STATE_PROVISIONED);
-      std::vector<uint8_t> data = improv::build_rpc_response(
-          improv::WIFI_SETTINGS, getLocalUrl(), false);
-      improv_send_response(data);
-
-      delay(2500);
-      ESP.restart();
-      setupWebserver();
-    }
-    else
-    {
-      queueLedEffect(LED_EFFECT_WIFI_CONNECT_ERROR);
-
-      improv_set_state(improv::STATE_STOPPED);
-      improv_set_error(improv::Error::ERROR_UNABLE_TO_CONNECT);
-    }
-
-    break;
-  }
-
-  case improv::Command::GET_DEVICE_INFO:
-  {
-    std::vector<std::string> infos = {// Firmware name
-                                      "BTClock",
-                                      // Firmware version
-                                      "1.0.0",
-                                      // Hardware chip/variant
-                                      "ESP32S3",
-                                      // Device name
-                                      "BTClock"};
-    std::vector<uint8_t> data =
-        improv::build_rpc_response(improv::GET_DEVICE_INFO, infos, false);
-    improv_send_response(data);
-    break;
-  }
-
-  case improv::Command::GET_WIFI_NETWORKS:
-  {
-    improvGetAvailableWifiNetworks();
-    // std::array<String, NUM_SCREENS> epdContent = {"W", "E", "B", "W", "I",
-    // "F", "I"}; setEpdContent(epdContent);
-    break;
-  }
-
-  default:
-  {
-    improv_set_error(improv::ERROR_UNKNOWN_RPC);
-    return false;
-  }
-  }
-
-  return true;
-}
-
-void improv_set_state(improv::State state)
-{
-  std::vector<uint8_t> data = {'I', 'M', 'P', 'R', 'O', 'V'};
-  data.resize(11);
-  data[6] = improv::IMPROV_SERIAL_VERSION;
-  data[7] = improv::TYPE_CURRENT_STATE;
-  data[8] = 1;
-  data[9] = state;
-
-  uint8_t checksum = 0x00;
-  for (uint8_t d : data)
-    checksum += d;
-  data[10] = checksum;
-
-  Serial.write(data.data(), data.size());
-}
-
-void improv_send_response(std::vector<uint8_t> &response)
-{
-  std::vector<uint8_t> data = {'I', 'M', 'P', 'R', 'O', 'V'};
-  data.resize(9);
-  data[6] = improv::IMPROV_SERIAL_VERSION;
-  data[7] = improv::TYPE_RPC_RESPONSE;
-  data[8] = response.size();
-  data.insert(data.end(), response.begin(), response.end());
-
-  uint8_t checksum = 0x00;
-  for (uint8_t d : data)
-    checksum += d;
-  data.push_back(checksum);
-
-  Serial.write(data.data(), data.size());
-}
-
-void improv_set_error(improv::Error error)
-{
-  std::vector<uint8_t> data = {'I', 'M', 'P', 'R', 'O', 'V'};
-  data.resize(11);
-  data[6] = improv::IMPROV_SERIAL_VERSION;
-  data[7] = improv::TYPE_ERROR_STATE;
-  data[8] = 1;
-  data[9] = error;
-
-  uint8_t checksum = 0x00;
-  for (uint8_t d : data)
-    checksum += d;
-  data[10] = checksum;
-
-  Serial.write(data.data(), data.size());
-}
-
-#endif
 
 void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 {
@@ -841,4 +705,38 @@ int findScreenIndexByValue(int value)
     }
   }
   return -1; // Return -1 if value is not found
+}
+
+std::vector<std::string> getAvailableCurrencies()
+{
+  return {CURRENCY_CODE_USD, CURRENCY_CODE_EUR, CURRENCY_CODE_GBP, CURRENCY_CODE_JPY, CURRENCY_CODE_AUD, CURRENCY_CODE_CAD};
+}
+
+std::vector<std::string> getActiveCurrencies()
+{
+  std::vector<std::string> result;
+
+  // Convert Arduino String to std::string
+  std::string stdString = preferences.getString("actCurrencies", DEFAULT_ACTIVE_CURRENCIES).c_str();
+
+  // Use a stringstream to split the string
+  std::stringstream ss(stdString);
+  std::string item;
+
+  // Split the string by comma and add each part to the vector
+  while (std::getline(ss, item, ','))
+  {
+    result.push_back(item);
+  }
+  return result;
+}
+
+bool isActiveCurrency(std::string &currency)
+{
+  std::vector<std::string> ac = getActiveCurrencies();
+  if (std::find(ac.begin(), ac.end(), currency) != ac.end())
+  {
+    return true;
+  }
+  return false;
 }

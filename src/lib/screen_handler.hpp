@@ -60,3 +60,6 @@ void setTimerActive(bool status);
 void toggleTimerActive();
 
 void setupTasks();
+void setCurrentCurrency(char currency);
+
+uint getCurrentCurrency();

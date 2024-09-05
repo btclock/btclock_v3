@@ -41,9 +41,10 @@ void setupWebserver()
   server.on("/api/action/timer_restart", HTTP_GET, onApiActionTimerRestart);
 
   server.on("/api/settings", HTTP_GET, onApiSettingsGet);
-  server.on("/api/settings", HTTP_POST, onApiSettingsPost);
 
   server.on("/api/show/screen", HTTP_GET, onApiShowScreen);
+  server.on("/api/show/currency", HTTP_GET, onApiShowCurrency);
+
   server.on("/api/show/text", HTTP_GET, onApiShowText);
 
   server.on("/api/screen/next", HTTP_GET, onApiScreenNext);
@@ -88,6 +89,8 @@ void setupWebserver()
   }
 
   server.on("/api/restart", HTTP_GET, onApiRestart);
+  server.addRewrite(
+      new OneParamRewrite("/api/show/currency/{c}", "/api/show/currency?c={c}"));
   server.addRewrite(new OneParamRewrite("/api/lights/color/{color}",
                                         "/api/lights/color?c={color}"));
   server.addRewrite(
@@ -241,10 +244,12 @@ JsonDocument getStatusObject()
   JsonObject conStatus = root["connectionStatus"].to<JsonObject>();
   conStatus["price"] = isPriceNotifyConnected();
   conStatus["blocks"] = isBlockNotifyConnected();
+  conStatus["V2"] = isV2NotifyConnected();
+
   conStatus["nostr"] = nostrConnected();
 
   root["rssi"] = WiFi.RSSI();
-
+  root["currency"] = getCurrencyCode(getCurrentCurrency());
 #ifdef HAS_FRONTLIGHT
   std::vector<uint16_t> statuses = frontlightGetStatus();
   uint16_t arr[NUM_SCREENS];
@@ -548,6 +553,23 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
     }
   }
 
+  if (settings.containsKey("actCurrencies"))
+  {
+    String actCurrencies;
+
+    for (JsonVariant cur : settings["actCurrencies"].as<JsonArray>())
+    {
+      if (!actCurrencies.isEmpty())
+      {
+        actCurrencies += ",";
+      }
+      actCurrencies += cur.as<String>();
+    }
+
+    preferences.putString("actCurrencies", actCurrencies.c_str());
+    Serial.printf("Set actCurrencies: %s\n", actCurrencies);
+  }
+
   if (settings.containsKey("txPower"))
   {
     int txPower = settings["txPower"].as<int>();
@@ -696,6 +718,18 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 #endif
   JsonArray screens = root["screens"].to<JsonArray>();
 
+  JsonArray actCurrencies = root["actCurrencies"].to<JsonArray>();
+  for (const auto &str : getActiveCurrencies())
+  {
+    actCurrencies.add(str);
+  }
+
+  JsonArray availableCurrencies = root["availableCurrencies"].to<JsonArray>();
+  for (const auto &str : getAvailableCurrencies())
+  {
+    availableCurrencies.add(str);
+  }
+
   std::vector<ScreenMapping> screenNameMap = getScreenNameMap();
 
   for (int i = 0; i < screenNameMap.size(); i++)
@@ -703,7 +737,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
     JsonObject o = screens.add<JsonObject>();
     String key = "screen" + String(screenNameMap.at(i).value) + "Visible";
     o["id"] = screenNameMap.at(i).value;
-    o["name"] = screenNameMap.at(i).name;
+    o["name"] = String(screenNameMap.at(i).name);
     o["enabled"] = preferences.getBool(key.c_str(), true);
   }
 
@@ -738,230 +772,6 @@ bool processEpdColorSettings(AsyncWebServerRequest *request)
   }
 
   return settingsChanged;
-}
-
-void onApiSettingsPost(AsyncWebServerRequest *request)
-{
-  // bool settingsChanged = false;
-
-  // settingsChanged = processEpdColorSettings(request);
-
-  // int headers = request->headers();
-  // int i;
-  // for (i = 0; i < headers; i++)
-  // {
-  //   AsyncWebHeader *h = request->getHeader(i);
-  //   Serial.printf("HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
-  // }
-
-  // int params = request->params();
-  // for (int i = 0; i < params; i++)
-  // {
-  //   const AsyncWebParameter *p = request->getParam(i);
-  //   if (p->isFile())
-  //   { // p->isPost() is also true
-  //     Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(),
-  //                   p->value().c_str(), p->size());
-  //   }
-  //   else if (p->isPost())
-  //   {
-  //     Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-  //   }
-  //   else
-  //   {
-  //     Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-  //   }
-  // }
-
-  // if (request->hasParam("fetchEurPrice", true))
-  // {
-  //   const AsyncWebParameter *fetchEurPrice = request->getParam("fetchEurPrice", true);
-
-  //   preferences.putBool("fetchEurPrice", fetchEurPrice->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("fetchEurPrice", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("ledTestOnPower", true))
-  // {
-  //   const AsyncWebParameter *ledTestOnPower =
-  //       request->getParam("ledTestOnPower", true);
-
-  //   preferences.putBool("ledTestOnPower", ledTestOnPower->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("ledTestOnPower", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("ledFlashOnUpd", true))
-  // {
-  //   const AsyncWebParameter *ledFlashOnUpdate =
-  //       request->getParam("ledFlashOnUpd", true);
-
-  //   preferences.putBool("ledFlashOnUpd", ledFlashOnUpdate->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("ledFlashOnUpd", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("mdnsEnabled", true))
-  // {
-  //   const AsyncWebParameter *mdnsEnabled = request->getParam("mdnsEnabled", true);
-
-  //   preferences.putBool("mdnsEnabled", mdnsEnabled->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("mdnsEnabled", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("otaEnabled", true))
-  // {
-  //   const AsyncWebParameter *otaEnabled = request->getParam("otaEnabled", true);
-
-  //   preferences.putBool("otaEnabled", otaEnabled->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("otaEnabled", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("stealFocus", false))
-  // {
-  //   const AsyncWebParameter *stealFocusOnBlock =
-  //       request->getParam("stealFocus", false);
-
-  //   preferences.putBool("stealFocus", stealFocusOnBlock->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("stealFocus", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("mcapBigChar", true))
-  // {
-  //   const AsyncWebParameter *mcapBigChar = request->getParam("mcapBigChar", true);
-
-  //   preferences.putBool("mcapBigChar", mcapBigChar->value().toInt());
-  //   settingsChanged = true;
-  // }
-  // else
-  // {
-  //   preferences.putBool("mcapBigChar", 0);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("mempoolInstance", true))
-  // {
-  //   const AsyncWebParameter *mempoolInstance =
-  //       request->getParam("mempoolInstance", true);
-
-  //   preferences.putString("mempoolInstance", mempoolInstance->value().c_str());
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("hostnamePrefix", true))
-  // {
-  //   const AsyncWebParameter *hostnamePrefix =
-  //       request->getParam("hostnamePrefix", true);
-
-  //   preferences.putString("hostnamePrefix", hostnamePrefix->value().c_str());
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("ledBrightness", true))
-  // {
-  //   const AsyncWebParameter *ledBrightness = request->getParam("ledBrightness", true);
-
-  //   preferences.putUInt("ledBrightness", ledBrightness->value().toInt());
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("fullRefreshMin", true))
-  // {
-  //   const AsyncWebParameter *fullRefreshMin =
-  //       request->getParam("fullRefreshMin", true);
-
-  //   preferences.putUInt("fullRefreshMin", fullRefreshMin->value().toInt());
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("wpTimeout", true))
-  // {
-  //   const AsyncWebParameter *wpTimeout = request->getParam("wpTimeout", true);
-
-  //   preferences.putUInt("wpTimeout", wpTimeout->value().toInt());
-  //   settingsChanged = true;
-  // }
-
-  // std::vector<std::string> screenNameMap = getScreenNameMap();
-
-  // if (request->hasParam("screens"))
-  // {
-  //   const AsyncWebParameter *screenParam = request->getParam("screens", true);
-
-  //   Serial.printf(screenParam->value().c_str());
-  // }
-
-  // for (int i = 0; i < screenNameMap.size(); i++)
-  // {
-  //   String key = "screen[" + String(i) + "]";
-  //   String prefKey = "screen" + String(i) + "Visible";
-  //   bool visible = false;
-  //   if (request->hasParam(key, true))
-  //   {
-  //     const AsyncWebParameter *screenParam = request->getParam(key, true);
-  //     visible = screenParam->value().toInt();
-  //   }
-
-  //   preferences.putBool(prefKey.c_str(), visible);
-  // }
-
-  // if (request->hasParam("tzOffset", true))
-  // {
-  //   const AsyncWebParameter *p = request->getParam("tzOffset", true);
-  //   int tzOffsetSeconds = p->value().toInt() * 60;
-  //   preferences.putInt("gmtOffset", tzOffsetSeconds);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("minSecPriceUpd", true))
-  // {
-  //   const AsyncWebParameter *p = request->getParam("minSecPriceUpd", true);
-  //   int minSecPriceUpd = p->value().toInt();
-  //   preferences.putUInt("minSecPriceUpd", minSecPriceUpd);
-  //   settingsChanged = true;
-  // }
-
-  // if (request->hasParam("timePerScreen", true))
-  // {
-  //   const AsyncWebParameter *p = request->getParam("timePerScreen", true);
-  //   uint timerSeconds = p->value().toInt() * 60;
-  //   preferences.putUInt("timerSeconds", timerSeconds);
-  //   settingsChanged = true;
-  // }
-
-  // request->send(200);
-  // if (settingsChanged)
-  // {
-  //   queueLedEffect(LED_FLASH_SUCCESS);
-  // }
 }
 
 void onApiSystemStatus(AsyncWebServerRequest *request)
@@ -1207,6 +1017,30 @@ void eventSourceTask(void *pvParameters)
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     eventSourceUpdate();
   }
+}
+
+void onApiShowCurrency(AsyncWebServerRequest *request)
+{
+  if (request->hasParam("c"))
+  {
+    const AsyncWebParameter *p = request->getParam("c");
+    std::string currency = p->value().c_str();
+
+    if (!isActiveCurrency(currency))
+    {
+      request->send(404);
+      return;
+    }
+
+    char curChar = getCurrencyChar(currency);
+
+    setCurrentCurrency(curChar);
+    setCurrentScreen(getCurrentScreen());
+
+    request->send(200);
+    return;
+  }
+  request->send(404);
 }
 
 #ifdef HAS_FRONTLIGHT

@@ -29,9 +29,9 @@ void taskPriceFetch(void *pvParameters) {
       //            usdPrice = doc["bitcoin"]["usd"];
       eurPrice = doc["bitcoin"]["eur"].as<uint>();
 
-      setPrice(eurPrice);
+      setPrice(eurPrice, CURRENCY_EUR);
       if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BTC_TICKER ||
-                                   getCurrentScreen() == SCREEN_MSCW_TIME ||
+                                   getCurrentScreen() == SCREEN_SATS_PER_CURRENCY ||
                                    getCurrentScreen() == SCREEN_MARKET_CAP)) {
         WorkItem priceUpdate = {TASK_PRICE_UPDATE, 0};
         xQueueSend(workQueue, &priceUpdate, portMAX_DELAY);

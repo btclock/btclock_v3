@@ -30,6 +30,8 @@ void onApiScreenNext(AsyncWebServerRequest *request);
 void onApiScreenPrevious(AsyncWebServerRequest *request);
 
 void onApiShowScreen(AsyncWebServerRequest *request);
+void onApiShowCurrency(AsyncWebServerRequest *request);
+
 void onApiShowText(AsyncWebServerRequest *request);
 void onApiIdentify(AsyncWebServerRequest *request);
 
@@ -38,7 +40,6 @@ void onApiShowTextAdvanced(AsyncWebServerRequest *request, JsonVariant &json);
 void onApiActionPause(AsyncWebServerRequest *request);
 void onApiActionTimerRestart(AsyncWebServerRequest *request);
 void onApiSettingsGet(AsyncWebServerRequest *request);
-void onApiSettingsPost(AsyncWebServerRequest *request);
 void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json);
 void onApiFullRefresh(AsyncWebServerRequest *request);
 

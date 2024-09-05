@@ -19,6 +19,8 @@
 #include "lib/nostr_notify.hpp"
 #include "lib/bitaxe_fetch.hpp"
 
+#include "lib/v2_notify.hpp"
+
 #include "lib/price_notify.hpp"
 #include "lib/screen_handler.hpp"
 #include "lib/shared.hpp"
@@ -64,6 +66,11 @@ std::vector<std::string> getLocalUrl();
 // void improv_set_state(improv::State state);
 // void improv_send_response(std::vector<uint8_t> &response);
 // void improv_set_error(improv::Error error);
+//void addCurrencyMappings(const std::vector<std::string>& currencies);
+std::vector<std::string> getActiveCurrencies();
+std::vector<std::string> getAvailableCurrencies();
+
+bool isActiveCurrency(std::string &currency);
 
 void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 String getHwRev();
@@ -71,4 +78,7 @@ bool isWhiteVersion();
 String getFsRev();
 
 void addScreenMapping(int value, const char* name);
+// void addScreenMapping(int value, const String& name);
+// void addScreenMapping(int value, const std::string& name);
+
 int findScreenIndexByValue(int value);

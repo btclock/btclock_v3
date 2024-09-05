@@ -32,23 +32,39 @@ std::string getCurrencyCode(char input)
     switch (input)
     {
     case CURRENCY_EUR:
-        return "EUR";
+        return CURRENCY_CODE_EUR;
         break;
     case CURRENCY_GBP:
-        return "GBP";
+        return CURRENCY_CODE_GBP;
         break;
     case CURRENCY_JPY:
-        return "YEN";
+        return CURRENCY_CODE_JPY;
         break;
     case CURRENCY_AUD:
-        return "AUD";
+        return CURRENCY_CODE_AUD;
         break;
     case CURRENCY_CAD:
-        return "CAD";
+        return CURRENCY_CODE_CAD;
         break;
     default:
-        return "USD";
+        return CURRENCY_CODE_USD;
     }
+}
+
+char getCurrencyChar(const std::string& input)
+{
+    if (input == "EUR")
+        return CURRENCY_EUR;
+    else if (input == "GBP")
+        return CURRENCY_GBP;
+    else if (input == "JPY")
+        return CURRENCY_JPY;
+    else if (input == "AUD")
+        return CURRENCY_AUD;
+    else if (input == "CAD")
+        return CURRENCY_CAD;
+    else
+        return CURRENCY_USD;  // Assuming USD is the default for unknown inputs
 }
 
 std::array<std::string, NUM_SCREENS> parsePriceData(std::uint32_t price, char currencySymbol, bool useSuffixFormat)
@@ -205,14 +221,8 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(std::uint32_t blockHeight, s
     std::uint32_t firstIndex = 0;
     double supply = getSupplyAtBlock(blockHeight);
     int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
-    if (currencySymbol == '[')
-    {
-        ret[0] = "EUR/MCAP";
-    }
-    else
-    {
-        ret[0] = "USD/MCAP";
-    }
+
+    ret[0] = getCurrencyCode(currencySymbol) + "/MCAP";
 
     if (bigChars)
     {

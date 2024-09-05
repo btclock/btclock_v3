@@ -134,7 +134,7 @@ extern "C" void app_main()
       }
 
       // if more than 5 price updates are missed, there is probably something wrong, reconnect
-      if ((getLastPriceUpdate() - currentUptime) > (preferences.getUInt("minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE) * 5))
+      if ((getLastPriceUpdate(CURRENCY_USD) - currentUptime) > (preferences.getUInt("minSecPriceUpd", DEFAULT_SECONDS_BETWEEN_PRICE_UPDATE) * 5))
       {
         Serial.println(F("Detected 5 missed price updates... restarting price handler."));
 
