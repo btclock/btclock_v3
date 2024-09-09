@@ -2,7 +2,7 @@
 
 char *wsServer;
 esp_websocket_client_handle_t blockNotifyClient = NULL;
-uint currentBlockHeight = 840000;
+uint currentBlockHeight = 860000;
 uint blockMedianFee = 1;
 bool blockNotifyInit = false;
 unsigned long int lastBlockUpdate;

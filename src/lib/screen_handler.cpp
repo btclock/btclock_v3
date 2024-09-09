@@ -8,14 +8,13 @@ TaskHandle_t workerTaskHandle;
 esp_timer_handle_t screenRotateTimer;
 esp_timer_handle_t minuteTimer;
 
-std::array<std::string, NUM_SCREENS> taskEpdContent = {"", "", "", "",
-                                                       "", "", ""};
+std::array<std::string, NUM_SCREENS> taskEpdContent = {};
 std::string priceString;
 
 #define WORK_QUEUE_SIZE 10
 QueueHandle_t workQueue = NULL;
 
-uint currentScreen;
+uint currentScreen = SCREEN_BLOCK_HEIGHT;
 uint currentCurrency = CURRENCY_USD;
 
 void workerTask(void *pvParameters) {
@@ -158,7 +157,9 @@ void setupTasks() {
               &taskScreenRotateTaskHandle);
 
   waitUntilNoneBusy();
-  setCurrentScreen(preferences.getUInt("currentScreen", DEFAULT_CURRENT_SCREEN));
+
+  if (findScreenIndexByValue(preferences.getUInt("currentScreen", DEFAULT_CURRENT_SCREEN)) != -1)
+    setCurrentScreen(preferences.getUInt("currentScreen", DEFAULT_CURRENT_SCREEN));
 }
 
 void setupTimeUpdateTimer(void *pvParameters) {

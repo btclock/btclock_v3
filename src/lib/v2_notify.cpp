@@ -15,7 +15,7 @@ void setupV2Notify()
     webSocket.onEvent(onWebsocketV2Event);
     webSocket.setReconnectInterval(5000);
     webSocket.enableHeartbeat(15000, 3000, 2);
-
+    
     setupV2NotifyTask();
 }
 
