@@ -490,7 +490,7 @@ void onApiSettingsPatch(AsyncWebServerRequest *request, JsonVariant &json)
                         settings["timePerScreen"].as<uint>() * 60);
   }
 
-  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay", "bitaxeHostname", "nostrZapPubkey"};
+  String strSettings[] = {"hostnamePrefix", "mempoolInstance", "nostrPubKey", "nostrRelay", "bitaxeHostname", "nostrZapPubkey", "httpAuthUser", "httpAuthPass"};
 
   for (String setting : strSettings)
   {
