@@ -44,7 +44,7 @@ uint getLastTimeSync();
 void setupPreferences();
 void setupWebsocketClients(void *pvParameters);
 void setupHardware();
-void tryImprovSetup();
+void setupWifi();
 void setupTimers();
 void finishSetup();
 void setupMcp();
@@ -82,3 +82,4 @@ void addScreenMapping(int value, const char* name);
 // void addScreenMapping(int value, const std::string& name);
 
 int findScreenIndexByValue(int value);
+String replaceAmbiguousChars(String input);

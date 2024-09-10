@@ -62,7 +62,7 @@ void setup()
     }
   }
 
-  tryImprovSetup();
+  setupWifi();
 
   setupWebserver();
 
@@ -105,7 +105,7 @@ void setup()
   forceFullRefresh();
 }
 
-void tryImprovSetup()
+void setupWifi()
 {
   WiFi.onEvent(WiFiEvent);
   WiFi.setAutoConnect(true);
@@ -140,10 +140,10 @@ void tryImprovSetup()
       String softAP_SSID =
           String("BTClock" + String(mac[5], 16) + String(mac[1], 16));
       WiFi.setHostname(softAP_SSID.c_str());
-      String softAP_password =
+      String softAP_password = replaceAmbiguousChars(
           base64::encode(String(mac[2], 16) + String(mac[4], 16) +
                          String(mac[5], 16) + String(mac[1], 16))
-              .substring(2, 10);
+              .substring(2, 10));
 
       wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", DEFAULT_WP_TIMEOUT));
       wm.setWiFiAutoReconnect(false);
@@ -274,9 +274,8 @@ void setupPreferences()
   else
     setCurrentCurrency(CURRENCY_USD);
 
-
   addScreenMapping(SCREEN_BLOCK_HEIGHT, "Block Height");
-  
+
   addScreenMapping(SCREEN_TIME, "Time");
   addScreenMapping(SCREEN_HALVING_COUNTDOWN, "Halving countdown");
   addScreenMapping(SCREEN_BLOCK_FEE_RATE, "Block Fee Rate");
@@ -284,7 +283,6 @@ void setupPreferences()
   addScreenMapping(SCREEN_SATS_PER_CURRENCY, "Sats per dollar");
   addScreenMapping(SCREEN_BTC_TICKER, "Ticker");
   addScreenMapping(SCREEN_MARKET_CAP, "Market Cap");
-
 
   // addScreenMapping(SCREEN_SATS_PER_CURRENCY_USD, "Sats per USD");
   // addScreenMapping(SCREEN_BTC_TICKER_USD, "Ticker USD");
@@ -302,13 +300,26 @@ void setupPreferences()
   // screenNameMap[SCREEN_HALVING_COUNTDOWN] = "Halving countdown";
   // screenNameMap[SCREEN_MARKET_CAP] = "Market Cap";
 
-  //addCurrencyMappings(getActiveCurrencies());
+  // addCurrencyMappings(getActiveCurrencies());
 
   if (preferences.getBool("bitaxeEnabled", DEFAULT_BITAXE_ENABLED))
   {
     addScreenMapping(SCREEN_BITAXE_HASHRATE, "BitAxe Hashrate");
     addScreenMapping(SCREEN_BITAXE_BESTDIFF, "BitAxe Best Difficulty");
   }
+}
+
+String replaceAmbiguousChars(String input)
+{
+  const char *ambiguous = "1IlO0";
+  const char *replacements = "LKQM8";
+
+  for (int i = 0; i < strlen(ambiguous); i++)
+  {
+    input.replace(ambiguous[i], replacements[i]);
+  }
+
+  return input;
 }
 
 // void addCurrencyMappings(const std::vector<std::string>& currencies)
@@ -375,9 +386,12 @@ void setupPreferences()
 
 void setupWebsocketClients(void *pvParameters)
 {
-  if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE)) {
+  if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE))
+  {
     setupV2Notify();
-  } else {
+  }
+  else
+  {
     setupBlockNotify();
     setupPriceNotify();
   }
