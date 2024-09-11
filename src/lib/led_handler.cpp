@@ -298,9 +298,14 @@ void ledTask(void *parameter)
             }
           }
 #endif
-          blinkDelayColor(250, 3, 142, 48, 235);
-       //   blinkDelayTwoColor(250, 3, pixels.Color(142, 48, 235),
-         //                    pixels.Color(169, 21, 255));
+          for (int flash = 0; flash < random(7, 10); flash++)
+          {
+            lightningStrike();
+            delay(random(50, 150));
+          }
+          // blinkDelayColor(250, 3, 142, 48, 235);
+          //   blinkDelayTwoColor(250, 3, pixels.Color(142, 48, 235),
+          //                    pixels.Color(169, 21, 255));
 #ifdef HAS_FRONTLIGHT
           if (preferences.getBool("flFlashOnUpd", DEFAULT_FL_FLASH_ON_UPDATE))
           {
@@ -666,6 +671,31 @@ void ledTheaterChaseRainbow(int wait)
       firstPixelHue += 65536 / 90;     // One cycle of color wheel over 90 frames
     }
   }
+}
+
+void lightningStrike()
+{
+  uint32_t PURPLE = pixels.Color(128, 0, 128);
+  uint32_t YELLOW = pixels.Color(255, 226, 41);
+
+  // Randomly choose which LEDs to light up
+  for (int i = 0; i < pixels.numPixels(); i++)
+  {
+    if (random(2) == 0)
+    { // 50% chance for each LED
+      pixels.setPixelColor(i, YELLOW);
+    }
+    else
+    {
+      pixels.setPixelColor(i, PURPLE);
+    }
+  }
+  pixels.show();
+
+  delay(random(10, 50)); // Flash duration
+
+  // Return to purple background
+  // setAllPixels(PURPLE);
 }
 
 Adafruit_NeoPixel getPixels() { return pixels; }

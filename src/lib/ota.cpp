@@ -70,62 +70,62 @@ void handleOTATask(void *parameter) {
   }
 }
 
-void downloadUpdate() {
-  WiFiClientSecure client;
-  client.setInsecure();
-  HTTPClient http;
-  http.setUserAgent(USER_AGENT);
+// void downloadUpdate() {
+//   WiFiClientSecure client;
+//   client.setInsecure();
+//   HTTPClient http;
+//   http.setUserAgent(USER_AGENT);
 
-  // Send HTTP request to CoinGecko API
-  http.useHTTP10(true);
+//   // Send HTTP request to CoinGecko API
+//   http.useHTTP10(true);
 
-  http.begin(client,
-             "https://api.github.com/repos/btclock/btclock_v3/releases/latest");
-  int httpCode = http.GET();
+//   http.begin(client,
+//              "https://api.github.com/repos/btclock/btclock_v3/releases/latest");
+//   int httpCode = http.GET();
 
-  if (httpCode == 200) {
-    //    WiFiClient * stream = http->getStreamPtr();
+//   if (httpCode == 200) {
+//     //    WiFiClient * stream = http->getStreamPtr();
 
-    JsonDocument filter;
+//     JsonDocument filter;
 
-    JsonObject filter_assets_0 = filter["assets"].add<JsonObject>();
-    filter_assets_0["name"] = true;
-    filter_assets_0["browser_download_url"] = true;
+//     JsonObject filter_assets_0 = filter["assets"].add<JsonObject>();
+//     filter_assets_0["name"] = true;
+//     filter_assets_0["browser_download_url"] = true;
 
-    JsonDocument doc;
+//     JsonDocument doc;
 
-    DeserializationError error = deserializeJson(
-        doc, http.getStream(), DeserializationOption::Filter(filter));
+//     DeserializationError error = deserializeJson(
+//         doc, http.getStream(), DeserializationOption::Filter(filter));
 
-    if (error) {
-      Serial.print("deserializeJson() failed: ");
-      Serial.println(error.c_str());
-      return;
-    }
+//     if (error) {
+//       Serial.print("deserializeJson() failed: ");
+//       Serial.println(error.c_str());
+//       return;
+//     }
 
-    String downloadUrl;
-    for (JsonObject asset : doc["assets"].as<JsonArray>()) {
-      if (asset["name"].as<String>().compareTo("firmware.bin") == 0) {
-        downloadUrl = asset["browser_download_url"].as<String>();
-        break;
-      }
-    }
+//     String downloadUrl;
+//     for (JsonObject asset : doc["assets"].as<JsonArray>()) {
+//       if (asset["name"].as<String>().compareTo("firmware.bin") == 0) {
+//         downloadUrl = asset["browser_download_url"].as<String>();
+//         break;
+//       }
+//     }
 
-    Serial.printf("Download update from %s", downloadUrl);
+//     Serial.printf("Download update from %s", downloadUrl);
 
-    // esp_http_client_config_t config = {
-    //     .url = CONFIG_FIRMWARE_UPGRADE_URL,
-    // };
-    // esp_https_ota_config_t ota_config = {
-    //     .http_config = &config,
-    // };
-    // esp_err_t ret = esp_https_ota(&ota_config);
-    // if (ret == ESP_OK)
-    // {
-    //   esp_restart();
-    // }
-  }
-}
+//     // esp_http_client_config_t config = {
+//     //     .url = CONFIG_FIRMWARE_UPGRADE_URL,
+//     // };
+//     // esp_https_ota_config_t ota_config = {
+//     //     .http_config = &config,
+//     // };
+//     // esp_err_t ret = esp_https_ota(&ota_config);
+//     // if (ret == ESP_OK)
+//     // {
+//     //   esp_restart();
+//     // }
+//   }
+// }
 
 void onOTAError(ota_error_t error) {
   Serial.println(F("\nOTA update error, restarting"));

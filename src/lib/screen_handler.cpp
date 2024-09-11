@@ -126,9 +126,6 @@ void IRAM_ATTR minuteTimerISR(void *arg) {
   //    vTaskNotifyGiveFromISR(timeUpdateTaskHandle, &xHigherPriorityTaskWoken);
   WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
   xQueueSendFromISR(workQueue, &timeUpdate, &xHigherPriorityTaskWoken);
-  if (priceFetchTaskHandle != NULL) {
-    vTaskNotifyGiveFromISR(priceFetchTaskHandle, &xHigherPriorityTaskWoken);
-  }
 
   if (bitaxeFetchTaskHandle != NULL) {
     vTaskNotifyGiveFromISR(bitaxeFetchTaskHandle, &xHigherPriorityTaskWoken);

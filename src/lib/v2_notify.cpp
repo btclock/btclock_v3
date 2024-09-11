@@ -9,7 +9,9 @@ void setupV2Notify()
     if ( preferences.getBool("stagingSource", DEFAULT_STAGING_SOURCE)) {
         Serial.println(F("Connecting to V2 staging source"));
         hostname = "ws-staging.btclock.dev";
-    } 
+    } else {
+        Serial.println(F("Connecting to V2 source"));
+    }
 
     webSocket.beginSSL(hostname, 443, "/api/v2/ws");
     webSocket.onEvent(onWebsocketV2Event);
@@ -120,7 +122,7 @@ void handleV2Message(JsonDocument doc) {
         processNewPrice(newPrice, getCurrencyChar(currency));
 
     }
-  }
+  } 
 }
 
 void taskV2Notify(void *pvParameters) {

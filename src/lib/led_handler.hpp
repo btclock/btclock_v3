@@ -61,6 +61,7 @@ void ledRainbow(int wait);
 void ledTheaterChaseRainbow(int wait);
 void ledTheaterChase(uint32_t color, int wait);
 Adafruit_NeoPixel getPixels();
+void lightningStrike();
 
 #ifdef HAS_FRONTLIGHT
 void frontlightFlash(int flDelayTime);

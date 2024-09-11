@@ -8,7 +8,6 @@
 #include <bitaxe_handler.hpp>
 
 #include "lib/epd.hpp"
-#include "lib/price_fetch.hpp"
 #include "lib/shared.hpp"
 
 // extern TaskHandle_t priceUpdateTaskHandle;

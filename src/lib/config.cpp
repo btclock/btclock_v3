@@ -754,3 +754,15 @@ bool isActiveCurrency(std::string &currency)
   }
   return false;
 }
+
+const char* getFirmwareFilename() {
+    if (HW_REV == "REV_B_EPD_2_13") {
+        return "btclock_rev_b_213epd_firmware.bin";
+    } else if (HW_REV == "REV_A_EPD_2_13") {
+        return "lolin_s3_mini_213epd_firmware.bin";
+    } else if (HW_REV == "REV_A_EPD_2_9") {
+        return "lolin_s3_mini_29epd_firmware.bin";
+    } else {
+        return "";
+    }
+}

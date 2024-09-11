@@ -86,6 +86,8 @@ void setupWebserver()
   {
     server.on("/upload/firmware", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
     server.on("/upload/webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
+    // server.on("/update/webui", HTTP_GET, onUpdateWebUi);
+    // server.on("/update/firmware", HTTP_GET, onUpdateFirmware);
   }
 
   server.on("/api/restart", HTTP_GET, onApiRestart);
@@ -662,7 +664,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
   root["mcapBigChar"] = preferences.getBool("mcapBigChar", DEFAULT_MCAP_BIG_CHAR);
   root["mdnsEnabled"] = preferences.getBool("mdnsEnabled", DEFAULT_MDNS_ENABLED);
   root["otaEnabled"] = preferences.getBool("otaEnabled", DEFAULT_OTA_ENABLED);
-  root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE);
+  //  root["fetchEurPrice"] = preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE);
   root["useSatsSymbol"] = preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL);
   root["useBlkCountdown"] = preferences.getBool("useBlkCountdown", DEFAULT_USE_BLOCK_COUNTDOWN);
   root["suffixPrice"] = preferences.getBool("suffixPrice", DEFAULT_SUFFIX_PRICE);
@@ -1041,6 +1043,167 @@ void onApiShowCurrency(AsyncWebServerRequest *request)
     return;
   }
   request->send(404);
+}
+
+String getLatestRelease(const String &fileToDownload)
+{
+
+  //  const char *fileToDownload = "littlefs.bin";
+
+  String releaseUrl = "https://api.github.com/repos/btclock/btclock_v3/releases/latest";
+  WiFiClientSecure client;
+  client.setCACert(github_root_ca);
+  HTTPClient http;
+  http.begin(client, releaseUrl);
+  http.setUserAgent(USER_AGENT);
+
+  int httpCode = http.GET();
+
+  String downloadUrl = "";
+
+  if (httpCode > 0)
+  {
+    String payload = http.getString();
+
+    JsonDocument doc;
+    deserializeJson(doc, payload);
+
+    JsonArray assets = doc["assets"];
+
+    for (JsonObject asset : assets)
+    {
+      if (asset["name"] == fileToDownload)
+      {
+        downloadUrl = asset["browser_download_url"].as<String>();
+        break;
+      }
+    }
+    Serial.printf("Latest release URL: %s\r\n", downloadUrl.c_str());
+  }
+  return downloadUrl;
+}
+
+void onUpdateWebUi(AsyncWebServerRequest *request)
+{
+  request->send(downloadUpdateHandler(UPDATE_WEBUI));
+}
+
+void onUpdateFirmware(AsyncWebServerRequest *request)
+{
+  request->send(downloadUpdateHandler(UPDATE_FIRMWARE));
+}
+
+int downloadUpdateHandler(char updateType)
+{
+  WiFiClientSecure client;
+  client.setCACert(github_root_ca);
+  HTTPClient http;
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+  String latestRelease = "";
+
+  switch (updateType)
+  {
+  case UPDATE_FIRMWARE:
+    latestRelease = getLatestRelease(getFirmwareFilename());
+    break;
+  case UPDATE_WEBUI:
+    latestRelease = getLatestRelease("littlefs.bin");
+    break;
+  }
+
+  if (latestRelease.equals(""))
+  {
+    return 503;
+  }
+
+  http.begin(client, latestRelease);
+  http.setUserAgent(USER_AGENT);
+
+  int httpCode = http.GET();
+  if (httpCode == HTTP_CODE_OK)
+  {
+    int contentLength = http.getSize();
+    if (contentLength > 0)
+    {
+      uint8_t *buffer = (uint8_t *)malloc(contentLength);
+      if (buffer)
+      {
+        WiFiClient *stream = http.getStreamPtr();
+        size_t written = stream->readBytes(buffer, contentLength);
+
+        if (written == contentLength)
+        {
+          String calculated_sha256 = calculateSHA256(buffer, contentLength);
+          Serial.print("Checksum is ");
+          Serial.println(calculated_sha256);
+          if (true)
+          {
+            Serial.println("Checksum verified. Proceeding with update.");
+
+            Update.onProgress(onOTAProgress);
+
+            int updateType = U_FLASH;
+
+            switch (updateType)
+            {
+            case UPDATE_WEBUI:
+              updateType = U_SPIFFS;
+              break;
+            default:
+            {
+              updateType = U_FLASH;
+            }
+            }
+
+            if (Update.begin(contentLength, updateType))
+            {
+              Update.write(buffer, contentLength);
+              if (Update.end())
+              {
+                Serial.println("Update complete. Rebooting.");
+                ESP.restart();
+              }
+              else
+              {
+                Serial.println("Error in update process.");
+              }
+            }
+            else
+            {
+              Serial.println("Not enough space to begin OTA");
+            }
+          }
+          else
+          {
+            Serial.println("Checksum mismatch. Aborting update.");
+          }
+        }
+        else
+        {
+          Serial.println("Error downloading firmware");
+        }
+        free(buffer);
+      }
+      else
+      {
+        Serial.println("Not enough memory to allocate buffer");
+      }
+    }
+    else
+    {
+      Serial.println("Invalid content length");
+    }
+  }
+  else
+  {
+    Serial.print(httpCode);
+    Serial.println("Error on HTTP request");
+    return 503;
+  }
+  http.end();
+
+  return 200;
 }
 
 #ifdef HAS_FRONTLIGHT

@@ -21,10 +21,17 @@ void stopWebServer();
 void setupWebserver();
 bool processEpdColorSettings(AsyncWebServerRequest *request);
 
+
+
 void onApiStatus(AsyncWebServerRequest *request);
 void onApiSystemStatus(AsyncWebServerRequest *request);
 void onApiSetWifiTxPower(AsyncWebServerRequest *request);
+void onUpdateWebUi(AsyncWebServerRequest *request);
+void onUpdateFirmware(AsyncWebServerRequest *request);
 
+int downloadUpdateHandler(char updateType);
+
+String getLatestRelease(const String& fileToDownload);
 
 void onApiScreenNext(AsyncWebServerRequest *request);
 void onApiScreenPrevious(AsyncWebServerRequest *request);

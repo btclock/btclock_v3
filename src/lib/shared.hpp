@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 #include <GxEPD2.h>
 #include <GxEPD2_BW.h>
+#include <mbedtls/md.h>
 
 #include <mutex>
 #include <utils.hpp>
@@ -65,7 +66,16 @@ const PROGMEM int screens[SCREEN_COUNT] = {
 const int usPerSecond = 1000000;
 const int usPerMinute = 60 * usPerSecond;
 
+extern const char *github_root_ca;
+
+const PROGMEM char UPDATE_FIRMWARE = 0;
+const PROGMEM char UPDATE_WEBUI = 1;
+
+
 struct ScreenMapping {
     int value;
     const char* name;
 };
+
+String calculateSHA256(uint8_t* data, size_t len);
+
