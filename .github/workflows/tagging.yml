@@ -59,7 +59,7 @@ jobs:
         run: shasum -a 256 ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin.sha256
 
       - name: Create checksum for littlefs partition
-        run: shasum -a 256 ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin.sha256
+        run: shasum -a 256 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin.sha256
 
       - name: Copy all artifacts to output folder
         run: cp .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/*.bin .pio/boot_app0.bin ${{ matrix.chip.name }}_${{ matrix.epd_variant }}
