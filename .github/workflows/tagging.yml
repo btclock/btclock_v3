@@ -55,6 +55,9 @@ jobs:
       - name: Create merged firmware binary
         run: mkdir -p ${{ matrix.chip.name }}_${{ matrix.epd_variant }} && esptool.py --chip ${{ matrix.chip.version }} merge_bin -o ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin --flash_mode dio 0x0000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/bootloader.bin 0x8000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/partitions.bin 0xe000 .pio/boot_app0.bin 0x10000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin 0x369000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin
 
+      - name: Create checksum for firmware
+        run: shasum -a 256 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}_firmware.bin.sha256
+        
       - name: Create checksum for merged binary
         run: shasum -a 256 ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin.sha256
 
