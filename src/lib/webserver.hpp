@@ -29,9 +29,7 @@ void onApiSetWifiTxPower(AsyncWebServerRequest *request);
 void onUpdateWebUi(AsyncWebServerRequest *request);
 void onUpdateFirmware(AsyncWebServerRequest *request);
 
-int downloadUpdateHandler(char updateType);
 
-String getLatestRelease(const String& fileToDownload);
 
 void onApiScreenNext(AsyncWebServerRequest *request);
 void onApiScreenPrevious(AsyncWebServerRequest *request);

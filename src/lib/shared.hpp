@@ -2,6 +2,7 @@
 
 #include <Adafruit_MCP23X17.h>
 #include <ArduinoJson.h>
+#include <WiFiClientSecure.h>
 #include <Preferences.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -78,4 +79,4 @@ struct ScreenMapping {
 };
 
 String calculateSHA256(uint8_t* data, size_t len);
-
+String calculateSHA256(WiFiClient *stream, size_t contentLength);

@@ -72,3 +72,40 @@ String calculateSHA256(uint8_t *data, size_t len)
 
     return String(sha256_str);
 }
+
+String calculateSHA256(WiFiClient *stream, size_t contentLength) {
+  mbedtls_md_context_t ctx;
+  mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
+  
+  mbedtls_md_init(&ctx);
+  mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 0);
+  mbedtls_md_starts(&ctx);
+  
+  uint8_t buff[1024];
+  size_t bytesRead = 0;
+  
+  while (bytesRead < contentLength) {
+    size_t toRead = min((size_t)(contentLength - bytesRead), sizeof(buff));
+    size_t readBytes = stream->readBytes(buff, toRead);
+    
+    if (readBytes == 0) {
+      break;
+    }
+    
+    mbedtls_md_update(&ctx, buff, readBytes);
+    bytesRead += readBytes;
+  }
+  
+  byte shaResult[32];
+  mbedtls_md_finish(&ctx, shaResult);
+  mbedtls_md_free(&ctx);
+  
+  String result = "";
+  for (int i = 0; i < sizeof(shaResult); i++) {
+    char str[3];
+    sprintf(str, "%02x", (int)shaResult[i]);
+    result += str;
+  }
+  
+  return result;
+}
