@@ -9,6 +9,7 @@
 #include <GxEPD2.h>
 #include <GxEPD2_BW.h>
 #include <mbedtls/md.h>
+#include <Update.h>
 
 #include <mutex>
 #include <utils.hpp>
@@ -69,9 +70,9 @@ const int usPerMinute = 60 * usPerSecond;
 
 extern const char *github_root_ca;
 
-const PROGMEM char UPDATE_FIRMWARE = 0;
-const PROGMEM char UPDATE_WEBUI = 1;
-
+const PROGMEM char UPDATE_FIRMWARE = U_FLASH;
+const PROGMEM char UPDATE_WEBUI = U_SPIFFS;
+const PROGMEM char UPDATE_ALL = 99;
 
 struct ScreenMapping {
     int value;

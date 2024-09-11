@@ -4,6 +4,8 @@ TaskHandle_t taskOtaHandle = NULL;
 bool isOtaUpdating = false;
 QueueHandle_t otaQueue;
 
+
+
 void setupOTA()
 {
   if (preferences.getBool("otaEnabled", DEFAULT_OTA_ENABLED))
@@ -65,7 +67,7 @@ void onOTAStart()
   vTaskSuspend(workerTaskHandle);
   vTaskSuspend(taskScreenRotateTaskHandle);
 
-  vTaskSuspend(ledTaskHandle);
+//  vTaskSuspend(ledTaskHandle);
   vTaskSuspend(buttonTaskHandle);
 
   // stopWebServer();
@@ -81,7 +83,18 @@ void handleOTATask(void *parameter)
   {
     if (xQueueReceive(otaQueue, &msg, 0) == pdTRUE)
     {
-      int result = downloadUpdateHandler(msg.updateType);
+      if (msg.updateType == UPDATE_ALL) {
+        int resultWebUi = downloadUpdateHandler(UPDATE_WEBUI);
+        int resultFw = downloadUpdateHandler(UPDATE_FIRMWARE);
+
+        if (resultWebUi == 0 && resultFw == 0) {
+          ESP.restart();
+        } else {
+          queueLedEffect(LED_FLASH_ERROR);
+          vTaskDelay(pdMS_TO_TICKS(3000));
+          ESP.restart();
+        }
+      }
     }
 
     ArduinoOTA.handle(); // Allow OTA updates to occur
@@ -89,7 +102,7 @@ void handleOTATask(void *parameter)
   }
 }
 
-String getLatestRelease(const String &fileToDownload)
+ReleaseInfo getLatestRelease(const String &fileToDownload)
 {
   String releaseUrl = "https://api.github.com/repos/btclock/btclock_v3/releases/latest";
   WiFiClientSecure client;
@@ -100,7 +113,7 @@ String getLatestRelease(const String &fileToDownload)
 
   int httpCode = http.GET();
 
-  String downloadUrl = "";
+  ReleaseInfo info = {"", ""};
 
   if (httpCode > 0)
   {
@@ -113,15 +126,26 @@ String getLatestRelease(const String &fileToDownload)
 
     for (JsonObject asset : assets)
     {
-      if (asset["name"] == fileToDownload)
+      String assetName = asset["name"].as<String>();
+      if (assetName == fileToDownload)
       {
-        downloadUrl = asset["browser_download_url"].as<String>();
+        info.fileUrl = asset["browser_download_url"].as<String>();
+      }
+      else if (assetName == fileToDownload + ".sha256")
+      {
+        info.checksumUrl = asset["browser_download_url"].as<String>();
+      }
+
+      if (!info.fileUrl.isEmpty() && !info.checksumUrl.isEmpty())
+      {
         break;
       }
     }
-    Serial.printf("Latest release URL: %s\r\n", downloadUrl.c_str());
+    Serial.printf("Latest release URL: %s\r\n", info.fileUrl.c_str());
+    Serial.printf("Checksum URL: %s\r\n", info.checksumUrl.c_str());
   }
-  return downloadUrl;
+  http.end();
+  return info;
 }
 
 int downloadUpdateHandler(char updateType)
@@ -131,7 +155,7 @@ int downloadUpdateHandler(char updateType)
   HTTPClient http;
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
-  String latestRelease = "";
+  ReleaseInfo latestRelease;
 
   switch (updateType)
   {
@@ -143,25 +167,22 @@ int downloadUpdateHandler(char updateType)
   case UPDATE_WEBUI:
   {
     latestRelease = getLatestRelease("littlefs.bin");
-    updateWebUi(latestRelease, U_SPIFFS);
-    return 0;
+    // updateWebUi(latestRelease.fileUrl, U_SPIFFS);
+    // return 0;
   }
   break;
   }
 
-  if (latestRelease.isEmpty())
-  {
-    return 503;
-  }
+
   // First, download the expected SHA256
-  String expectedSHA256 = downloadSHA256(getFirmwareFilename());
+  String expectedSHA256 = downloadSHA256(latestRelease.checksumUrl);
   if (expectedSHA256.isEmpty())
   {
     Serial.println("Failed to get SHA256 checksum. Aborting update.");
     return false;
   }
 
-  http.begin(client, latestRelease);
+  http.begin(client, latestRelease.fileUrl);
   http.setUserAgent(USER_AGENT);
 
   int httpCode = http.GET();
@@ -215,19 +236,21 @@ int downloadUpdateHandler(char updateType)
       
       Update.onProgress(onOTAProgress);
 
-      int updateType = (updateType == UPDATE_WEBUI) ? U_SPIFFS : U_FLASH;
-
       if (Update.begin(contentLength, updateType))
       {
-        size_t written = Update.writeStream(*stream);
+        onOTAStart();
+        size_t written = Update.write(firmware, contentLength);
 
         if (written == contentLength)
         {
           Serial.println("Written : " + String(written) + " successfully");
+          free(firmware);
         }
         else
         {
           Serial.println("Written only : " + String(written) + "/" + String(contentLength) + ". Retry?");
+          free(firmware);
+          return 503;
         }
 
         if (Update.end())
@@ -236,26 +259,33 @@ int downloadUpdateHandler(char updateType)
           if (Update.isFinished())
           {
             Serial.println("Update successfully completed. Rebooting.");
-            ESP.restart();
+//            ESP.restart();
           }
           else
           {
             Serial.println("Update not finished? Something went wrong!");
+            free(firmware);
+            return 503;
           }
         }
         else
         {
           Serial.println("Error Occurred. Error #: " + String(Update.getError()));
+          free(firmware);
+          return 503;
         }
       }
       else
       {
         Serial.println("Not enough space to begin OTA");
+        free(firmware);
+        return 503;
       }
     }
     else
     {
       Serial.println("Invalid content length");
+      return 503;
     }
   }
   else
@@ -265,7 +295,7 @@ int downloadUpdateHandler(char updateType)
   }
   http.end();
 
-  return 200;
+  return 0;
 }
 
 void updateWebUi(String latestRelease, int command)
@@ -380,9 +410,8 @@ bool getIsOTAUpdating()
   return isOtaUpdating;
 }
 
-String downloadSHA256(const String &filename)
+String downloadSHA256(const String &sha256Url)
 {
-  String sha256Url = getLatestRelease(filename + ".sha256");
   if (sha256Url.isEmpty())
   {
     Serial.println("Failed to get SHA256 file URL");

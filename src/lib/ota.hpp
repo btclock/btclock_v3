@@ -15,6 +15,11 @@ typedef struct {
 
 extern QueueHandle_t otaQueue;
 
+struct ReleaseInfo {
+  String fileUrl;
+  String checksumUrl;
+};
+
 void setupOTA();
 void onOTAStart();
 void handleOTATask(void *parameter);
@@ -23,9 +28,10 @@ void onOTAProgress(unsigned int progress, unsigned int total);
 void onOTAError(ota_error_t error);
 void onOTAComplete();
 int downloadUpdateHandler(char updateType);
-String getLatestRelease(const String& fileToDownload);
+ReleaseInfo getLatestRelease(const String& fileToDownload);
 
 bool getIsOTAUpdating();
 
 void updateWebUi(String latestRelease, int command);
 String downloadSHA256(const String& filename);
+

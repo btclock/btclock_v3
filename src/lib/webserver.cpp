@@ -86,8 +86,7 @@ void setupWebserver()
   {
     server.on("/upload/firmware", HTTP_POST, onFirmwareUpdate, asyncFirmwareUpdateHandler);
     server.on("/upload/webui", HTTP_POST, onFirmwareUpdate, asyncWebuiUpdateHandler);
-    // server.on("/update/webui", HTTP_GET, onUpdateWebUi);
-    // server.on("/update/firmware", HTTP_GET, onUpdateFirmware);
+    server.on("/api/firmware/auto_update", HTTP_GET, onAutoUpdateFirmware);
   }
 
   server.on("/api/restart", HTTP_GET, onApiRestart);
@@ -142,29 +141,16 @@ void onFirmwareUpdate(AsyncWebServerRequest *request)
   request->send(response);
 }
 
-void onUpdateWebUi(AsyncWebServerRequest *request)
+void onAutoUpdateFirmware(AsyncWebServerRequest *request)
 {
-  UpdateMessage msg = {UPDATE_WEBUI};
+  UpdateMessage msg = {UPDATE_ALL};
   if (xQueueSend(otaQueue, &msg, 0) == pdTRUE)
   {
-    request->send(200, "text/plain", "WebUI update triggered");
+    request->send(200, "application/json", "{\"msg\":\"Firmware update triggered\"}");
   }
   else
   {
-    request->send(503, "text/plain", "Update already in progress");
-  }
-}
-
-void onUpdateFirmware(AsyncWebServerRequest *request)
-{
-  UpdateMessage msg = {UPDATE_FIRMWARE};
-  if (xQueueSend(otaQueue, &msg, 0) == pdTRUE)
-  {
-    request->send(200, "text/plain", "Firmware update triggered");
-  }
-  else
-  {
-    request->send(503, "text/plain", "Update already in progress");
+    request->send(503,"application/json", "{\"msg\":\"Update already in progress\"}"); 
   }
 }
 
