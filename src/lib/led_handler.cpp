@@ -576,6 +576,7 @@ void saveLedState()
   {
     int pixelColor = pixels.getPixelColor(i);
     char key[12];
+    snprintf(key, 12, "%s%d", "ledColor_", i);
     preferences.putUInt(key, pixelColor);
   }
 
@@ -587,6 +588,7 @@ void restoreLedState()
   for (int i = 0; i < pixels.numPixels(); i++)
   {
     char key[12];
+    snprintf(key, 12, "%s%d", "ledColor_", i);
     uint pixelColor = preferences.getUInt(key, pixels.Color(0, 0, 0));
     pixels.setPixelColor(i, pixelColor);
   }
