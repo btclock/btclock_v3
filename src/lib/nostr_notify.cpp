@@ -76,7 +76,8 @@ void setupNostrNotify(bool asDatasource, bool zapNotify)
                 }else if(status==nostr::ConnectionStatus::ERROR){
                     sstatus = "ERROR";
                 }
-                Serial.println("[ Nostr ] Connection status changed: " + sstatus); });
+                //Serial.println("[ Nostr ] Connection status changed: " + sstatus); 
+                });
         }
     }
     catch (const std::exception &e)
@@ -204,9 +205,11 @@ void handleNostrZapCallback(const String &subId, nostr::SignedNostrEvent *event)
 
             if (strcmp(key, "bolt11") == 0)
             {
-                Serial.println(F("Got a zap"));
+                Serial.print(F("Got a zap of "));
                 
                 int64_t satsAmount = getAmountInSatoshis(std::string(value));
+                Serial.print(satsAmount);
+                Serial.println(F(" sats"));
 
                 std::array<std::string, NUM_SCREENS> textEpdContent = parseZapNotify(satsAmount, preferences.getBool("useSatsSymbol", DEFAULT_USE_SATS_SYMBOL));
 

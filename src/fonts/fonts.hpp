@@ -1,7 +1,7 @@
 #pragma once
 
 #include "antonio-semibold20.h"
-#include "antonio-semibold30.h"
+//#include "antonio-semibold30.h"
 #include "antonio-semibold40.h"
 #include "antonio-semibold90.h"
 #include "sats-symbol.h"

@@ -705,7 +705,7 @@ void onApiSettingsGet(AsyncWebServerRequest *request)
 
 #ifdef HAS_FRONTLIGHT
   root["hasFrontlight"] = true;
-  root["flDisable"] = preferences.getBool("flDisable", DEFAULT_DISABLE_FL);
+  root["flDisable"] = preferences.getBool("flDisable");
   root["flMaxBrightness"] = preferences.getUInt("flMaxBrightness", DEFAULT_FL_MAX_BRIGHTNESS);
   root["flAlwaysOn"] = preferences.getBool("flAlwaysOn", DEFAULT_FL_ALWAYS_ON);
   root["flEffectDelay"] = preferences.getUInt("flEffectDelay", DEFAULT_FL_EFFECT_DELAY);

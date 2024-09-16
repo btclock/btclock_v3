@@ -58,6 +58,9 @@ void setup()
     {
       preferences.clear();
       queueLedEffect(LED_EFFECT_WIFI_ERASE_SETTINGS);
+      nvs_flash_erase();
+      delay(1000);
+
       ESP.restart();
     }
   }
@@ -229,6 +232,9 @@ void setupWifi()
       // esp_task_wdt_deinit();
       // esp_task_wdt_reset();
     }
+
+
+
     setFgColor(preferences.getUInt("fgColor", isWhiteVersion() ? GxEPD_BLACK : GxEPD_WHITE));
     setBgColor(preferences.getUInt("bgColor", isWhiteVersion() ? GxEPD_WHITE : GxEPD_BLACK));
   }
@@ -273,6 +279,16 @@ void setupPreferences()
     setCurrentCurrency(preferences.getUChar("lastCurrency", CURRENCY_USD));
   else
     setCurrentCurrency(CURRENCY_USD);
+
+  if (!preferences.isKey("flDisable")) {
+    preferences.putBool("flDisable", isWhiteVersion() ? false : true);
+  }
+
+  if (!preferences.isKey("fgColor")) {
+    preferences.putUInt("fgColor", isWhiteVersion() ? GxEPD_BLACK : GxEPD_WHITE);
+    preferences.putUInt("bgColor", isWhiteVersion() ? GxEPD_WHITE : GxEPD_BLACK);
+  }
+ 
 
   addScreenMapping(SCREEN_BLOCK_HEIGHT, "Block Height");
 
@@ -455,6 +471,10 @@ void setupHardware()
     Serial.println(F("An Error has occurred while mounting LittleFS"));
   }
 
+  if (HW_REV == "REV_B_EPD_2_13" && !isWhiteVersion()) {
+    Serial.println(F("Black Rev B"));
+  }
+
   if (!LittleFS.open("/index.html.gz", "r"))
   {
     Serial.println(F("Error loading WebUI"));
@@ -509,7 +529,7 @@ void setupHardware()
   }
 
 #ifdef IS_HW_REV_B
-  pinMode(39, INPUT_PULLUP);
+  pinMode(39, INPUT_PULLDOWN);
 
 #endif
 
@@ -690,6 +710,7 @@ String getHwRev()
 bool isWhiteVersion()
 {
 #ifdef IS_HW_REV_B
+  pinMode(39, INPUT_PULLDOWN);
   return digitalRead(39);
 #else
   return false;

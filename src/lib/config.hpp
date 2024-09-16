@@ -7,7 +7,7 @@
 #include <WiFiManager.h>
 #include <base64.h>
 #include <esp_task_wdt.h>
-
+#include <nvs_flash.h>
 #include <map>
 
 #include "lib/block_notify.hpp"
