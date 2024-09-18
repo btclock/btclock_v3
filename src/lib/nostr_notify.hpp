@@ -12,6 +12,7 @@
 
 #include "price_notify.hpp"
 #include "block_notify.hpp"
+#include "lib/timers.hpp"
 
 void setupNostrNotify(bool asDatasource, bool zapNotify);
 

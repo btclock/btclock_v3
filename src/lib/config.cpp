@@ -404,7 +404,7 @@ void setupWebsocketClients(void *pvParameters)
 {
   if (preferences.getBool("ownDataSource", DEFAULT_OWN_DATA_SOURCE))
   {
-    setupV2Notify();
+    V2Notify::setupV2Notify();
   }
   else
   {
@@ -553,7 +553,7 @@ void setupHardware()
   {
     Serial.println(F("Found BH1750"));
     hasLuxSensor = true;
-    bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE, 0x5C);
+    bh1750.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x5C);
   }
   else
   {

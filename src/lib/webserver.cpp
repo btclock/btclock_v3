@@ -256,9 +256,10 @@ JsonDocument getStatusObject()
   // root["espPsramSize"] = ESP.getPsramSize();
 
   JsonObject conStatus = root["connectionStatus"].to<JsonObject>();
+  
   conStatus["price"] = isPriceNotifyConnected();
   conStatus["blocks"] = isBlockNotifyConnected();
-  conStatus["V2"] = isV2NotifyConnected();
+  conStatus["V2"] = V2Notify::isV2NotifyConnected();
 
   conStatus["nostr"] = nostrConnected();
 

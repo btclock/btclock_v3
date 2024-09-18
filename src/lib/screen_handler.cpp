@@ -5,8 +5,7 @@
 // TaskHandle_t timeUpdateTaskHandle;
 TaskHandle_t taskScreenRotateTaskHandle;
 TaskHandle_t workerTaskHandle;
-esp_timer_handle_t screenRotateTimer;
-esp_timer_handle_t minuteTimer;
+
 
 std::array<std::string, NUM_SCREENS> taskEpdContent = {};
 std::string priceString;
@@ -23,8 +22,6 @@ void workerTask(void *pvParameters) {
   while (1) {
     // Wait for a work item to be available in the queue
     if (xQueueReceive(workQueue, &receivedItem, portMAX_DELAY)) {
-      uint firstIndex = 0;
-
       // Process the work item based on its type
       switch (receivedItem.type) {
         case TASK_BITAXE_UPDATE: {
@@ -42,10 +39,7 @@ void workerTask(void *pvParameters) {
         case TASK_PRICE_UPDATE: {
           uint currency = getCurrentCurrency();
           uint price = getPrice(currency);
-       //   u_char priceSymbol = '$';
-          // if (preferences.getBool("fetchEurPrice", DEFAULT_FETCH_EUR_PRICE)) {
-          //   priceSymbol = '[';
-          // }
+
           if (getCurrentScreen() == SCREEN_BTC_TICKER) {
             taskEpdContent = parsePriceData(price, currency, preferences.getBool("suffixPrice", DEFAULT_SUFFIX_PRICE));
           } else if (getCurrentScreen() == SCREEN_SATS_PER_CURRENCY) {
@@ -121,29 +115,6 @@ void taskScreenRotate(void *pvParameters) {
   }
 }
 
-void IRAM_ATTR minuteTimerISR(void *arg) {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  //    vTaskNotifyGiveFromISR(timeUpdateTaskHandle, &xHigherPriorityTaskWoken);
-  WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
-  xQueueSendFromISR(workQueue, &timeUpdate, &xHigherPriorityTaskWoken);
-
-  if (bitaxeFetchTaskHandle != NULL) {
-    vTaskNotifyGiveFromISR(bitaxeFetchTaskHandle, &xHigherPriorityTaskWoken);
-  }
-
-  if (xHigherPriorityTaskWoken == pdTRUE) {
-    portYIELD_FROM_ISR();
-  }
-}
-
-void IRAM_ATTR screenRotateTimerISR(void *arg) {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(taskScreenRotateTaskHandle, &xHigherPriorityTaskWoken);
-  if (xHigherPriorityTaskWoken == pdTRUE) {
-    portYIELD_FROM_ISR();
-  }
-}
-
 void setupTasks() {
   workQueue = xQueueCreate(WORK_QUEUE_SIZE, sizeof(WorkItem));
 
@@ -158,65 +129,6 @@ void setupTasks() {
   if (findScreenIndexByValue(preferences.getUInt("currentScreen", DEFAULT_CURRENT_SCREEN)) != -1)
     setCurrentScreen(preferences.getUInt("currentScreen", DEFAULT_CURRENT_SCREEN));
 }
-
-void setupTimeUpdateTimer(void *pvParameters) {
-  const esp_timer_create_args_t minuteTimerConfig = {
-      .callback = &minuteTimerISR, .name = "minute_timer"};
-
-  esp_timer_create(&minuteTimerConfig, &minuteTimer);
-
-  time_t currentTime;
-  struct tm timeinfo;
-  time(&currentTime);
-  localtime_r(&currentTime, &timeinfo);
-  uint32_t secondsUntilNextMinute = 60 - timeinfo.tm_sec;
-
-  if (secondsUntilNextMinute > 0)
-    vTaskDelay(pdMS_TO_TICKS((secondsUntilNextMinute * 1000)));
-
-  esp_timer_start_periodic(minuteTimer, usPerMinute);
-
-  WorkItem timeUpdate = {TASK_TIME_UPDATE, 0};
-  xQueueSend(workQueue, &timeUpdate, portMAX_DELAY);
-  //    xTaskNotifyGive(timeUpdateTaskHandle);
-
-  vTaskDelete(NULL);
-}
-
-void setupScreenRotateTimer(void *pvParameters) {
-  const esp_timer_create_args_t screenRotateTimerConfig = {
-      .callback = &screenRotateTimerISR, .name = "screen_rotate_timer"};
-
-  esp_timer_create(&screenRotateTimerConfig, &screenRotateTimer);
-
-  if (preferences.getBool("timerActive", DEFAULT_TIMER_ACTIVE)) {
-    esp_timer_start_periodic(screenRotateTimer,
-                             getTimerSeconds() * usPerSecond);
-  }
-
-  vTaskDelete(NULL);
-}
-
-uint getTimerSeconds() { return preferences.getUInt("timerSeconds", DEFAULT_TIMER_SECONDS); }
-
-bool isTimerActive() { return esp_timer_is_active(screenRotateTimer); }
-
-void setTimerActive(bool status) {
-  if (status) {
-    esp_timer_start_periodic(screenRotateTimer,
-                             getTimerSeconds() * usPerSecond);
-    queueLedEffect(LED_EFFECT_START_TIMER);
-    preferences.putBool("timerActive", true);
-  } else {
-    esp_timer_stop(screenRotateTimer);
-    queueLedEffect(LED_EFFECT_PAUSE_TIMER);
-    preferences.putBool("timerActive", false);
-  }
-
-  if (eventSourceTaskHandle != NULL) xTaskNotifyGive(eventSourceTaskHandle);
-}
-
-void toggleTimerActive() { setTimerActive(!isTimerActive()); }
 
 uint getCurrentScreen() { return currentScreen; }
 

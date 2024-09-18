@@ -4,6 +4,7 @@
 
 #include "lib/screen_handler.hpp"
 #include "lib/shared.hpp"
+#include "lib/timers.hpp"
 
 extern TaskHandle_t buttonTaskHandle;
 

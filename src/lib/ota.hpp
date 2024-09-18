@@ -5,6 +5,7 @@
 
 #include "lib/config.hpp"
 #include "lib/shared.hpp"
+#include "lib/timers.hpp"
 
 #ifndef UPDATE_MESSAGE_HPP
 #define UPDATE_MESSAGE_HPP

@@ -16,9 +16,6 @@
 extern TaskHandle_t workerTaskHandle;
 extern TaskHandle_t taskScreenRotateTaskHandle;
 
-extern esp_timer_handle_t screenRotateTimer;
-extern esp_timer_handle_t minuteTimer;
-
 extern QueueHandle_t workQueue;
 
 typedef enum {
@@ -42,21 +39,14 @@ void previousScreen();
 
 void showSystemStatusScreen();
 
-void setupTimeUpdateTimer(void *pvParameters);
-void setupScreenRotateTimer(void *pvParameters);
 
-void IRAM_ATTR minuteTimerISR(void *arg);
-void IRAM_ATTR screenRotateTimerISR(void *arg);
 
 // void taskPriceUpdate(void *pvParameters);
 // void taskBlockUpdate(void *pvParameters);
 // void taskTimeUpdate(void *pvParameters);
 void taskScreenRotate(void *pvParameters);
 
-uint getTimerSeconds();
-bool isTimerActive();
-void setTimerActive(bool status);
-void toggleTimerActive();
+
 
 void setupTasks();
 void setCurrentCurrency(char currency);
