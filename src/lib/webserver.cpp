@@ -20,6 +20,10 @@ void setupWebserver()
 
   AsyncStaticWebHandler &staticHandler = server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
+
+  server.rewrite("/convert", "/");
+  server.rewrite("/api", "/");
+
   if (preferences.getBool("httpAuthEnabled", DEFAULT_HTTP_AUTH_ENABLED))
   {
     staticHandler.setAuthentication(
