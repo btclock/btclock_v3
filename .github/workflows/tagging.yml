@@ -44,9 +44,9 @@ jobs:
             version: esp32s3
         epd_variant: [213epd, 29epd]
         exclude:
-          - chip: btclock_rev_b
+          - chip: {name: btclock_rev_b, version: esp32s3}
             epd_variant: 29epd
-          - chip: btclock_v8
+          - chip: {name: btclock_v8, version: esp32s3}
             epd_variant: 29epd
     steps:
       - uses: actions/download-artifact@v4
