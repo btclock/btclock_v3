@@ -4,7 +4,7 @@
 
 Preferences preferences;
 Adafruit_MCP23X17 mcp1;
-#ifdef IS_BTCLOCK_S3
+#ifdef IS_BTCLOCK_V8
 Adafruit_MCP23X17 mcp2;
 #endif
 
@@ -439,12 +439,12 @@ std::vector<ScreenMapping> getScreenNameMap() { return screenMappings; }
 
 void setupMcp()
 {
-#ifdef IS_BTCLOCK_S3
+#ifdef IS_BTCLOCK_V8
   const int mcp1AddrPins[] = {MCP1_A0_PIN, MCP1_A1_PIN, MCP1_A2_PIN};
   const int mcp1AddrValues[] = {LOW, LOW, LOW};
 
   const int mcp2AddrPins[] = {MCP2_A0_PIN, MCP2_A1_PIN, MCP2_A2_PIN};
-  const int mcp2AddrValues[] = {LOW, LOW, HIGH};
+  const int mcp2AddrValues[] = {HIGH, LOW, LOW};
 
   pinMode(MCP_RESET_PIN, OUTPUT);
   digitalWrite(MCP_RESET_PIN, HIGH);
@@ -505,7 +505,7 @@ void setupHardware()
 
   if (!mcp1.begin_I2C(0x20))
   {
-    Serial.println(F("Error MCP23017"));
+    Serial.println(F("Error MCP23017 1"));
 
     // while (1)
     //         ;
@@ -520,7 +520,7 @@ void setupHardware()
       mcp1.pinMode(i, INPUT_PULLUP);
       mcp1.setupInterruptPin(i, LOW);
     }
-#ifndef IS_BTCLOCK_S3
+#ifndef IS_BTCLOCK_V8
     for (int i = 8; i <= 14; i++)
     {
       mcp1.pinMode(i, OUTPUT);
@@ -533,10 +533,10 @@ void setupHardware()
 
 #endif
 
-#ifdef IS_BTCLOCK_S3
+#ifdef IS_BTCLOCK_V8
   if (!mcp2.begin_I2C(0x21))
   {
-    Serial.println(F("Error MCP23017"));
+    Serial.println(F("Error MCP23017 2"));
 
     // while (1)
     //         ;

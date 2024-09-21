@@ -1,9 +1,9 @@
 name: BTClock CI
 
-on: 
+on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build:
@@ -40,10 +40,14 @@ jobs:
             version: esp32s3
           - name: btclock_rev_b
             version: esp32s3
+          - name: btclock_v8
+            version: esp32s3
         epd_variant: [213epd, 29epd]
         exclude:
-            - chip: btclock_rev_b
-              epd_variant: 29epd
+          - chip: btclock_rev_b
+            epd_variant: 29epd
+          - chip: btclock_v8
+            epd_variant: 29epd
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -51,13 +55,37 @@ jobs:
           path: .pio
       - name: Install esptools.py
         run: pip install --upgrade esptool
-
+      # - name: Create merged firmware binary
+      # run: mkdir -p ${{ matrix.chip.name }}_${{ matrix.epd_variant }} && esptool.py --chip ${{ matrix.chip.version }} merge_bin -o ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin --flash_mode dio 0x0000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/bootloader.bin 0x8000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/partitions.bin 0xe000 .pio/boot_app0.bin 0x10000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin 0x369000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin
       - name: Create merged firmware binary
-        run: mkdir -p ${{ matrix.chip.name }}_${{ matrix.epd_variant }} && esptool.py --chip ${{ matrix.chip.version }} merge_bin -o ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin --flash_mode dio 0x0000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/bootloader.bin 0x8000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/partitions.bin 0xe000 .pio/boot_app0.bin 0x10000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin 0x369000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin
+        run: |
+          if [ "${{ matrix.chip.name }}" == "btclock_v8" ]; then
+            mkdir -p ${{ matrix.chip.name }}_${{ matrix.epd_variant }} && \
+            esptool.py --chip ${{ matrix.chip.version }} merge_bin \
+            -o ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin \
+            --flash_mode qio \
+            0x0000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/bootloader.bin \
+            0x8000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/partitions.bin \
+            0xe000 .pio/boot_app0.bin \
+            0x10000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin \
+            0x810000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin;
+          else
+            # Original command for other cases
+            mkdir -p ${{ matrix.chip.name }}_${{ matrix.epd_variant }} && \
+            esptool.py --chip ${{ matrix.chip.version }} merge_bin \
+            -o ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin \
+            --flash_mode dio \
+            0x0000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/bootloader.bin \
+            0x8000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/partitions.bin \
+            0xe000 .pio/boot_app0.bin \
+            0x10000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin \
+            0x369000 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/littlefs.bin
+            # Adjust the offset for littlefs or other files as needed for the original case
+          fi
 
       - name: Create checksum for firmware
         run: shasum -a 256 .pio/build/${{ matrix.chip.name }}_${{ matrix.epd_variant }}/firmware.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}_firmware.bin.sha256
-        
+
       - name: Create checksum for merged binary
         run: shasum -a 256 ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin | awk '{print $1}' > ${{ matrix.chip.name }}_${{ matrix.epd_variant }}/${{ matrix.chip.name }}_${{ matrix.epd_variant }}.bin.sha256
 
@@ -91,10 +119,10 @@ jobs:
           merge-multiple: false
       - name: Write commit hash to file
         run: echo $GITHUB_SHA > commit.txt
-  
+
       - name: Write build date to file
         run: echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > date.txt
-  
+
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
@@ -117,8 +145,8 @@ jobs:
         with:
           source-directory: .
           target-directory: firmware_v3/
-          destination-github-username: 'btclock'
-          destination-repository-name: 'web-flasher'
+          destination-github-username: "btclock"
+          destination-repository-name: "web-flasher"
           target-branch: main
           user-name: ${{github.actor}}
           user-email: ${{github.actor}}@users.noreply.github.com

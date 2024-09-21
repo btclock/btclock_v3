@@ -30,7 +30,7 @@ MCP23X17_Pin EPD_RESET_MPD[NUM_SCREENS] = {
 };
 
 Native_Pin EPD_DC = Native_Pin(14);
-#elif IS_BTCLOCK_S3
+#elif IS_BTCLOCK_V8
 Native_Pin EPD_DC = Native_Pin(38);
 
 MCP23X17_Pin EPD_BUSY[NUM_SCREENS] = {
@@ -104,8 +104,8 @@ GxEPD2_BW<EPD_CLASS, EPD_CLASS::HEIGHT> displays[NUM_SCREENS] = {
     EPD_CLASS(&EPD_CS[4], &EPD_DC, &EPD_RESET_MPD[4], &EPD_BUSY[4]),
     EPD_CLASS(&EPD_CS[5], &EPD_DC, &EPD_RESET_MPD[5], &EPD_BUSY[5]),
     EPD_CLASS(&EPD_CS[6], &EPD_DC, &EPD_RESET_MPD[6], &EPD_BUSY[6]),
-#ifdef IS_BTCLOCK_S3
-    EPD_CLASS(&EPD_CS[7], &EPD_DC, &EPD_RESET_MPD[6], &EPD_BUSY[7]),
+#ifdef IS_BTCLOCK_V8
+    EPD_CLASS(&EPD_CS[7], &EPD_DC, &EPD_RESET_MPD[7], &EPD_BUSY[7]),
 #endif
 };
 
@@ -170,7 +170,7 @@ void setupDisplays()
 
   updateQueue = xQueueCreate(UPDATE_QUEUE_SIZE, sizeof(UpdateDisplayTaskItem));
 
-  xTaskCreate(prepareDisplayUpdateTask, "PrepareUpd", 2048, NULL, 11, NULL);
+  xTaskCreate(prepareDisplayUpdateTask, "PrepareUpd", 4096, NULL, 11, NULL);
 
   for (uint i = 0; i < NUM_SCREENS; i++)
   {
@@ -180,7 +180,7 @@ void setupDisplays()
     int *taskParam = new int;
     *taskParam = i;
 
-    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 2048, taskParam,
+    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 4096, taskParam,
                 11, &tasks[i]); // create task
   }
 
@@ -194,8 +194,11 @@ void setupDisplays()
   }
   else
   {
-
+    #ifdef IS_BTCLOCK_V8
+    epdContent = {"B", "T", "C", "L", "O", "C", "K", "v8"};
+    #else
     epdContent = {"B", "T", "C", "L", "O", "C", "K"};
+    #endif
   }
 
   setEpdContent(epdContent);

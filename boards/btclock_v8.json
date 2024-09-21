@@ -10,7 +10,7 @@
       "-DBOARD_HAS_PSRAM",
       "-DARDUINO_BTCLOCK",
       "-DARDUINO_ESP32S3_DEV",
-      "-DIS_BTCLOCK_S3",
+      "-DIS_BTCLOCK_V8",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1",
@@ -20,8 +20,8 @@
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "psram_type": "opi",
-    "espidf": {
-      "sdkconfig_path": "boards"
+    "esp-idf": {
+      "sdkconfig_path": "boards/sdkconfig.btclock_v8"
     },
     "hwids": [
       [

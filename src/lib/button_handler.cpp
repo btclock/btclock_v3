@@ -4,6 +4,18 @@ TaskHandle_t buttonTaskHandle = NULL;
 const TickType_t debounceDelay = pdMS_TO_TICKS(50);
 TickType_t lastDebounceTime = 0;
 
+#ifdef IS_BTCLOCK_V8
+#define BTN_1 0
+#define BTN_2 1
+#define BTN_3 2
+#define BTN_4 3
+#else
+#define BTN_1 3
+#define BTN_2 2
+#define BTN_3 1
+#define BTN_4 0
+#endif
+
 void buttonTask(void *parameter) {
   while (1) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -17,16 +29,16 @@ void buttonTask(void *parameter) {
         uint pin = mcp1.getLastInterruptPin();
 
         switch (pin) {
-          case 3:
+          case BTN_1:
             toggleTimerActive();
             break;
-          case 2:
+          case BTN_2:
             nextScreen();
             break;
-          case 1:
+          case BTN_3:
             previousScreen();
             break;
-          case 0:
+          case BTN_4:
             showSystemStatusScreen();
             break;
         }
