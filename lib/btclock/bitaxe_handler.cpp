@@ -9,7 +9,7 @@ std::array<std::string, NUM_SCREENS> parseBitaxeHashRate(std::string text)
 
     // Calculate the position where the digits should start
     // Account for the position of the "mdi:pickaxe" and the "GH/S" label
-    std::size_t startIndex = NUM_SCREENS - 1 - textLength;
+    std::size_t startIndex = NUM_SCREENS - textLength;
 
     // Insert the "mdi:pickaxe" icon just before the digits
     if (startIndex > 0)
@@ -23,7 +23,9 @@ std::array<std::string, NUM_SCREENS> parseBitaxeHashRate(std::string text)
         ret[startIndex + i] = text.substr(i, 1);
     }
 
-    ret[NUM_SCREENS - 1] = "GH/S";
+    char lastChar = text[textLength - 1];
+
+    ret[NUM_SCREENS - 1] = std::string(1, lastChar) + "H/S";
     ret[0] = "BIT/AXE";
 
     return ret;

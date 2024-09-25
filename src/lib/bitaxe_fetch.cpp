@@ -17,14 +17,18 @@ std::string getBitaxeBestDiff()
 
 void taskBitaxeFetch(void *pvParameters)
 {
+    WiFiClientSecure client;
+
+    client.setCACert(srpool_ca);
+
     for (;;)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         HTTPClient http;
         http.setUserAgent(USER_AGENT);
-        String bitaxeApiUrl = "http://" + preferences.getString("bitaxeHostname", DEFAULT_BITAXE_HOSTNAME) + "/api/system/info";
-        http.begin(bitaxeApiUrl.c_str());
+        String bitaxeApiUrl = preferences.getString("bitaxeHostname", DEFAULT_BITAXE_HOSTNAME);
+        http.begin(client, bitaxeApiUrl.c_str());
 
         int httpCode = http.GET();
 
@@ -33,8 +37,8 @@ void taskBitaxeFetch(void *pvParameters)
             String payload = http.getString();
             JsonDocument doc;
             deserializeJson(doc, payload);
-            bitaxeHashrate = std::to_string(static_cast<int>(std::round(doc["hashRate"].as<float>())));
-            bitaxeBestDiff = doc["bestDiff"].as<std::string>();
+            bitaxeHashrate = doc["hashrate1m"].as<std::string>();
+            bitaxeBestDiff = formatNumberWithSuffix(doc["bestever"].as<uint64_t>());
 
             if (workQueue != nullptr && (getCurrentScreen() == SCREEN_BITAXE_HASHRATE || getCurrentScreen() == SCREEN_BITAXE_BESTDIFF))
             {

@@ -69,6 +69,7 @@ const int usPerSecond = 1000000;
 const int usPerMinute = 60 * usPerSecond;
 
 extern const char *github_root_ca;
+extern const char *srpool_ca;
 
 const PROGMEM char UPDATE_FIRMWARE = U_FLASH;
 const PROGMEM char UPDATE_WEBUI = U_SPIFFS;
