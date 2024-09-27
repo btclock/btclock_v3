@@ -300,7 +300,8 @@ JsonDocument getLedStatusObject()
     uint green = (pixColor >> 8) & 0xFF;
     uint blue = pixColor & 0xFF;
     char hexColor[8];
-    sprintf(hexColor, "#%02X%02X%02X", red, green, blue);
+    snprintf(hexColor, sizeof(hexColor), "#%02X%02X%02X", red, green, blue);
+
 
     JsonObject object = colors.add<JsonObject>();
     object["red"] = red;

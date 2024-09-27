@@ -1,6 +1,18 @@
 #include <data_handler.hpp>
 #include <unity.h>
 
+template<size_t N>
+std::string joinArrayWithBrackets(const std::array<std::string, N>& arr, const std::string& separator = " ") {
+    std::ostringstream result;
+    for (size_t i = 0; i < N; ++i) {
+        if (i > 0) {
+            result << separator;
+        }
+        result << '[' << arr[i] << ']';
+    }
+    return result.str();
+}
+
 void setUp(void)
 {
     // set stuff up here
@@ -100,6 +112,24 @@ void test_Mcap1TrillionUsd(void)
     TEST_ASSERT_EQUAL_STRING("T", output[NUM_SCREENS - 1].c_str());
 }
 
+void test_Mcap1TrillionUsdSmallChars(void)
+{
+    std::array<std::string, NUM_SCREENS> output = parseMarketCap(831000, 52000, '$', false);
+    TEST_ASSERT_EQUAL_STRING("USD/MCAP", output[0].c_str());
+
+    std::string joined = joinArrayWithBrackets(output);
+
+
+
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(" $ ", output[NUM_SCREENS - 6].c_str(), joined.c_str());
+
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("  1", output[NUM_SCREENS - 5].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("020", output[NUM_SCREENS - 4].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("825", output[NUM_SCREENS - 3].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("000", output[NUM_SCREENS - 2].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("000", output[NUM_SCREENS - 1].c_str(), joined.c_str());
+}
+
 void test_Mcap1TrillionEur(void)
 {
     std::array<std::string, NUM_SCREENS> output = parseMarketCap(831000, 52000, CURRENCY_EUR, true);
@@ -110,6 +140,23 @@ void test_Mcap1TrillionEur(void)
     TEST_ASSERT_EQUAL_STRING("0", output[NUM_SCREENS - 3].c_str());
     TEST_ASSERT_EQUAL_STRING("2", output[NUM_SCREENS - 2].c_str());
     TEST_ASSERT_EQUAL_STRING("T", output[NUM_SCREENS - 1].c_str());
+}
+
+void test_Mcap1TrillionEurSmallChars(void)
+{
+    std::array<std::string, NUM_SCREENS> output = parseMarketCap(831000, 52000, CURRENCY_EUR, false);
+    TEST_ASSERT_EQUAL_STRING("EUR/MCAP", output[0].c_str());
+
+    std::string joined = joinArrayWithBrackets(output);
+
+    char result[4];
+    snprintf(result, sizeof(result), " %c ", CURRENCY_EUR);
+    TEST_ASSERT_EQUAL_STRING(result, output[NUM_SCREENS - 6].c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("  1", output[NUM_SCREENS - 5].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("020", output[NUM_SCREENS - 4].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("825", output[NUM_SCREENS - 3].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("000", output[NUM_SCREENS - 2].c_str(), joined.c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("000", output[NUM_SCREENS - 1].c_str(), joined.c_str());
 }
 
 void test_Mcap1TrillionJpy(void)
@@ -124,6 +171,21 @@ void test_Mcap1TrillionJpy(void)
     TEST_ASSERT_EQUAL_STRING("T", output[NUM_SCREENS - 1].c_str());
 }
 
+void test_Mcap1TrillionJpySmallChars(void)
+{
+    std::array<std::string, NUM_SCREENS> output = parseMarketCap(831000, 52000, CURRENCY_JPY, false);
+    TEST_ASSERT_EQUAL_STRING("JPY/MCAP", output[0].c_str());
+
+    char result[4];
+    snprintf(result, sizeof(result), " %c ", CURRENCY_JPY);
+    TEST_ASSERT_EQUAL_STRING(result, output[NUM_SCREENS - 6].c_str());
+    TEST_ASSERT_EQUAL_STRING("  1", output[NUM_SCREENS - 5].c_str());
+    TEST_ASSERT_EQUAL_STRING("020", output[NUM_SCREENS - 4].c_str());
+    TEST_ASSERT_EQUAL_STRING("825", output[NUM_SCREENS - 3].c_str());
+    TEST_ASSERT_EQUAL_STRING("000", output[NUM_SCREENS - 2].c_str());
+    TEST_ASSERT_EQUAL_STRING("000", output[NUM_SCREENS - 1].c_str());
+}
+
 // not needed when using generate_test_runner.rb
 int runUnityTests(void)
 {
@@ -136,8 +198,11 @@ int runUnityTests(void)
     RUN_TEST(test_PriceOf100kusd);
     RUN_TEST(test_McapLowerUsd);
     RUN_TEST(test_Mcap1TrillionUsd);
+    RUN_TEST(test_Mcap1TrillionUsdSmallChars);
     RUN_TEST(test_Mcap1TrillionEur);
+    RUN_TEST(test_Mcap1TrillionEurSmallChars);
     RUN_TEST(test_Mcap1TrillionJpy);
+    RUN_TEST(test_Mcap1TrillionJpySmallChars);
 
     return UNITY_END();
 }

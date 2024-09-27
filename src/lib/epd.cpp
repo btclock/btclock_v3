@@ -132,6 +132,12 @@ std::mutex epdMutex[NUM_SCREENS];
 
 uint8_t qrcode[800];
 
+#ifdef IS_BTCLOCK_V8
+#define EPD_TASK_STACK_SIZE 4096
+#else
+#define EPD_TASK_STACK_SIZE 2048
+#endif
+
 void forceFullRefresh()
 {
   for (uint i = 0; i < NUM_SCREENS; i++)
@@ -170,7 +176,7 @@ void setupDisplays()
 
   updateQueue = xQueueCreate(UPDATE_QUEUE_SIZE, sizeof(UpdateDisplayTaskItem));
 
-  xTaskCreate(prepareDisplayUpdateTask, "PrepareUpd", 4096, NULL, 11, NULL);
+  xTaskCreate(prepareDisplayUpdateTask, "PrepareUpd", EPD_TASK_STACK_SIZE, NULL, 11, NULL);
 
   for (uint i = 0; i < NUM_SCREENS; i++)
   {
@@ -180,7 +186,7 @@ void setupDisplays()
     int *taskParam = new int;
     *taskParam = i;
 
-    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), 4096, taskParam,
+    xTaskCreate(updateDisplay, ("EpdUpd" + String(i)).c_str(), EPD_TASK_STACK_SIZE, taskParam,
                 11, &tasks[i]); // create task
   }
 
@@ -190,7 +196,7 @@ void setupDisplays()
     setFgColor(GxEPD_BLACK);
     setBgColor(GxEPD_WHITE);
 
-    epdContent = {" ", " ", " ", " ", " ", " ", " "};
+    epdContent.fill("");
   }
   else
   {
