@@ -68,7 +68,8 @@ std::string formatNumberWithSuffix(std::uint64_t num, int numCharacters)
     }
     else
     {
-        sprintf(result, "%llu", (unsigned long long)num);
+        snprintf(result, sizeof(result), "%llu", (unsigned long long)num);
+//        sprintf(result, "%llu", (unsigned long long)num);
         return result;
     }
 

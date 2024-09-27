@@ -220,7 +220,7 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(std::uint32_t blockHeight, s
     std::array<std::string, NUM_SCREENS> ret;
     std::uint32_t firstIndex = 0;
     double supply = getSupplyAtBlock(blockHeight);
-    int64_t marketCap = static_cast<std::int64_t>(supply * double(price));
+    uint64_t marketCap = static_cast<std::uint64_t>(supply * double(price));
 
     ret[0] = getCurrencyCode(currencySymbol) + "/MCAP";
 
@@ -256,7 +256,7 @@ std::array<std::string, NUM_SCREENS> parseMarketCap(std::uint32_t blockHeight, s
             ret[i] = "";
         }
 
-        ret[NUM_SCREENS - groups - 1] = " $ ";
+        ret[NUM_SCREENS - groups - 1] = std::string(" ") + currencySymbol + " ";
         for (std::uint32_t i = 0; i < groups; i++)
         {
             ret[(NUM_SCREENS - groups + i)] = stringValue.substr(i * 3, 3).c_str();
