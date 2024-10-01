@@ -82,12 +82,19 @@ void workerTask(void *pvParameters) {
             std::string timeString;
 
             String minute = String(timeinfo.tm_min);
+            String hour = String(timeinfo.tm_hour);
+
+            if (hour.length() < 2) {
+              hour = "0" + hour;
+            }
             if (minute.length() < 2) {
               minute = "0" + minute;
             }
 
-            timeString =
-                std::to_string(timeinfo.tm_hour) + ":" + minute.c_str();
+            timeString = timeString.append(hour.c_str());
+            timeString = timeString.append(String(":").c_str());
+            timeString = timeString.append(minute.c_str());
+
             timeString.insert(timeString.begin(),
                               NUM_SCREENS - timeString.length(), ' ');
             taskEpdContent[0] = std::to_string(timeinfo.tm_mday) + "/" +
