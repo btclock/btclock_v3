@@ -145,7 +145,7 @@ void setupWifi()
       WiFi.setHostname(softAP_SSID.c_str());
       String softAP_password = replaceAmbiguousChars(
           base64::encode(String(mac[2], 16) + String(mac[4], 16) +
-                         String(mac[5], 16) + String(mac[1], 16))
+                         String(mac[5], 16) + String(mac[1], 16) + String(mac[3], 16))
               .substring(2, 10));
 
       wm.setConfigPortalTimeout(preferences.getUInt("wpTimeout", DEFAULT_WP_TIMEOUT));
@@ -155,10 +155,10 @@ void setupWifi()
 
       wm.setAPCallback([&](WiFiManager *wifiManager)
                        {
-        // Serial.printf("Entered config mode:ip=%s, ssid='%s', pass='%s'\n",
-        // WiFi.softAPIP().toString().c_str(),
-        // wifiManager->getConfigPortalSSID().c_str(),
-        // softAP_password.c_str());
+        Serial.printf("Entered config mode:ip=%s, ssid='%s', pass='%s'\n",
+        WiFi.softAPIP().toString().c_str(),
+        wifiManager->getConfigPortalSSID().c_str(),
+        softAP_password.c_str());
         // delay(6000);
         setFgColor(GxEPD_BLACK);
         setBgColor(GxEPD_WHITE);
