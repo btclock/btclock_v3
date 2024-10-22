@@ -4,16 +4,20 @@ std::vector<nostr::NostrPool *> pools;
 nostr::Transport *transport;
 TaskHandle_t nostrTaskHandle = NULL;
 boolean nostrIsConnected = false;
+boolean nostrIsSubscribed = false;
+boolean nostrIsSubscribing = true;
+
+String subIdZap;
 
 void setupNostrNotify(bool asDatasource, bool zapNotify)
 {
     nostr::esp32::ESP32Platform::initNostr(false);
-    time_t now;
-    time(&now);
-    struct tm *utcTimeInfo;
-    utcTimeInfo = gmtime(&now);
-    time_t utcNow = mktime(utcTimeInfo);
-    time_t timestamp60MinutesAgo = utcNow - 3600;
+    // time_t now;
+    // time(&now);
+    // struct tm *utcTimeInfo;
+    // utcTimeInfo = gmtime(&now);
+    // time_t utcNow = mktime(utcTimeInfo);
+    // time_t timestamp60MinutesAgo = utcNow - 3600;
 
     try
     {
@@ -27,20 +31,7 @@ void setupNostrNotify(bool asDatasource, bool zapNotify)
 
         if (zapNotify)
         {
-            String subIdZap = pool->subscribeMany(
-                {relay},
-                {
-                    {
-                        {"kinds", {"9735"}},
-                        {"limit", {"1"}},
-                        {"since", {String(timestamp60MinutesAgo)}},
-                        {"#p", {preferences.getString("nostrZapPubkey", DEFAULT_ZAP_NOTIFY_PUBKEY)}},
-                    },
-                },
-                handleNostrZapCallback,
-                onNostrSubscriptionClosed,
-                onNostrSubscriptionEose);
-            Serial.println("[ Nostr ] Subscribing to Zap Notifications");
+            subscribeZaps(pool, relay, 60);
         }
 
         if (asDatasource)
@@ -50,7 +41,7 @@ void setupNostrNotify(bool asDatasource, bool zapNotify)
                 {// First filter
                  {
                      {"kinds", {"1"}},
-                     {"since", {String(timestamp60MinutesAgo)}},
+                     {"since", {String(getMinutesAgo(60))}},
                      {"authors", {pubKey}},
                  }},
                 handleNostrEventCallback,
@@ -72,11 +63,12 @@ void setupNostrNotify(bool asDatasource, bool zapNotify)
                     sstatus="CONNECTED";
                 }else if(status==nostr::ConnectionStatus::DISCONNECTED){
                     nostrIsConnected = false;
+                    nostrIsSubscribed = false;
                     sstatus="DISCONNECTED";
                 }else if(status==nostr::ConnectionStatus::ERROR){
                     sstatus = "ERROR";
                 }
-                //Serial.println("[ Nostr ] Connection status changed: " + sstatus); 
+                Serial.println("[ Nostr ] Connection status changed: " + sstatus); 
                 });
         }
     }
@@ -88,8 +80,10 @@ void setupNostrNotify(bool asDatasource, bool zapNotify)
 
 void nostrTask(void *pvParameters)
 {
-    int blockFetch = getBlockFetch();
-    processNewBlock(blockFetch);
+    if(preferences.getBool("useNostr", DEFAULT_USE_NOSTR)) {
+        int blockFetch = getBlockFetch();
+        processNewBlock(blockFetch);
+    }
 
     while (1)
     {
@@ -98,6 +92,10 @@ void nostrTask(void *pvParameters)
             // Run internal loop: refresh relays, complete pending connections, send
             // pending messages
             pool->loop();
+            if (!nostrIsSubscribed && !nostrIsSubscribing) {
+                Serial.println(F("Not subscribed"));
+                subscribeZaps(pool, preferences.getString("nostrRelay"), 1);
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(100));
     }
@@ -125,6 +123,8 @@ void onNostrSubscriptionEose(const String &subId)
     // This is the callback that will be called when the subscription is
     // EOSE
     Serial.println("[ Nostr ] Subscription EOSE: " + subId);
+    nostrIsSubscribing = false;
+    nostrIsSubscribed = true;
 }
 
 void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *event)
@@ -181,6 +181,34 @@ void handleNostrEventCallback(const String &subId, nostr::SignedNostrEvent *even
             processNewBlockFee(medianFee);
         }
     }
+}
+
+time_t getMinutesAgo(int min) {
+    time_t now;
+    time(&now);
+    return now - (min * 60);
+}
+
+void subscribeZaps(nostr::NostrPool *pool, const String &relay, int minutesAgo) {
+    if (subIdZap) {
+        pool->closeSubscription(subIdZap);
+    }
+    nostrIsSubscribing = true;
+
+    subIdZap = pool->subscribeMany(
+        {relay},
+        {
+            {
+                {"kinds", {"9735"}},
+                {"limit", {"1"}},
+                {"since", {String(getMinutesAgo(minutesAgo))}},
+                {"#p", {preferences.getString("nostrZapPubkey", DEFAULT_ZAP_NOTIFY_PUBKEY)}},
+            },
+        },
+        handleNostrZapCallback,
+        onNostrSubscriptionClosed,
+        onNostrSubscriptionEose);
+    Serial.println("[ Nostr ] Subscribing to Zap Notifications since " + String(getMinutesAgo(minutesAgo)));
 }
 
 void handleNostrZapCallback(const String &subId, nostr::SignedNostrEvent *event) {

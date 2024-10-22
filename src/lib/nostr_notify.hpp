@@ -25,3 +25,6 @@ void handleNostrZapCallback(const String &subId, nostr::SignedNostrEvent *event)
 
 void onNostrSubscriptionClosed(const String &subId, const String &reason);
 void onNostrSubscriptionEose(const String &subId);
+
+time_t getMinutesAgo(int min);
+void subscribeZaps(nostr::NostrPool *pool, const String &relay, int minutesAgo);
